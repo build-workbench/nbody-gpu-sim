@@ -2,9 +2,11 @@
 
 超大规模 N-Body 粒子仿真系统，支持百万级粒子的 GPU 并行计算和实时可视化。
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![CUDA](https://img.shields.io/badge/CUDA-11.0+-green.svg)
-![OpenGL](https://img.shields.io/badge/OpenGL-3.3+-orange.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
+![OpenGL](https://img.shields.io/badge/OpenGL-3.3+-5586A4?logo=opengl&logoColor=white)
+![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
 
 ## 特性
 
