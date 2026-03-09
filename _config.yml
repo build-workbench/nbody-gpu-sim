@@ -1,0 +1,5 @@
+title: N-Body Particle Simulation
+description: Million-particle GPU simulation — Direct N², Barnes-Hut, Spatial Hash with CUDA-OpenGL interop
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
