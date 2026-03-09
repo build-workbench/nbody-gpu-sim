@@ -3,66 +3,111 @@ layout: default
 title: N-Body Particle Simulation
 ---
 
-# N-Body Particle Simulation System
+# N-Body Particle Simulation
 
-超大规模 N-Body 粒子仿真系统，支持百万级粒子的 GPU 并行计算和实时可视化。
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
+![OpenGL](https://img.shields.io/badge/OpenGL-3.3+-5586A4?logo=opengl&logoColor=white)
 
-## 核心特性
+A million-particle GPU simulation system with real-time visualization. Implements three force-calculation algorithms — Direct N², Barnes-Hut, and Spatial Hash — running entirely on the GPU via CUDA, with zero-copy CUDA-OpenGL interop rendering.
 
-- **高性能 GPU 计算** — CUDA 并行计算，支持百万级粒子实时仿真
-- **多种力计算算法**:
-  - Direct N² — O(N²) 精确计算
-  - Barnes-Hut — O(N log N) 树算法加速
-  - Spatial Hash — O(N) 空间哈希（短程力）
-- **零拷贝渲染** — CUDA-OpenGL 互操作，无 CPU-GPU 数据传输
-- **Velocity Verlet 积分** — 辛积分器，保证能量守恒
-- **实时交互** — 相机控制、参数调节、算法切换
+## Performance
 
-## 文档
+| Particles | Direct N² | Barnes-Hut | Spatial Hash |
+|-----------|-----------|------------|--------------|
+| 10 K      | 60+ FPS   | 60+ FPS    | 60+ FPS      |
+| 100 K     | ~10 FPS   | 60+ FPS    | 60+ FPS      |
+| **1 M**   | <1 FPS    | ~30 FPS    | **60+ FPS**  |
 
-- [README](README.md) — 项目概述与快速开始
-- [算法详解](docs/ALGORITHMS.md) — Direct N²、Barnes-Hut、Spatial Hash 原理
-- [API 参考](docs/API.md) — 接口文档
-- [性能分析](docs/PERFORMANCE.md) — 基准测试与优化
+*Tested on NVIDIA RTX 3080, CUDA 11.8*
 
-## 快速开始
+## Key Features
+
+- **Million-particle real-time simulation** — CUDA parallel physics with three switchable algorithms
+- **Zero-copy rendering** — CUDA-OpenGL interop eliminates CPU↔GPU data transfer
+- **Symplectic integrator** — Velocity Verlet ensures long-term energy conservation
+- **Interactive controls** — Camera orbit, algorithm hot-swap, parameter tuning at runtime
+
+## Force Algorithms
+
+| Algorithm | Complexity | Best For |
+|-----------|------------|----------|
+| **Direct N²** | O(N²) | Small systems, exact results |
+| **Barnes-Hut** | O(N log N) | Large-scale gravitational simulation |
+| **Spatial Hash** | O(N) | Short-range forces (molecular dynamics) |
+
+**Barnes-Hut** builds an octree each frame, approximating distant particle clusters as single mass points (controlled by θ parameter). **Spatial Hash** bins particles into a uniform grid so only neighboring cells interact — ideal for short-range potentials.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     CPU  (Host)                              │
+│  SimulationConfig ──▶ ParticleSystem ──▶ Render Loop         │
+└──────────────────────────┬───────────────────────────────────┘
+                           │  CUDA-GL interop (zero copy)
+┌──────────────────────────▼───────────────────────────────────┐
+│                     GPU  (Device)                            │
+│  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐  │
+│  │ Force Kernel   │  │ Velocity Verlet│  │ OpenGL Render │  │
+│  │ (N²/BH/Hash)  │─▶│ Integration    │─▶│ (point sprite)│  │
+│  └────────────────┘  └────────────────┘  └───────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Quick Start
 
 ```bash
-# 安装依赖 (Ubuntu)
+# Dependencies (Ubuntu)
 sudo apt-get install -y cmake libglfw3-dev libglew-dev libglm-dev
 
-# 构建
+# Build
 mkdir build && cd build
-cmake ..
-make -j$(nproc)
+cmake .. && make -j$(nproc)
 
-# 运行 (默认 10000 粒子)
+# Run (default 10K particles)
 ./nbody_sim
 
-# 百万粒子
+# Million-particle simulation
 ./nbody_sim 1000000
 ```
 
-## 键盘控制
+## Controls
 
-| 按键 | 功能 |
-|------|------|
-| `1` / `2` / `3` | 切换 Direct / Barnes-Hut / Spatial Hash |
-| `WASD` | 移动相机 |
-| `Space` / `Shift` | 升降相机 |
-| `P` | 暂停/继续 |
-| `R` | 重置 |
+| Key | Action |
+|-----|--------|
+| `1` / `2` / `3` | Switch Direct / Barnes-Hut / Spatial Hash |
+| `WASD` | Move camera |
+| `Space` / `Shift` | Camera up / down |
+| `P` | Pause / resume |
+| `R` | Reset simulation |
+| Mouse drag | Rotate view |
+| Scroll wheel | Zoom |
 
-## 技术栈
+## Tech Stack
 
-| 类别 | 技术 |
-|------|------|
-| 语言 | CUDA C++17 |
-| 渲染 | OpenGL 3.3+, GLFW, GLEW |
-| 构建 | CMake 3.18+ |
-| GPU | SM 75+ (Turing → Hopper) |
+| Category | Technology |
+|----------|------------|
+| Language | CUDA C++17 |
+| Rendering | OpenGL 3.3+, GLFW, GLEW, GLM |
+| Build | CMake 3.18+ |
+| GPU | Compute Capability 7.5+ (Turing → Hopper) |
+| Testing | Google Test + RapidCheck |
 
-## 链接
+## Documentation
 
-- [GitHub 仓库](https://github.com/LessUp/n-body)
-- [README](README.md)
+- [README](README.md) — Full project overview and API examples
+- [Algorithm Details](docs/ALGORITHMS.md) — Direct N², Barnes-Hut, Spatial Hash internals
+- [API Reference](docs/API.md) — Public interface documentation
+- [Performance Guide](docs/PERFORMANCE.md) — Benchmarks and optimization notes
+
+## References
+
+1. Barnes & Hut (1986). *A hierarchical O(N log N) force-calculation algorithm.* Nature 324.
+2. Nyland, Harris & Prins (2007). *Fast N-body simulation with CUDA.* GPU Gems 3.
+3. Green (2010). *Particle simulation using CUDA.* NVIDIA Whitepaper.
+
+---
+
+[View on GitHub](https://github.com/LessUp/n-body)
