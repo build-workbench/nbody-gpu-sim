@@ -8,6 +8,7 @@ namespace nbody {
 class Integrator {
 public:
     Integrator(int block_size = 256);
+    ~Integrator();
     
     // Full integration step (position update, force calculation, velocity update)
     // Note: Force calculation is done externally between position and velocity updates
@@ -29,11 +30,16 @@ public:
     // Compute total energy
     float computeTotalEnergy(const ParticleData* d_particles, float G, float eps);
     
+    // Pre-allocate scratch buffer for reduction (call after particle count is known)
+    void ensureScratchBuffer(size_t particle_count);
+    
     void setBlockSize(int size) { block_size_ = size; }
     int getBlockSize() const { return block_size_; }
     
 private:
     int block_size_;
+    float* d_scratch_ = nullptr;   // Pre-allocated scratch for reductions
+    int scratch_blocks_ = 0;       // Number of blocks in scratch buffer
 };
 
 // GPU kernel declarations (implemented in .cu file)

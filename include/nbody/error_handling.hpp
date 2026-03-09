@@ -89,6 +89,17 @@ public:
     } while(0)
 
 // CUDA kernel launch error check
+// In Release builds, only checks cudaGetLastError (async, no stall).
+// In Debug builds, also synchronizes to catch kernel errors immediately.
+#ifdef NDEBUG
+#define CUDA_CHECK_KERNEL() \
+    do { \
+        cudaError_t err = cudaGetLastError(); \
+        if (err != cudaSuccess) { \
+            throw nbody::CudaException(cudaGetErrorString(err), __FILE__, __LINE__); \
+        } \
+    } while(0)
+#else
 #define CUDA_CHECK_KERNEL() \
     do { \
         cudaError_t err = cudaGetLastError(); \
@@ -100,6 +111,7 @@ public:
             throw nbody::CudaException(cudaGetErrorString(err), __FILE__, __LINE__); \
         } \
     } while(0)
+#endif
 
 // OpenGL error checking function
 void checkGLError(const char* operation);

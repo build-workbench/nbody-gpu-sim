@@ -27,6 +27,29 @@ __host__ __device__ unsigned int computeMortonCode(float x, float y, float z) {
     return (expandBits(ix) << 2) | (expandBits(iy) << 1) | expandBits(iz);
 }
 
+// CAS-based atomic float min/max (correct for all sign combinations)
+__device__ inline void atomicMinFloat(float* addr, float val) {
+    int* addr_as_int = reinterpret_cast<int*>(addr);
+    int old = *addr_as_int;
+    int expected;
+    do {
+        expected = old;
+        if (val >= __int_as_float(expected)) break;
+        old = atomicCAS(addr_as_int, expected, __float_as_int(val));
+    } while (old != expected);
+}
+
+__device__ inline void atomicMaxFloat(float* addr, float val) {
+    int* addr_as_int = reinterpret_cast<int*>(addr);
+    int old = *addr_as_int;
+    int expected;
+    do {
+        expected = old;
+        if (val <= __int_as_float(expected)) break;
+        old = atomicCAS(addr_as_int, expected, __float_as_int(val));
+    } while (old != expected);
+}
+
 // Compute bounding box kernel
 __global__ void computeBoundingBoxKernel(
     const float* pos_x, const float* pos_y, const float* pos_z,
@@ -68,12 +91,12 @@ __global__ void computeBoundingBoxKernel(
     }
     
     if (tid == 0) {
-        atomicMin(reinterpret_cast<int*>(min_x), __float_as_int(s_min_x[0]));
-        atomicMin(reinterpret_cast<int*>(min_y), __float_as_int(s_min_y[0]));
-        atomicMin(reinterpret_cast<int*>(min_z), __float_as_int(s_min_z[0]));
-        atomicMax(reinterpret_cast<int*>(max_x), __float_as_int(s_max_x[0]));
-        atomicMax(reinterpret_cast<int*>(max_y), __float_as_int(s_max_y[0]));
-        atomicMax(reinterpret_cast<int*>(max_z), __float_as_int(s_max_z[0]));
+        atomicMinFloat(min_x, s_min_x[0]);
+        atomicMinFloat(min_y, s_min_y[0]);
+        atomicMinFloat(min_z, s_min_z[0]);
+        atomicMaxFloat(max_x, s_max_x[0]);
+        atomicMaxFloat(max_y, s_max_y[0]);
+        atomicMaxFloat(max_z, s_max_z[0]);
     }
 }
 

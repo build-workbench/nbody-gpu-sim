@@ -173,7 +173,10 @@ __global__ void spatialHashForceKernel(
 
 // SpatialHashGrid implementation
 SpatialHashGrid::SpatialHashGrid(size_t max_particles, float cell_size)
-    : max_particles_(max_particles), cell_size_(cell_size), total_cells_(0) {
+    : d_cell_start_(nullptr), d_cell_end_(nullptr),
+      d_particle_cell_(nullptr), d_sorted_indices_(nullptr), d_cell_counts_(nullptr),
+      max_particles_(max_particles), cell_size_(cell_size), total_cells_(0) {
+    grid_dims_ = make_int3(0, 0, 0);
     // Allocate device memory
     CUDA_CHECK(cudaMalloc(&d_particle_cell_, max_particles * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_sorted_indices_, max_particles * sizeof(int)));
@@ -187,34 +190,55 @@ SpatialHashGrid::~SpatialHashGrid() {
     cudaFree(d_cell_counts_);
 }
 
+// Reuse the bounding box kernel from Barnes-Hut (declared extern)
+extern __global__ void computeBoundingBoxKernel(
+    const float* pos_x, const float* pos_y, const float* pos_z,
+    float* min_x, float* min_y, float* min_z,
+    float* max_x, float* max_y, float* max_z,
+    int N);
+
 void SpatialHashGrid::computeBoundingBox(const ParticleData* d_particles) {
     int N = static_cast<int>(d_particles->count);
-    
-    // Copy positions to host for bounding box computation
-    std::vector<float> h_pos_x(N), h_pos_y(N), h_pos_z(N);
-    CUDA_CHECK(cudaMemcpy(h_pos_x.data(), d_particles->pos_x, N * sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(h_pos_y.data(), d_particles->pos_y, N * sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpy(h_pos_z.data(), d_particles->pos_z, N * sizeof(float), cudaMemcpyDeviceToHost));
-    
-    bbox_min_ = Vec3(1e30f, 1e30f, 1e30f);
-    bbox_max_ = Vec3(-1e30f, -1e30f, -1e30f);
-    
-    for (int i = 0; i < N; i++) {
-        bbox_min_.x = std::min(bbox_min_.x, h_pos_x[i]);
-        bbox_min_.y = std::min(bbox_min_.y, h_pos_y[i]);
-        bbox_min_.z = std::min(bbox_min_.z, h_pos_z[i]);
-        bbox_max_.x = std::max(bbox_max_.x, h_pos_x[i]);
-        bbox_max_.y = std::max(bbox_max_.y, h_pos_y[i]);
-        bbox_max_.z = std::max(bbox_max_.z, h_pos_z[i]);
-    }
-    
+    int block_size = 256;
+    int num_blocks = (N + block_size - 1) / block_size;
+
+    // Allocate temporary device scalars for reduction
+    float *d_min_x, *d_min_y, *d_min_z, *d_max_x, *d_max_y, *d_max_z;
+    CUDA_CHECK(cudaMalloc(&d_min_x, sizeof(float)));
+    CUDA_CHECK(cudaMalloc(&d_min_y, sizeof(float)));
+    CUDA_CHECK(cudaMalloc(&d_min_z, sizeof(float)));
+    CUDA_CHECK(cudaMalloc(&d_max_x, sizeof(float)));
+    CUDA_CHECK(cudaMalloc(&d_max_y, sizeof(float)));
+    CUDA_CHECK(cudaMalloc(&d_max_z, sizeof(float)));
+
+    float init_min = 1e30f, init_max = -1e30f;
+    CUDA_CHECK(cudaMemcpy(d_min_x, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_min_y, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_min_z, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_max_x, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_max_y, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_max_z, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+
+    size_t shared_size = 6 * block_size * sizeof(float);
+    computeBoundingBoxKernel<<<num_blocks, block_size, shared_size>>>(
+        d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
+        d_min_x, d_min_y, d_min_z, d_max_x, d_max_y, d_max_z, N
+    );
+    CUDA_CHECK_KERNEL();
+
+    CUDA_CHECK(cudaMemcpy(&bbox_min_.x, d_min_x, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&bbox_min_.y, d_min_y, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&bbox_min_.z, d_min_z, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&bbox_max_.x, d_max_x, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&bbox_max_.y, d_max_y, sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&bbox_max_.z, d_max_z, sizeof(float), cudaMemcpyDeviceToHost));
+
+    cudaFree(d_min_x); cudaFree(d_min_y); cudaFree(d_min_z);
+    cudaFree(d_max_x); cudaFree(d_max_y); cudaFree(d_max_z);
+
     // Add small padding
-    bbox_min_.x -= 0.001f;
-    bbox_min_.y -= 0.001f;
-    bbox_min_.z -= 0.001f;
-    bbox_max_.x += 0.001f;
-    bbox_max_.y += 0.001f;
-    bbox_max_.z += 0.001f;
+    bbox_min_.x -= 0.001f; bbox_min_.y -= 0.001f; bbox_min_.z -= 0.001f;
+    bbox_max_.x += 0.001f; bbox_max_.y += 0.001f; bbox_max_.z += 0.001f;
 }
 
 void SpatialHashGrid::build(const ParticleData* d_particles) {
