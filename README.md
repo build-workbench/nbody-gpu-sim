@@ -1,5 +1,7 @@
 # N-Body Particle Simulation System
 
+简体中文 | [English](README.en.md)
+
 超大规模 N-Body 粒子仿真系统，支持百万级粒子的 GPU 并行计算和实时可视化。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
