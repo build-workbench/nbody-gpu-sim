@@ -1,5 +1,62 @@
 title: N-Body Particle Simulation
-description: Million-particle GPU simulation — Direct N², Barnes-Hut, Spatial Hash with CUDA-OpenGL interop
+description: >-
+  Million-particle GPU simulation — Direct N², Barnes-Hut, Spatial Hash
+  with CUDA-OpenGL interop real-time rendering
 remote_theme: pages-themes/cayman@v0.2.0
 plugins:
   - jekyll-remote-theme
+  - jekyll-seo-tag
+repository: LessUp/n-body
+show_downloads: false
+
+# SEO & metadata
+url: https://lessup.github.io
+baseurl: /n-body
+lang: en
+author: LessUp
+
+# Markdown rendering
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# Default layout for all pages
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+  - scope:
+      path: "changelog"
+    values:
+      layout: default
+
+# Exclude irrelevant files from Jekyll build
+exclude:
+  - .git
+  - .github
+  - .kiro
+  - .vscode
+  - include
+  - src
+  - shaders
+  - tests
+  - docs
+  - build
+  - cmake-build-*
+  - CMakeLists.txt
+  - .clang-format
+  - .editorconfig
+  - .gitignore
+  - CONTRIBUTING.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - "*.cu"
+  - "*.cuh"
+  - "*.cpp"
+  - "*.h"
+  - "*.o"
+  - "*.so"
