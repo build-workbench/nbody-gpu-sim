@@ -14,7 +14,7 @@ void checkGLError(const char *operation) {
 
 void validateResourceRequirements(size_t particle_count) {
   cudaDeviceProp prop;
-  cudaGetDeviceProperties(&prop, 0);
+  CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
 
   // Estimate memory requirements
   // pos(3) + vel(3) + acc(6) + mass(1) = 13 floats per particle
@@ -30,7 +30,7 @@ void validateResourceRequirements(size_t particle_count) {
 }
 
 void validateSimulationConfig(const SimulationConfig &config) {
-  validateParticleCount(config.particle_count);
+  validateParticleCountRange(config.particle_count);
   validateTimeStep(config.dt);
   validateSoftening(config.softening);
 
@@ -38,8 +38,22 @@ void validateSimulationConfig(const SimulationConfig &config) {
     validateTheta(config.barnes_hut_theta);
   }
 
-  if (config.G <= 0) {
-    throw ValidationException("Gravitational constant must be positive");
+  if (config.G <= 0 || std::isnan(config.G) || std::isinf(config.G)) {
+    throw ValidationException("Gravitational constant must be positive and finite");
+  }
+
+  if (config.force_method == ForceMethod::SPATIAL_HASH) {
+    if (config.spatial_hash_cell_size <= 0 ||
+        std::isnan(config.spatial_hash_cell_size) ||
+        std::isinf(config.spatial_hash_cell_size)) {
+      throw ValidationException("Spatial hash cell size must be positive and finite");
+    }
+
+    if (config.spatial_hash_cutoff <= 0 ||
+        std::isnan(config.spatial_hash_cutoff) ||
+        std::isinf(config.spatial_hash_cutoff)) {
+      throw ValidationException("Spatial hash cutoff must be positive and finite");
+    }
   }
 
   if (config.cuda_block_size <= 0 || config.cuda_block_size > 1024) {
@@ -47,7 +61,7 @@ void validateSimulationConfig(const SimulationConfig &config) {
   }
 }
 
-void validateParticleCount(size_t count) {
+void validateParticleCountRange(size_t count) {
   if (count == 0) {
     throw ValidationException("Particle count must be greater than 0");
   }
@@ -56,7 +70,10 @@ void validateParticleCount(size_t count) {
     throw ValidationException(
         "Particle count exceeds maximum supported (100M)");
   }
+}
 
+void validateParticleCount(size_t count) {
+  validateParticleCountRange(count);
   validateResourceRequirements(count);
 }
 

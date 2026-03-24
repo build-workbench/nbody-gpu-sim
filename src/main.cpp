@@ -110,17 +110,18 @@ void printUsage() {
 }
 
 int main(int argc, char *argv[]) {
-  // Parse command line arguments
-  size_t particle_count = 10000;
-  if (argc > 1) {
-    particle_count = std::stoul(argv[1]);
-  }
-
-  std::cout << "N-Body Particle Simulation\n";
-  std::cout << "Particle count: " << particle_count << "\n";
-  printUsage();
-
   try {
+    // Parse command line arguments
+    size_t particle_count = 10000;
+    if (argc > 1) {
+      particle_count = std::stoul(argv[1]);
+      validateParticleCountRange(particle_count);
+    }
+
+    std::cout << "N-Body Particle Simulation\n";
+    std::cout << "Particle count: " << particle_count << "\n";
+    printUsage();
+
     // Initialize GLFW
     if (!glfwInit()) {
       throw std::runtime_error("Failed to initialize GLFW");
@@ -148,66 +149,71 @@ int main(int argc, char *argv[]) {
     glfwSetScrollCallback(window, scrollCallback);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-    // Initialize renderer
-    Renderer renderer;
-    renderer.initialize(1280, 720);
-    g_app_state.renderer = &renderer;
+    {
+      // Initialize renderer
+      Renderer renderer;
+      renderer.initialize(1280, 720);
+      g_app_state.renderer = &renderer;
 
-    // Initialize particle system
-    SimulationConfig config;
-    config.particle_count = particle_count;
-    config.init_distribution = InitDistribution::SPHERICAL;
-    config.force_method = ForceMethod::DIRECT_N2;
-    config.dt = 0.001f;
-    config.G = 1.0f;
-    config.softening = 0.1f;
+      // Initialize particle system
+      SimulationConfig config;
+      config.particle_count = particle_count;
+      config.init_distribution = InitDistribution::SPHERICAL;
+      config.force_method = ForceMethod::DIRECT_N2;
+      config.dt = 0.001f;
+      config.G = 1.0f;
+      config.softening = 0.1f;
 
-    ParticleSystem particle_system;
-    particle_system.initialize(config);
-    particle_system.initializeInterop();
-    g_app_state.particle_system = &particle_system;
+      ParticleSystem particle_system;
+      particle_system.initialize(config);
+      particle_system.initializeInterop();
+      g_app_state.particle_system = &particle_system;
+      g_app_state.paused = false;
 
-    // Main loop
-    auto last_time = std::chrono::high_resolution_clock::now();
-    int frame_count = 0;
-    float fps = 0.0f;
+      // Main loop
+      auto last_time = std::chrono::high_resolution_clock::now();
+      int frame_count = 0;
+      float fps = 0.0f;
 
-    while (!glfwWindowShouldClose(window)) {
-      auto current_time = std::chrono::high_resolution_clock::now();
-      float delta_time =
-          std::chrono::duration<float>(current_time - last_time).count();
+      while (!glfwWindowShouldClose(window)) {
+        auto current_time = std::chrono::high_resolution_clock::now();
+        float delta_time =
+            std::chrono::duration<float>(current_time - last_time).count();
 
-      // Update FPS counter
-      frame_count++;
-      if (delta_time >= 1.0f) {
-        fps = frame_count / delta_time;
-        frame_count = 0;
-        last_time = current_time;
+        // Update FPS counter
+        frame_count++;
+        if (delta_time >= 1.0f) {
+          fps = frame_count / delta_time;
+          frame_count = 0;
+          last_time = current_time;
 
-        // Update window title
-        std::ostringstream title;
-        title << "N-Body Simulation | " << particle_count << " particles | "
-              << std::fixed << std::setprecision(1) << fps << " FPS | "
-              << "Time: " << std::setprecision(2)
-              << particle_system.getSimulationTime();
-        glfwSetWindowTitle(window, title.str().c_str());
+          // Update window title
+          std::ostringstream title;
+          title << "N-Body Simulation | " << particle_count << " particles | "
+                << std::fixed << std::setprecision(1) << fps << " FPS | "
+                << "Time: " << std::setprecision(2)
+                << particle_system.getSimulationTime();
+          glfwSetWindowTitle(window, title.str().c_str());
+        }
+
+        // Update simulation
+        if (!g_app_state.paused) {
+          particle_system.update(particle_system.getTimeStep());
+        }
+
+        // Render
+        renderer.render(particle_system.getInterop()->getPositionVBO(),
+                        particle_system.getParticleCount());
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
       }
 
-      // Update simulation
-      if (!g_app_state.paused) {
-        particle_system.update(config.dt);
-      }
-
-      // Render
-      renderer.render(particle_system.getInterop()->getPositionVBO(),
-                      particle_system.getParticleCount());
-
-      glfwSwapBuffers(window);
-      glfwPollEvents();
+      g_app_state.particle_system = nullptr;
+      g_app_state.renderer = nullptr;
+      renderer.cleanup();
     }
 
-    // Cleanup
-    renderer.cleanup();
     glfwDestroyWindow(window);
     glfwTerminate();
 
