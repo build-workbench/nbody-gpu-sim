@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nbody/particle_system.hpp"
+#include "nbody/simulation_state.hpp"
 #include "nbody/types.hpp"
 #include <fstream>
 #include <iostream>
