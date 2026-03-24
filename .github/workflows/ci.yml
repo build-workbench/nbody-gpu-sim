@@ -29,3 +29,97 @@ jobs:
           check-path: '.'
           exclude-regex: '(^|/)(build|third_party|external|vendor|\.git)(/|$)'
           fallback-style: 'LLVM'
+
+  ci-scope-note:
+    name: CI Scope Note
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain current CI scope
+        run: |
+          echo "This repository currently requires a local CUDA toolkit/OpenGL environment for full configure, build, and runtime validation."
+          echo "Hosted CI remains limited to CPU-safe checks until the build is split into host-only and CUDA-dependent targets."
+          echo "Tracked follow-up: make CMake configurable without nvcc for host-only validation."
+          echo "RapidCheck is wired for test builds, but end-to-end test execution still depends on CUDA-enabled local tooling."
+          echo "Current CI intentionally enforces formatting only."
+
+  docs-consistency:
+    name: Docs Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify documented executable names
+        run: |
+          grep -q './nbody_sim' README.md
+          ! grep -q './n_body_sim' README.md
+
+      - name: Verify landing page controls
+        run: |
+          grep -q '`Space` | Pause / resume' index.md
+          grep -q '`C` | Reset camera' index.md
+          ! grep -q '`WASD` | Move camera' index.md
+          ! grep -q '`P` | Pause / resume' index.md
+
+      - name: Verify documented test stack mention
+        run: |
+          grep -q 'RapidCheck' README.zh-CN.md
+          grep -q 'RapidCheck' index.md
+
+      - name: Verify executable target name in CMake
+        run: |
+          grep -q 'add_executable(nbody_sim src/main.cpp)' CMakeLists.txt
+          grep -q 'FetchContent_MakeAvailable(googletest rapidcheck)' CMakeLists.txt
+          grep -q 'target_link_libraries(nbody_tests PRIVATE' CMakeLists.txt
+          grep -q 'rapidcheck' CMakeLists.txt
+          grep -q 'GTest::gtest_main' CMakeLists.txt
+          grep -q 'project(NBodySimulation' CMakeLists.txt
+          grep -q 'LANGUAGES CXX CUDA' CMakeLists.txt
+
+      - name: Verify app usage implementation still matches docs
+        run: |
+          grep -q 'particle_count = std::stoul(argv\[1\]);' src/main.cpp
+          grep -q 'validateParticleCountRange(particle_count);' src/main.cpp
+          grep -q 'Space  - Pause/Resume' src/main.cpp
+          grep -q 'C      - Reset camera' src/main.cpp
+          grep -q 'Esc    - Quit' src/main.cpp
+
+      - name: Verify runtime validation hooks are enforced
+        run: |
+          grep -q 'validateSimulationConfig(config);' src/core/particle_system.cpp
+          grep -q 'validateResourceRequirements(config.particle_count);' src/core/particle_system.cpp
+          grep -q 'void validateParticleCountRange(size_t count)' src/utils/error_handling.cpp
+          grep -q 'void ParticleSystem::setTimeStep(float dt)' src/core/particle_system.cpp
+          grep -q 'config_.dt = dt;' src/core/particle_system.cpp
+          grep -q 'particle_system.update(particle_system.getTimeStep());' src/main.cpp
+
+      - name: Verify context-safe cleanup ordering
+        run: |
+          grep -q 'g_app_state.particle_system = nullptr;' src/main.cpp
+          grep -q 'g_app_state.renderer = nullptr;' src/main.cpp
+          grep -q 'glfwDestroyWindow(window);' src/main.cpp
+          grep -q 'glfwTerminate();' src/main.cpp
+          grep -q 'void ParticleSystem::initializeInterop()' src/core/particle_system.cpp
+          grep -q 'interop_->initialize(particle_count_);' src/core/particle_system.cpp
+
+      - name: Note hosted CI limitation
+        run: |
+          echo 'Docs-consistency checks passed.'
+          echo 'Hosted CI still does not configure/build the CUDA project because nvcc is unavailable here.'
+          echo 'Next step is host-only/CUDA target split in CMake.'
+          echo 'Until then, local CUDA/OpenGL verification remains required.'
+          echo 'This job exists to stop doc/runtime drift while full CI is blocked.'
+          echo 'Done.'
+
+  local-cuda-required:
+    name: Local CUDA Required
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain build limitation
+        run: |
+          echo "Skipping CMake configure/build in hosted CI because this project currently requires nvcc and GPU-adjacent dependencies at configure time."
+          echo "Once host-only targets exist, replace this note job with a real CPU-safe configure/test job."
+          echo "For now, validate full builds locally in a CUDA/OpenGL environment."
+          echo "This is intentional and keeps the workflow honest."
+          echo "No-op complete."
+          true
