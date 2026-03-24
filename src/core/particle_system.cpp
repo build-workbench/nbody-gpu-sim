@@ -1,6 +1,7 @@
 #include "nbody/particle_system.hpp"
 #include "nbody/error_handling.hpp"
 #include "nbody/serialization.hpp"
+#include <cmath>
 #include <cstring>
 #include <fstream>
 
@@ -28,11 +29,15 @@ void ParticleSystem::freeMemory() {
 }
 
 void ParticleSystem::initialize(const SimulationConfig &config) {
+  validateSimulationConfig(config);
+  validateResourceRequirements(config.particle_count);
+
   config_ = config;
   dt_ = config.dt;
   G_ = config.G;
   softening_ = config.softening;
   force_method_ = config.force_method;
+  is_paused_ = false;
 
   freeMemory();
   allocateMemory(config.particle_count);
@@ -78,6 +83,11 @@ void ParticleSystem::initialize(const SimulationConfig &config) {
 
   simulation_time_ = 0.0f;
   is_initialized_ = true;
+
+  if (interop_) {
+    interop_->initialize(particle_count_);
+    updateInteropBuffer();
+  }
 }
 
 void ParticleSystem::initializeWithDistribution(size_t particle_count,
@@ -124,6 +134,10 @@ void ParticleSystem::setForceMethod(ForceMethod method) {
 }
 
 void ParticleSystem::setGravitationalConstant(float G) {
+  if (G <= 0 || std::isnan(G) || std::isinf(G)) {
+    throw ValidationException("Gravitational constant must be positive and finite");
+  }
+
   G_ = G;
   config_.G = G;
   if (force_calculator_) {
@@ -132,6 +146,8 @@ void ParticleSystem::setGravitationalConstant(float G) {
 }
 
 void ParticleSystem::setSofteningParameter(float eps) {
+  validateSoftening(eps);
+
   softening_ = eps;
   config_.softening = eps;
   if (force_calculator_) {
@@ -139,7 +155,14 @@ void ParticleSystem::setSofteningParameter(float eps) {
   }
 }
 
+void ParticleSystem::setTimeStep(float dt) {
+  validateTimeStep(dt);
+  dt_ = dt;
+  config_.dt = dt;
+}
+
 void ParticleSystem::setBarnesHutTheta(float theta) {
+  validateTheta(theta);
   config_.barnes_hut_theta = theta;
   if (force_method_ == ForceMethod::BARNES_HUT) {
     auto *bh = dynamic_cast<BarnesHutCalculator *>(force_calculator_.get());
@@ -149,6 +172,10 @@ void ParticleSystem::setBarnesHutTheta(float theta) {
 }
 
 void ParticleSystem::setSpatialHashCellSize(float size) {
+  if (size <= 0 || std::isnan(size) || std::isinf(size)) {
+    throw ValidationException("Spatial hash cell size must be positive and finite");
+  }
+
   config_.spatial_hash_cell_size = size;
   if (force_method_ == ForceMethod::SPATIAL_HASH) {
     auto *sh = dynamic_cast<SpatialHashCalculator *>(force_calculator_.get());
@@ -158,6 +185,10 @@ void ParticleSystem::setSpatialHashCellSize(float size) {
 }
 
 void ParticleSystem::setSpatialHashCutoff(float cutoff) {
+  if (cutoff <= 0 || std::isnan(cutoff) || std::isinf(cutoff)) {
+    throw ValidationException("Spatial hash cutoff must be positive and finite");
+  }
+
   config_.spatial_hash_cutoff = cutoff;
   if (force_method_ == ForceMethod::SPATIAL_HASH) {
     auto *sh = dynamic_cast<SpatialHashCalculator *>(force_calculator_.get());
@@ -198,6 +229,15 @@ SimulationState ParticleSystem::getState() const {
 }
 
 void ParticleSystem::setState(const SimulationState &state) {
+  SimulationConfig config = config_;
+  config.particle_count = state.particle_count;
+  config.dt = state.dt;
+  config.G = state.G;
+  config.softening = state.softening;
+  config.force_method = state.force_method;
+  validateSimulationConfig(config);
+  validateResourceRequirements(state.particle_count);
+
   freeMemory();
   allocateMemory(state.particle_count);
 
@@ -233,7 +273,13 @@ void ParticleSystem::setState(const SimulationState &state) {
   // Compute initial forces
   force_calculator_->computeForces(&d_particles_);
 
+  is_paused_ = false;
   is_initialized_ = true;
+
+  if (interop_) {
+    interop_->initialize(particle_count_);
+    updateInteropBuffer();
+  }
 }
 
 void ParticleSystem::saveState(const std::string &filename) const {
@@ -263,50 +309,17 @@ float ParticleSystem::computeTotalEnergy() const {
 }
 
 void ParticleSystem::initializeInterop() {
-  interop_ = std::make_unique<CudaGLInterop>();
+  if (!interop_) {
+    interop_ = std::make_unique<CudaGLInterop>();
+  }
   interop_->initialize(particle_count_);
   updateInteropBuffer();
 }
 
 void ParticleSystem::updateInteropBuffer() {
-  if (interop_) {
+  if (interop_ && is_initialized_) {
     interop_->updatePositions(&d_particles_);
   }
-}
-
-// SimulationState implementation
-bool SimulationState::operator==(const SimulationState &other) const {
-  if (particle_count != other.particle_count)
-    return false;
-  if (std::abs(simulation_time - other.simulation_time) > 1e-6f)
-    return false;
-  if (std::abs(dt - other.dt) > 1e-6f)
-    return false;
-  if (std::abs(G - other.G) > 1e-6f)
-    return false;
-  if (std::abs(softening - other.softening) > 1e-6f)
-    return false;
-  if (force_method != other.force_method)
-    return false;
-
-  for (size_t i = 0; i < particle_count; i++) {
-    if (std::abs(pos_x[i] - other.pos_x[i]) > 1e-6f)
-      return false;
-    if (std::abs(pos_y[i] - other.pos_y[i]) > 1e-6f)
-      return false;
-    if (std::abs(pos_z[i] - other.pos_z[i]) > 1e-6f)
-      return false;
-    if (std::abs(vel_x[i] - other.vel_x[i]) > 1e-6f)
-      return false;
-    if (std::abs(vel_y[i] - other.vel_y[i]) > 1e-6f)
-      return false;
-    if (std::abs(vel_z[i] - other.vel_z[i]) > 1e-6f)
-      return false;
-    if (std::abs(mass[i] - other.mass[i]) > 1e-6f)
-      return false;
-  }
-
-  return true;
 }
 
 } // namespace nbody

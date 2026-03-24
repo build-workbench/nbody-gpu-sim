@@ -126,6 +126,7 @@ void validateResourceRequirements(size_t particle_count);
 // Input validation
 void validateSimulationConfig(const struct SimulationConfig &config);
 void validateParticleCount(size_t count);
+void validateParticleCountRange(size_t count);
 void validateTimeStep(float dt);
 void validateSoftening(float eps);
 void validateTheta(float theta);

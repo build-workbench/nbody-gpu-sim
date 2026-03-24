@@ -4,31 +4,12 @@
 #include "nbody/force_calculator.hpp"
 #include "nbody/integrator.hpp"
 #include "nbody/particle_data.hpp"
+#include "nbody/simulation_state.hpp"
 #include "nbody/types.hpp"
 #include <memory>
 #include <string>
 
 namespace nbody {
-
-// Simulation state for serialization
-struct SimulationState {
-  std::vector<float> pos_x, pos_y, pos_z;
-  std::vector<float> vel_x, vel_y, vel_z;
-  std::vector<float> mass;
-  size_t particle_count;
-  float simulation_time;
-  float dt;
-  float G;
-  float softening;
-  ForceMethod force_method;
-
-  // Serialization
-  void serialize(std::ostream &out) const;
-  static SimulationState deserialize(std::istream &in);
-
-  // Comparison for testing
-  bool operator==(const SimulationState &other) const;
-};
 
 // Main particle system class
 class ParticleSystem {
@@ -51,7 +32,7 @@ public:
   void setForceMethod(ForceMethod method);
   void setGravitationalConstant(float G);
   void setSofteningParameter(float eps);
-  void setTimeStep(float dt) { dt_ = dt; }
+  void setTimeStep(float dt);
   void setBarnesHutTheta(float theta);
   void setSpatialHashCellSize(float size);
   void setSpatialHashCutoff(float cutoff);
