@@ -116,13 +116,4 @@ std::vector<float> Serializer::readFloatArray(std::istream &in, size_t count) {
   return data;
 }
 
-// SimulationState serialization methods
-void SimulationState::serialize(std::ostream &out) const {
-  Serializer::save(out, *this);
-}
-
-SimulationState SimulationState::deserialize(std::istream &in) {
-  return Serializer::load(in);
-}
-
 } // namespace nbody

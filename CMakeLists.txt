@@ -41,8 +41,13 @@ if(NBODY_BUILD_TESTS)
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.14.0
     )
+    FetchContent_Declare(
+        rapidcheck
+        GIT_REPOSITORY https://github.com/emil-e/rapidcheck.git
+        GIT_TAG master
+    )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    FetchContent_MakeAvailable(googletest rapidcheck)
 endif()
 
 # Source files
@@ -64,6 +69,7 @@ set(CPP_SOURCES
     src/render/cuda_gl_interop.cpp
     src/utils/error_handling.cpp
     src/utils/serialization.cpp
+    src/utils/simulation_state.cpp
 )
 
 # ── 主库 ─────────────────────────────────────────────────────────
@@ -117,6 +123,7 @@ if(NBODY_BUILD_TESTS)
         nbody_lib
         GTest::gtest
         GTest::gtest_main
+        rapidcheck
     )
     include(GoogleTest)
     gtest_discover_tests(nbody_tests)
