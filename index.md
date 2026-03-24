@@ -27,7 +27,7 @@ A million-particle GPU simulation system with real-time visualization. Implement
 - **Million-particle real-time simulation** — CUDA parallel physics with three switchable algorithms
 - **Zero-copy rendering** — CUDA-OpenGL interop eliminates CPU↔GPU data transfer
 - **Symplectic integrator** — Velocity Verlet ensures long-term energy conservation
-- **Interactive controls** — Camera orbit, algorithm hot-swap, parameter tuning at runtime
+- **Interactive controls** — Camera orbit, zoom, reset, and force-algorithm hot-swap at runtime
 
 ## Force Algorithms
 
@@ -78,10 +78,10 @@ cmake .. && make -j$(nproc)
 | Key | Action |
 |-----|--------|
 | `1` / `2` / `3` | Switch Direct / Barnes-Hut / Spatial Hash |
-| `WASD` | Move camera |
-| `Space` / `Shift` | Camera up / down |
-| `P` | Pause / resume |
+| `Space` | Pause / resume |
 | `R` | Reset simulation |
+| `C` | Reset camera |
+| `Esc` | Quit |
 | Mouse drag | Rotate view |
 | Scroll wheel | Zoom |
 

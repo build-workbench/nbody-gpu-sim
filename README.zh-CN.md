@@ -164,6 +164,8 @@ make nbody_tests
 - 单元测试：验证各组件功能
 - 属性测试：使用 RapidCheck 验证正确性属性
 
+注意：当前 CI 主要覆盖格式检查；完整构建和运行测试仍需要本地 CUDA/OpenGL 环境。
+
 ## API 示例
 
 ```cpp

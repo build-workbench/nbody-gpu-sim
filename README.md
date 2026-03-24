@@ -17,8 +17,8 @@ Large-scale N-Body particle simulation system supporting million-particle GPU pa
   - Barnes-Hut — O(N log N) tree approximation
   - Spatial Hash — O(N) grid-based neighbor search
 - **Real-Time Visualization** — CUDA-OpenGL interop, no CPU-GPU data transfer
-- **Multi-Integrator** — Euler, Velocity Verlet, Leapfrog
-- **Interactive Control** — Camera rotation/zoom, real-time parameter adjustment
+- **Velocity Verlet Integrator** — Symplectic time integration for stable long-running simulation
+- **Interactive Control** — Camera rotation/zoom and runtime force-algorithm switching
 
 ## Requirements
 
@@ -38,10 +38,10 @@ cmake --build . -j$(nproc)
 
 ```bash
 # Default simulation
-./n_body_sim
+./nbody_sim
 
-# Custom parameters
-./n_body_sim --particles 100000 --algorithm barnes-hut --dt 0.001
+# Custom particle count
+./nbody_sim 100000
 ```
 
 ## Performance
@@ -53,6 +53,11 @@ cmake --build . -j$(nproc)
 | 1M | — | 15+ FPS | 30+ FPS |
 
 *Tested on RTX 3060*
+
+## Notes
+
+- The current executable accepts an optional positional particle count argument only.
+- Full build and runtime verification currently require a local CUDA/OpenGL environment.
 
 ## License
 
