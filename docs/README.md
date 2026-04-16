@@ -2,23 +2,36 @@
 
 Welcome to the N-Body Particle Simulation documentation.
 
-## 📚 Available Languages
+## 📚 Documentation Structure
 
-| Language | Link |
-|----------|------|
-| 🇺🇸 English | [English Documentation](./en/) |
-| 🇨🇳 简体中文 | [中文文档](./zh-CN/) |
+| Directory | Purpose |
+|-----------|---------|
+| [`setup/`](./setup/) | Environment setup, build instructions, troubleshooting |
+| [`tutorials/`](./tutorials/) | User guides and usage examples |
+| [`architecture/`](./architecture/) | System design, algorithms, API reference, performance |
+| [`assets/`](./assets/) | Images, diagrams, and other static resources |
 
 ## 🚀 Quick Navigation
 
 ### Getting Started
-- [Quick Start Guide (EN)](./en/getting-started.md) | [快速入门指南 (CN)](./zh-CN/getting-started.md)
+- [Setup Guide](./setup/getting-started.md) — Installation, build, and first run
 
-### Reference
-- [Architecture (EN)](./en/architecture.md) | [架构文档 (CN)](./zh-CN/architecture.md)
-- [API Reference (EN)](./en/api.md) | [API 参考 (CN)](./zh-CN/api.md)
-- [Algorithms (EN)](./en/algorithms.md) | [算法文档 (CN)](./zh-CN/algorithms.md)
-- [Performance Guide (EN)](./en/performance.md) | [性能指南 (CN)](./zh-CN/performance.md)
+### Architecture & Design
+- [Architecture Overview](./architecture/architecture.md) — System design, components, and data flow
+- [Algorithms](./architecture/algorithms.md) — Force calculation algorithms explained
+- [API Reference](./architecture/api.md) — Complete API documentation
+- [Performance Guide](./architecture/performance.md) — Optimization strategies and profiling
+
+### Specs (Single Source of Truth)
+- [Product Spec](../specs/product/n-body-simulation.md) — Requirements and acceptance criteria
+- [Architecture RFC](../specs/rfc/0001-core-architecture.md) — Technical design decisions
+
+## 🌐 Available Languages
+
+| Language | Documentation |
+|----------|---------------|
+| 🇺🇸 English | [This directory](./) |
+| 🇨🇳 简体中文 | [中文文档](./zh-CN/) |
 
 ## 🎯 What is N-Body Simulation?
 
@@ -39,3 +52,4 @@ N-Body simulation is a computational method that models the motion of particles 
 - [Main README](../README.md)
 - [Changelog](../CHANGELOG.md)
 - [Examples](../examples/)
+- [Contributing Guide](../CONTRIBUTING.md)

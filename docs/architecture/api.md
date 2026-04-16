@@ -655,7 +655,7 @@ void validateSoftening(float eps);
 
 ## 📚 Related Documentation
 
-- [Getting Started](./getting-started.md) - Setup and usage guide
+- [Getting Started](../setup/getting-started.md) - Setup and usage guide
 - [Architecture](./architecture.md) - System design overview
 - [Algorithms](./algorithms.md) - Algorithm explanations
 - [Performance Guide](./performance.md) - Optimization strategies
