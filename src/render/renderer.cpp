@@ -4,29 +4,42 @@
 
 namespace nbody {
 
+// Rendering constants
+namespace {
+constexpr float DEFAULT_BACKGROUND_R = 0.02f;
+constexpr float DEFAULT_BACKGROUND_G = 0.02f;
+constexpr float DEFAULT_BACKGROUND_B = 0.05f;
+}  // namespace
+
 // Vertex shader source
-const char *VERTEX_SHADER_SOURCE = R"(
+// Supports both position (location 0) and velocity (location 1) attributes
+const char* VERTEX_SHADER_SOURCE = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aVel;
 
 uniform mat4 view;
 uniform mat4 projection;
 uniform float pointSize;
 
 out float depth;
+out float velocity;
 
 void main() {
     vec4 viewPos = view * vec4(aPos, 1.0);
     gl_Position = projection * viewPos;
     gl_PointSize = pointSize / max(-viewPos.z, 0.1);
     depth = -viewPos.z;
+    velocity = length(aVel);
 }
 )";
 
 // Fragment shader source
-const char *FRAGMENT_SHADER_SOURCE = R"(
+// Color modes: 0=depth, 1=velocity, 2=density
+const char* FRAGMENT_SHADER_SOURCE = R"(
 #version 330 core
 in float depth;
+in float velocity;
 out vec4 FragColor;
 
 uniform float maxDepth;
@@ -38,35 +51,45 @@ void main() {
     vec2 coord = gl_PointCoord - vec2(0.5);
     float dist = length(coord);
     if (dist > 0.5) discard;
-    
+
     // Color based on mode
     vec3 color;
-    float t = clamp(depth / maxDepth, 0.0, 1.0);
-    
+
     if (colorMode == 0) {
         // Depth-based coloring (warm to cool)
+        float t = clamp(depth / maxDepth, 0.0, 1.0);
         color = mix(vec3(1.0, 0.5, 0.0), vec3(0.0, 0.5, 1.0), t);
     } else if (colorMode == 1) {
-        // Velocity-based (would need velocity data)
+        // Velocity-based coloring (blue=slow, red=fast)
+        float t = clamp(velocity / maxVelocity, 0.0, 1.0);
         color = mix(vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0), t);
     } else {
-        // Density-based
+        // Density-based (using depth as proxy)
+        float t = clamp(depth / maxDepth, 0.0, 1.0);
         color = mix(vec3(0.2, 0.2, 0.8), vec3(1.0, 1.0, 0.2), t);
     }
-    
+
     // Edge softening
     float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
-    
+
     FragColor = vec4(color, alpha);
 }
 )";
 
 Renderer::Renderer()
-    : shader_program_(0), vao_(0), color_mode_(ColorMode::DEPTH),
-      point_size_(2.0f), max_depth_(100.0f), max_velocity_(10.0f), width_(1280),
-      height_(720), is_initialized_(false) {}
+    : shader_program_(0),
+      vao_(0),
+      color_mode_(ColorMode::DEPTH),
+      point_size_(2.0f),
+      max_depth_(100.0f),
+      max_velocity_(10.0f),
+      width_(1280),
+      height_(720),
+      is_initialized_(false) {}
 
-Renderer::~Renderer() { cleanup(); }
+Renderer::~Renderer() {
+  cleanup();
+}
 
 void Renderer::initialize(int width, int height) {
   width_ = width;
@@ -83,11 +106,13 @@ void Renderer::initialize(int width, int height) {
 
   // Create VAO
   glGenVertexArrays(1, &vao_);
+  checkGLError("glGenVertexArrays");
 
   // Enable point sprites
   glEnable(GL_PROGRAM_POINT_SIZE);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  checkGLError("OpenGL state setup");
 
   // Set up camera
   camera_.setPosition(glm::vec3(0, 0, 50));
@@ -111,8 +136,7 @@ void Renderer::cleanup() {
 
 void Renderer::compileShaders() {
   GLuint vertex_shader = compileShader(GL_VERTEX_SHADER, VERTEX_SHADER_SOURCE);
-  GLuint fragment_shader =
-      compileShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
+  GLuint fragment_shader = compileShader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
 
   shader_program_ = glCreateProgram();
   glAttachShader(shader_program_, vertex_shader);
@@ -122,6 +146,7 @@ void Renderer::compileShaders() {
 
   glDeleteShader(vertex_shader);
   glDeleteShader(fragment_shader);
+  checkGLError("shader cleanup");
 
   // Get uniform locations
   view_loc_ = glGetUniformLocation(shader_program_, "view");
@@ -132,7 +157,7 @@ void Renderer::compileShaders() {
   color_mode_loc_ = glGetUniformLocation(shader_program_, "colorMode");
 }
 
-GLuint Renderer::compileShader(GLenum type, const char *source) {
+GLuint Renderer::compileShader(GLenum type, const char* source) {
   GLuint shader = glCreateShader(type);
   glShaderSource(shader, 1, &source, nullptr);
   glCompileShader(shader);
@@ -160,33 +185,49 @@ void Renderer::checkProgramLinking(GLuint program) {
   }
 }
 
-void Renderer::render(GLuint position_vbo, size_t particle_count) {
+void Renderer::render(GLuint position_vbo, size_t particle_count, GLuint velocity_vbo) {
   if (!is_initialized_)
     return;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearColor(0.02f, 0.02f, 0.05f, 1.0f);
+  glClearColor(DEFAULT_BACKGROUND_R, DEFAULT_BACKGROUND_G, DEFAULT_BACKGROUND_B, 1.0f);
 
   glUseProgram(shader_program_);
 
   // Set uniforms
   glUniformMatrix4fv(view_loc_, 1, GL_FALSE, &camera_.getViewMatrix()[0][0]);
-  glUniformMatrix4fv(projection_loc_, 1, GL_FALSE,
-                     &camera_.getProjectionMatrix()[0][0]);
+  glUniformMatrix4fv(projection_loc_, 1, GL_FALSE, &camera_.getProjectionMatrix()[0][0]);
   glUniform1f(point_size_loc_, point_size_);
   glUniform1f(max_depth_loc_, max_depth_);
   glUniform1f(max_velocity_loc_, max_velocity_);
   glUniform1i(color_mode_loc_, static_cast<int>(color_mode_));
 
-  // Bind VAO and VBO
+  // Bind VAO and position VBO
   glBindVertexArray(vao_);
   glBindBuffer(GL_ARRAY_BUFFER, position_vbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
   glEnableVertexAttribArray(0);
 
+  // Bind velocity VBO if provided and using velocity color mode
+  if (velocity_vbo != 0) {
+    glBindBuffer(GL_ARRAY_BUFFER, velocity_vbo);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glEnableVertexAttribArray(1);
+  } else {
+    // No velocity data - disable attribute, velocity will be 0
+    glDisableVertexAttribArray(1);
+    glVertexAttrib3f(1, 0.0f, 0.0f, 0.0f);
+  }
+
   // Draw particles
   glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(particle_count));
+  checkGLError("glDrawArrays");
 
+  // Cleanup
+  glDisableVertexAttribArray(0);
+  if (velocity_vbo != 0) {
+    glDisableVertexAttribArray(1);
+  }
   glBindVertexArray(0);
 }
 
@@ -197,4 +238,4 @@ void Renderer::onResize(int width, int height) {
   camera_.setAspectRatio(static_cast<float>(width) / height);
 }
 
-} // namespace nbody
+}  // namespace nbody

@@ -7,4 +7,4 @@ namespace nbody {
 
 // Implementation is in force_spatial_hash.cu
 
-} // namespace nbody
+}  // namespace nbody

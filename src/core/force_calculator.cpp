@@ -7,4 +7,4 @@ namespace nbody {
 
 // CPU reference implementation is in force_direct.cu
 
-} // namespace nbody
+}  // namespace nbody

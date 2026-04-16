@@ -5,15 +5,13 @@
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
 #include <thrust/sort.h>
+#include <vector>
 
 namespace nbody {
 
 // Cell index calculation
-__host__ __device__ int3 SpatialHashGrid::getCellIndex(float x, float y,
-                                                       float z,
-                                                       float cell_size) {
-  return make_int3(static_cast<int>(floorf(x / cell_size)),
-                   static_cast<int>(floorf(y / cell_size)),
+__host__ __device__ int3 SpatialHashGrid::getCellIndex(float x, float y, float z, float cell_size) {
+  return make_int3(static_cast<int>(floorf(x / cell_size)), static_cast<int>(floorf(y / cell_size)),
                    static_cast<int>(floorf(z / cell_size)));
 }
 
@@ -26,9 +24,8 @@ __host__ __device__ int SpatialHashGrid::hashCell(int3 cell, int3 grid_dims) {
 }
 
 // Assign particles to cells kernel
-__global__ void assignCellsKernel(const float *pos_x, const float *pos_y,
-                                  const float *pos_z, int *particle_cell,
-                                  float cell_size, float min_x, float min_y,
+__global__ void assignCellsKernel(const float* pos_x, const float* pos_y, const float* pos_z,
+                                  int* particle_cell, float cell_size, float min_x, float min_y,
                                   float min_z, int3 grid_dims, int N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
@@ -38,22 +35,20 @@ __global__ void assignCellsKernel(const float *pos_x, const float *pos_y,
   float y = pos_y[i] - min_y;
   float z = pos_z[i] - min_z;
 
-  int3 cell = make_int3(static_cast<int>(floorf(x / cell_size)),
-                        static_cast<int>(floorf(y / cell_size)),
-                        static_cast<int>(floorf(z / cell_size)));
+  int3 cell =
+      make_int3(static_cast<int>(floorf(x / cell_size)), static_cast<int>(floorf(y / cell_size)),
+                static_cast<int>(floorf(z / cell_size)));
 
   // Clamp to grid bounds
   cell.x = max(0, min(cell.x, grid_dims.x - 1));
   cell.y = max(0, min(cell.y, grid_dims.y - 1));
   cell.z = max(0, min(cell.z, grid_dims.z - 1));
 
-  particle_cell[i] =
-      cell.x + cell.y * grid_dims.x + cell.z * grid_dims.x * grid_dims.y;
+  particle_cell[i] = cell.x + cell.y * grid_dims.x + cell.z * grid_dims.x * grid_dims.y;
 }
 
 // Count particles per cell kernel
-__global__ void countCellsKernel(const int *particle_cell, int *cell_counts,
-                                 int N) {
+__global__ void countCellsKernel(const int* particle_cell, int* cell_counts, int N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -62,8 +57,7 @@ __global__ void countCellsKernel(const int *particle_cell, int *cell_counts,
 }
 
 // Compute cell end indices
-__global__ void computeCellEndKernel(const int *cell_start,
-                                     const int *cell_counts, int *cell_end,
+__global__ void computeCellEndKernel(const int* cell_start, const int* cell_counts, int* cell_end,
                                      int total_cells) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= total_cells)
@@ -73,10 +67,8 @@ __global__ void computeCellEndKernel(const int *cell_start,
 }
 
 // Sort particles by cell (scatter)
-__global__ void scatterParticlesKernel(const int *particle_cell,
-                                       const int *cell_start,
-                                       int *cell_counts_temp,
-                                       int *sorted_indices, int N) {
+__global__ void scatterParticlesKernel(const int* particle_cell, const int* cell_start,
+                                       int* cell_counts_temp, int* sorted_indices, int N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -87,12 +79,12 @@ __global__ void scatterParticlesKernel(const int *particle_cell,
 }
 
 // Spatial hash force calculation kernel
-__global__ void spatialHashForceKernel(
-    const int *cell_start, const int *cell_end, const int *sorted_indices,
-    const float *pos_x, const float *pos_y, const float *pos_z,
-    const float *mass, float *acc_x, float *acc_y, float *acc_z, int3 grid_dims,
-    float cell_size, float min_x, float min_y, float min_z, float cutoff2,
-    float G, float eps2, int N) {
+__global__ void spatialHashForceKernel(const int* cell_start, const int* cell_end,
+                                       const int* sorted_indices, const float* pos_x,
+                                       const float* pos_y, const float* pos_z, const float* mass,
+                                       float* acc_x, float* acc_y, float* acc_z, int3 grid_dims,
+                                       float cell_size, float min_x, float min_y, float min_z,
+                                       float cutoff2, float G, float eps2, int N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -116,13 +108,12 @@ __global__ void spatialHashForceKernel(
 
         // Skip out-of-bounds cells
         if (neighbor.x < 0 || neighbor.x >= grid_dims.x || neighbor.y < 0 ||
-            neighbor.y >= grid_dims.y || neighbor.z < 0 ||
-            neighbor.z >= grid_dims.z) {
+            neighbor.y >= grid_dims.y || neighbor.z < 0 || neighbor.z >= grid_dims.z) {
           continue;
         }
 
-        int cell_idx = neighbor.x + neighbor.y * grid_dims.x +
-                       neighbor.z * grid_dims.x * grid_dims.y;
+        int cell_idx =
+            neighbor.x + neighbor.y * grid_dims.x + neighbor.z * grid_dims.x * grid_dims.y;
 
         int start = cell_start[cell_idx];
         int end = cell_end[cell_idx];
@@ -161,9 +152,14 @@ __global__ void spatialHashForceKernel(
 
 // SpatialHashGrid implementation
 SpatialHashGrid::SpatialHashGrid(size_t max_particles, float cell_size)
-    : d_cell_start_(nullptr), d_cell_end_(nullptr), d_particle_cell_(nullptr),
-      d_sorted_indices_(nullptr), d_cell_counts_(nullptr),
-      max_particles_(max_particles), cell_size_(cell_size), total_cells_(0) {
+    : d_cell_start_(nullptr),
+      d_cell_end_(nullptr),
+      d_particle_cell_(nullptr),
+      d_sorted_indices_(nullptr),
+      d_cell_counts_(nullptr),
+      max_particles_(max_particles),
+      cell_size_(cell_size),
+      total_cells_(0) {
   grid_dims_ = make_int3(0, 0, 0);
   // Allocate device memory
   CUDA_CHECK(cudaMalloc(&d_particle_cell_, max_particles * sizeof(int)));
@@ -179,13 +175,12 @@ SpatialHashGrid::~SpatialHashGrid() {
 }
 
 // Reuse the bounding box kernel from Barnes-Hut (declared extern)
-extern __global__ void
-computeBoundingBoxKernel(const float *pos_x, const float *pos_y,
-                         const float *pos_z, float *min_x, float *min_y,
-                         float *min_z, float *max_x, float *max_y, float *max_z,
-                         int N);
+extern __global__ void computeBoundingBoxKernel(const float* pos_x, const float* pos_y,
+                                                const float* pos_z, float* min_x, float* min_y,
+                                                float* min_z, float* max_x, float* max_y,
+                                                float* max_z, int N);
 
-void SpatialHashGrid::computeBoundingBox(const ParticleData *d_particles) {
+void SpatialHashGrid::computeBoundingBox(const ParticleData* d_particles) {
   int N = static_cast<int>(d_particles->count);
   int block_size = 256;
   int num_blocks = (N + block_size - 1) / block_size;
@@ -200,37 +195,25 @@ void SpatialHashGrid::computeBoundingBox(const ParticleData *d_particles) {
   CUDA_CHECK(cudaMalloc(&d_max_z, sizeof(float)));
 
   float init_min = 1e30f, init_max = -1e30f;
-  CUDA_CHECK(
-      cudaMemcpy(d_min_x, &init_min, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_min_y, &init_min, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_min_z, &init_min, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_max_x, &init_max, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_max_y, &init_max, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_max_z, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_min_x, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_min_y, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_min_z, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_max_x, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_max_y, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_max_z, &init_max, sizeof(float), cudaMemcpyHostToDevice));
 
   size_t shared_size = 6 * block_size * sizeof(float);
   computeBoundingBoxKernel<<<num_blocks, block_size, shared_size>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_min_x,
-      d_min_y, d_min_z, d_max_x, d_max_y, d_max_z, N);
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_min_x, d_min_y, d_min_z,
+      d_max_x, d_max_y, d_max_z, N);
   CUDA_CHECK_KERNEL();
 
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_min_.x, d_min_x, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_min_.y, d_min_y, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_min_.z, d_min_z, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_max_.x, d_max_x, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_max_.y, d_max_y, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_max_.z, d_max_z, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_min_.x, d_min_x, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_min_.y, d_min_y, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_min_.z, d_min_z, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_max_.x, d_max_x, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_max_.y, d_max_y, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_max_.z, d_max_z, sizeof(float), cudaMemcpyDeviceToHost));
 
   cudaFree(d_min_x);
   cudaFree(d_min_y);
@@ -248,7 +231,7 @@ void SpatialHashGrid::computeBoundingBox(const ParticleData *d_particles) {
   bbox_max_.z += 0.001f;
 }
 
-void SpatialHashGrid::build(const ParticleData *d_particles) {
+void SpatialHashGrid::build(const ParticleData* d_particles) {
   int N = static_cast<int>(d_particles->count);
   int block_size = 256;
   int num_blocks = (N + block_size - 1) / block_size;
@@ -257,12 +240,9 @@ void SpatialHashGrid::build(const ParticleData *d_particles) {
   computeBoundingBox(d_particles);
 
   // Compute grid dimensions
-  grid_dims_.x =
-      static_cast<int>(ceilf((bbox_max_.x - bbox_min_.x) / cell_size_)) + 1;
-  grid_dims_.y =
-      static_cast<int>(ceilf((bbox_max_.y - bbox_min_.y) / cell_size_)) + 1;
-  grid_dims_.z =
-      static_cast<int>(ceilf((bbox_max_.z - bbox_min_.z) / cell_size_)) + 1;
+  grid_dims_.x = static_cast<int>(ceilf((bbox_max_.x - bbox_min_.x) / cell_size_)) + 1;
+  grid_dims_.y = static_cast<int>(ceilf((bbox_max_.y - bbox_min_.y) / cell_size_)) + 1;
+  grid_dims_.z = static_cast<int>(ceilf((bbox_max_.z - bbox_min_.z) / cell_size_)) + 1;
 
   int new_total_cells = grid_dims_.x * grid_dims_.y * grid_dims_.z;
 
@@ -286,14 +266,12 @@ void SpatialHashGrid::build(const ParticleData *d_particles) {
 
   // Assign particles to cells
   assignCellsKernel<<<num_blocks, block_size>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_particle_cell_, cell_size_, bbox_min_.x, bbox_min_.y, bbox_min_.z,
-      grid_dims_, N);
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particle_cell_, cell_size_,
+      bbox_min_.x, bbox_min_.y, bbox_min_.z, grid_dims_, N);
   CUDA_CHECK_KERNEL();
 
   // Count particles per cell
-  countCellsKernel<<<num_blocks, block_size>>>(d_particle_cell_, d_cell_counts_,
-                                               N);
+  countCellsKernel<<<num_blocks, block_size>>>(d_particle_cell_, d_cell_counts_, N);
   CUDA_CHECK_KERNEL();
 
   // Prefix sum to get cell start indices
@@ -303,59 +281,54 @@ void SpatialHashGrid::build(const ParticleData *d_particles) {
 
   // Compute cell end indices
   int cell_blocks = (total_cells_ + block_size - 1) / block_size;
-  computeCellEndKernel<<<cell_blocks, block_size>>>(
-      d_cell_start_, d_cell_counts_, d_cell_end_, total_cells_);
+  computeCellEndKernel<<<cell_blocks, block_size>>>(d_cell_start_, d_cell_counts_, d_cell_end_,
+                                                    total_cells_);
   CUDA_CHECK_KERNEL();
 
   // Reset counts for scatter
   CUDA_CHECK(cudaMemset(d_cell_counts_, 0, total_cells_ * sizeof(int)));
 
   // Scatter particles to sorted order
-  scatterParticlesKernel<<<num_blocks, block_size>>>(
-      d_particle_cell_, d_cell_start_, d_cell_counts_, d_sorted_indices_, N);
+  scatterParticlesKernel<<<num_blocks, block_size>>>(d_particle_cell_, d_cell_start_,
+                                                     d_cell_counts_, d_sorted_indices_, N);
   CUDA_CHECK_KERNEL();
 }
 
-void SpatialHashGrid::computeForces(ParticleData *d_particles, float cutoff,
-                                    float G, float eps) {
+void SpatialHashGrid::computeForces(ParticleData* d_particles, float cutoff, float G, float eps) {
   int N = static_cast<int>(d_particles->count);
   int block_size = 256;
   int num_blocks = (N + block_size - 1) / block_size;
 
   spatialHashForceKernel<<<num_blocks, block_size>>>(
-      d_cell_start_, d_cell_end_, d_sorted_indices_, d_particles->pos_x,
-      d_particles->pos_y, d_particles->pos_z, d_particles->mass,
-      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z, grid_dims_,
-      cell_size_, bbox_min_.x, bbox_min_.y, bbox_min_.z, cutoff * cutoff, G,
-      eps * eps, N);
+      d_cell_start_, d_cell_end_, d_sorted_indices_, d_particles->pos_x, d_particles->pos_y,
+      d_particles->pos_z, d_particles->mass, d_particles->acc_x, d_particles->acc_y,
+      d_particles->acc_z, grid_dims_, cell_size_, bbox_min_.x, bbox_min_.y, bbox_min_.z,
+      cutoff * cutoff, G, eps * eps, N);
   CUDA_CHECK_KERNEL();
 }
 
-void SpatialHashGrid::copyCellDataToHost(std::vector<int> &cell_start,
-                                         std::vector<int> &cell_end,
-                                         std::vector<int> &particle_cells,
-                                         std::vector<int> &sorted_indices) {
+void SpatialHashGrid::copyCellDataToHost(std::vector<int>& cell_start, std::vector<int>& cell_end,
+                                         std::vector<int>& particle_cells,
+                                         std::vector<int>& sorted_indices) {
   cell_start.resize(total_cells_);
   cell_end.resize(total_cells_);
   particle_cells.resize(max_particles_);
   sorted_indices.resize(max_particles_);
 
-  CUDA_CHECK(cudaMemcpy(cell_start.data(), d_cell_start_,
-                        total_cells_ * sizeof(int), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(cell_end.data(), d_cell_end_,
-                        total_cells_ * sizeof(int), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(particle_cells.data(), d_particle_cell_,
-                        max_particles_ * sizeof(int), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(sorted_indices.data(), d_sorted_indices_,
-                        max_particles_ * sizeof(int), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(cell_start.data(), d_cell_start_, total_cells_ * sizeof(int),
+                        cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(cell_end.data(), d_cell_end_, total_cells_ * sizeof(int), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(particle_cells.data(), d_particle_cell_, max_particles_ * sizeof(int),
+                        cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(sorted_indices.data(), d_sorted_indices_, max_particles_ * sizeof(int),
+                        cudaMemcpyDeviceToHost));
 }
 
-bool SpatialHashGrid::verifyCellAssignment(
-    const ParticleData *h_particles) const {
+bool SpatialHashGrid::verifyCellAssignment(const ParticleData* h_particles) const {
   for (size_t i = 0; i < h_particles->count; i++) {
     int3 expected_cell =
-        getCellIndex(h_particles->pos_x[i] - bbox_min_.x,
-                     h_particles->pos_y[i] - bbox_min_.y,
+        getCellIndex(h_particles->pos_x[i] - bbox_min_.x, h_particles->pos_y[i] - bbox_min_.y,
                      h_particles->pos_z[i] - bbox_min_.z, cell_size_);
 
     // Clamp to grid bounds
@@ -371,12 +344,9 @@ bool SpatialHashGrid::verifyCellAssignment(
     float cell_min_z = bbox_min_.z + expected_cell.z * cell_size_;
     float cell_max_z = cell_min_z + cell_size_;
 
-    if (h_particles->pos_x[i] < cell_min_x ||
-        h_particles->pos_x[i] > cell_max_x ||
-        h_particles->pos_y[i] < cell_min_y ||
-        h_particles->pos_y[i] > cell_max_y ||
-        h_particles->pos_z[i] < cell_min_z ||
-        h_particles->pos_z[i] > cell_max_z) {
+    if (h_particles->pos_x[i] < cell_min_x || h_particles->pos_x[i] > cell_max_x ||
+        h_particles->pos_y[i] < cell_min_y || h_particles->pos_y[i] > cell_max_y ||
+        h_particles->pos_z[i] < cell_min_z || h_particles->pos_z[i] > cell_max_z) {
       return false;
     }
   }
@@ -384,13 +354,12 @@ bool SpatialHashGrid::verifyCellAssignment(
 }
 
 // SpatialHashCalculator implementation
-SpatialHashCalculator::SpatialHashCalculator(float cell_size,
-                                             float cutoff_radius)
+SpatialHashCalculator::SpatialHashCalculator(float cell_size, float cutoff_radius)
     : cell_size_(cell_size), cutoff_radius_(cutoff_radius) {}
 
 SpatialHashCalculator::~SpatialHashCalculator() = default;
 
-void SpatialHashCalculator::computeForces(ParticleData *d_particles) {
+void SpatialHashCalculator::computeForces(ParticleData* d_particles) {
   if (!grid_) {
     grid_ = std::make_unique<SpatialHashGrid>(d_particles->count, cell_size_);
   }
@@ -399,8 +368,8 @@ void SpatialHashCalculator::computeForces(ParticleData *d_particles) {
 }
 
 // Factory function
-std::unique_ptr<ForceCalculator>
-createForceCalculator(ForceMethod method, const SimulationConfig &config) {
+std::unique_ptr<ForceCalculator> createForceCalculator(ForceMethod method,
+                                                       const SimulationConfig& config) {
   switch (method) {
   case ForceMethod::DIRECT_N2:
     return std::make_unique<DirectForceCalculator>(config.cuda_block_size);
@@ -411,8 +380,8 @@ createForceCalculator(ForceMethod method, const SimulationConfig &config) {
     return calc;
   }
   case ForceMethod::SPATIAL_HASH: {
-    auto calc = std::make_unique<SpatialHashCalculator>(
-        config.spatial_hash_cell_size, config.spatial_hash_cutoff);
+    auto calc = std::make_unique<SpatialHashCalculator>(config.spatial_hash_cell_size,
+                                                        config.spatial_hash_cutoff);
     calc->setGravitationalConstant(config.G);
     calc->setSofteningParameter(config.softening);
     return calc;
@@ -422,4 +391,4 @@ createForceCalculator(ForceMethod method, const SimulationConfig &config) {
   }
 }
 
-} // namespace nbody
+}  // namespace nbody

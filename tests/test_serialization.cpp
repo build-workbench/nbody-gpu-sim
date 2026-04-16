@@ -91,7 +91,7 @@ TEST(SerializationTest, ValidateStream) {
 TEST(SerializationTest, InvalidMagicNumber) {
   std::stringstream ss;
   uint32_t bad_magic = 0x12345678;
-  ss.write(reinterpret_cast<const char *>(&bad_magic), sizeof(bad_magic));
+  ss.write(reinterpret_cast<const char*>(&bad_magic), sizeof(bad_magic));
 
   ss.seekg(0);
   EXPECT_FALSE(Serializer::validateStream(ss));
@@ -101,8 +101,7 @@ TEST(SerializationTest, InvalidMagicNumber) {
 // Feature: n-body-simulation, Property 12: Save/Load State Round-Trip
 
 RC_GTEST_PROP(Serialization, RoundTripPreservesState,
-              (size_t particle_count, float sim_time, float dt, float G,
-               float softening)) {
+              (size_t particle_count, float sim_time, float dt, float G, float softening)) {
   // Feature: n-body-simulation, Property 12: Save/Load State Round-Trip
   // Validates: Requirements 8.4
 

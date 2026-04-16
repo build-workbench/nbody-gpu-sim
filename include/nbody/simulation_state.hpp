@@ -19,11 +19,11 @@ struct SimulationState {
   ForceMethod force_method = ForceMethod::DIRECT_N2;
 
   // Serialization
-  void serialize(std::ostream &out) const;
-  static SimulationState deserialize(std::istream &in);
+  void serialize(std::ostream& out) const;
+  static SimulationState deserialize(std::istream& in);
 
   // Comparison for testing
-  bool operator==(const SimulationState &other) const;
+  bool operator==(const SimulationState& other) const;
 };
 
-} // namespace nbody
+}  // namespace nbody

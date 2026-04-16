@@ -1,6 +1,7 @@
 # Build
 build/
 cmake-build-*/
+out/
 *.o
 *.so
 *.a
@@ -13,16 +14,20 @@ cmake_install.cmake
 Makefile
 compile_commands.json
 CMakeUserPresets.json
+CTestTestfile.cmake
+cmake-build-*/
 
 # CUDA
 *.cubin
 *.fatbin
 *.ptx
+*.nvprof
 
 # Simulation output
 *.nbody
 *.ppm
 *.png
+*.csv
 
 # IDE
 .vscode/
@@ -30,7 +35,36 @@ CMakeUserPresets.json
 *.swp
 *.swo
 *~
+*.code-workspace
+.project
+.cproject
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+
+# Documentation
+docs/html/
+docs/latex/
+doxygen_*.log
+
+# Test coverage
+*.gcda
+*.gcno
+coverage/
+*.info
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+
+# Python (for future bindings)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/

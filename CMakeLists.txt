@@ -128,6 +128,3 @@ if(NBODY_BUILD_TESTS)
     include(GoogleTest)
     gtest_discover_tests(nbody_tests)
 endif()
-
-# Copy shaders to build directory
-file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${CMAKE_BINARY_DIR})

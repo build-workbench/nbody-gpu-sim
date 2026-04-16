@@ -102,8 +102,7 @@ RC_GTEST_PROP(Integrator, EnergyConservationProperty, ()) {
   float orbit_radius = 5.0f;
   float G = 1.0f;
   float m = 1.0f;
-  float v_orbit =
-      std::sqrt(G * m / (2 * orbit_radius)); // Circular orbit velocity
+  float v_orbit = std::sqrt(G * m / (2 * orbit_radius));  // Circular orbit velocity
 
   h_particles.pos_x[0] = -orbit_radius;
   h_particles.pos_y[0] = 0.0f;
@@ -122,8 +121,7 @@ RC_GTEST_PROP(Integrator, EnergyConservationProperty, ()) {
 
   for (int i = 0; i < 2; i++) {
     h_particles.acc_x[i] = h_particles.acc_y[i] = h_particles.acc_z[i] = 0.0f;
-    h_particles.acc_old_x[i] = h_particles.acc_old_y[i] =
-        h_particles.acc_old_z[i] = 0.0f;
+    h_particles.acc_old_x[i] = h_particles.acc_old_y[i] = h_particles.acc_old_z[i] = 0.0f;
   }
 
   ParticleDataManager::copyToDevice(d_particles, h_particles);

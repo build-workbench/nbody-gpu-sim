@@ -29,11 +29,8 @@
 specs/
 ├── product/            # 产品功能定义与验收标准
 │   └── n-body-simulation.md
-├── rfc/                # 技术设计与架构方案
-│   └── 0001-core-architecture.md
-├── api/                # 接口规范定义
-├── db/                 # 数据库模型定义
-└── testing/            # BDD 测试用例规范
+└── rfc/                # 技术设计与架构方案
+    └── 0001-core-architecture.md
 ```
 
 详细说明请参阅 [AGENTS.md](AGENTS.md)。
@@ -159,11 +156,8 @@ This project strictly follows the **Spec-Driven Development (SDD)** paradigm. Al
 specs/
 ├── product/            # Product feature definitions and acceptance criteria
 │   └── n-body-simulation.md
-├── rfc/                # Technical design and architecture decisions
-│   └── 0001-core-architecture.md
-├── api/                # API interface definitions
-├── db/                 # Database schema definitions
-└── testing/            # BDD test case specifications
+└── rfc/                # Technical design and architecture decisions
+    └── 0001-core-architecture.md
 ```
 
 For detailed instructions, see [AGENTS.md](AGENTS.md).

@@ -7,4 +7,4 @@ namespace nbody {
 
 // Implementation is in force_barnes_hut.cu
 
-} // namespace nbody
+}  // namespace nbody

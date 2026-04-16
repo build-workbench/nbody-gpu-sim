@@ -1,6 +1,8 @@
 ---
 layout: default
 title: N-Body Particle Simulation
+description: Million-particle GPU simulation with real-time visualization
+nav_order: 0
 ---
 
 # N-Body Particle Simulation
@@ -85,6 +87,20 @@ cmake .. && make -j$(nproc)
 | Mouse drag | Rotate view |
 | Scroll wheel | Zoom |
 
+## Documentation
+
+### Getting Started
+
+- **[Getting Started Guide](docs/GETTING_STARTED.html)** — Setup and usage instructions
+- **[Examples](examples/README.md)** — Code examples for common scenarios
+
+### Reference
+
+- **[API Reference](docs/API.html)** — Complete API documentation
+- **[Architecture](docs/ARCHITECTURE.html)** — System design and components
+- **[Algorithms](docs/ALGORITHMS.html)** — Algorithm explanations
+- **[Performance Guide](docs/PERFORMANCE.html)** — Optimization strategies
+
 ## Tech Stack
 
 | Category | Technology |
@@ -94,13 +110,6 @@ cmake .. && make -j$(nproc)
 | Build | CMake 3.18+ |
 | GPU | Compute Capability 7.5+ (Turing → Hopper) |
 | Testing | Google Test + RapidCheck |
-
-## Documentation
-
-- [README](README.md) — Full project overview and API examples
-- [Algorithm Details](docs/ALGORITHMS.md) — Direct N², Barnes-Hut, Spatial Hash internals
-- [API Reference](docs/API.md) — Public interface documentation
-- [Performance Guide](docs/PERFORMANCE.md) — Benchmarks and optimization notes
 
 ## References
 

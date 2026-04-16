@@ -7,7 +7,7 @@ plugins:
   - jekyll-remote-theme
   - jekyll-seo-tag
 repository: LessUp/n-body
-show_downloads: false
+show_downloads: true
 
 # SEO & metadata
 url: https://lessup.github.io
@@ -15,17 +15,37 @@ baseurl: /n-body
 lang: en
 author: LessUp
 
+# Navigation
+nav:
+  - title: Home
+    url: /
+  - title: Documentation
+    url: docs/
+  - title: API Reference
+    url: docs/API.html
+  - title: Changelog
+    url: changelog/
+  - title: GitHub
+    url: https://github.com/LessUp/n-body
+    external: true
+
 # Markdown rendering
 markdown: kramdown
 kramdown:
   input: GFM
   hard_wrap: false
   syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
 
 # Default layout for all pages
 defaults:
   - scope:
       path: ""
+    values:
+      layout: default
+  - scope:
+      path: "docs"
     values:
       layout: default
   - scope:
@@ -43,20 +63,47 @@ exclude:
   - src
   - shaders
   - tests
-  - docs
+  - examples
   - build
   - cmake-build-*
   - CMakeLists.txt
   - .clang-format
   - .editorconfig
   - .gitignore
-  - CONTRIBUTING.md
+  - .markdownlint.json
   - Gemfile
   - Gemfile.lock
   - vendor
   - "*.cu"
   - "*.cuh"
   - "*.cpp"
-  - "*.h"
+  - "*.hpp"
   - "*.o"
   - "*.so"
+  - "*.a"
+  - Doxyfile
+  - Doxyfile.in
+
+# Include specific files
+include:
+  - LICENSE
+  - CHANGELOG.md
+
+# Plugins configuration
+whitelist:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+
+# GitHub metadata
+github:
+  repository_name: n-body
+  owner_name: LessUp
+
+# Collections (optional for future use)
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:path
+  changelog:
+    output: true
+    permalink: /:collection/:path

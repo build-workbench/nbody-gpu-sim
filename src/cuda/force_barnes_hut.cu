@@ -6,8 +6,17 @@
 #include <cuda_runtime.h>
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
+#include <vector>
 
 namespace nbody {
+
+// Constants for bounding box computation
+namespace {
+// Large value for initializing bounding box min/max
+// Used to find the actual min/max of particle positions
+constexpr float BBOX_INIT_MIN = 1e30f;
+constexpr float BBOX_INIT_MAX = -1e30f;
+}  // namespace
 
 // Morton code utilities
 __host__ __device__ unsigned int expandBits(unsigned int v) {
@@ -28,8 +37,8 @@ __host__ __device__ unsigned int computeMortonCode(float x, float y, float z) {
 }
 
 // CAS-based atomic float min/max (correct for all sign combinations)
-__device__ inline void atomicMinFloat(float *addr, float val) {
-  int *addr_as_int = reinterpret_cast<int *>(addr);
+__device__ inline void atomicMinFloat(float* addr, float val) {
+  int* addr_as_int = reinterpret_cast<int*>(addr);
   int old = *addr_as_int;
   int expected;
   do {
@@ -40,8 +49,8 @@ __device__ inline void atomicMinFloat(float *addr, float val) {
   } while (old != expected);
 }
 
-__device__ inline void atomicMaxFloat(float *addr, float val) {
-  int *addr_as_int = reinterpret_cast<int *>(addr);
+__device__ inline void atomicMaxFloat(float* addr, float val) {
+  int* addr_as_int = reinterpret_cast<int*>(addr);
   int old = *addr_as_int;
   int expected;
   do {
@@ -53,18 +62,16 @@ __device__ inline void atomicMaxFloat(float *addr, float val) {
 }
 
 // Compute bounding box kernel
-__global__ void computeBoundingBoxKernel(const float *pos_x, const float *pos_y,
-                                         const float *pos_z, float *min_x,
-                                         float *min_y, float *min_z,
-                                         float *max_x, float *max_y,
-                                         float *max_z, int N) {
+__global__ void computeBoundingBoxKernel(const float* pos_x, const float* pos_y, const float* pos_z,
+                                         float* min_x, float* min_y, float* min_z, float* max_x,
+                                         float* max_y, float* max_z, int N) {
   extern __shared__ float shared[];
-  float *s_min_x = shared;
-  float *s_min_y = s_min_x + blockDim.x;
-  float *s_min_z = s_min_y + blockDim.x;
-  float *s_max_x = s_min_z + blockDim.x;
-  float *s_max_y = s_max_x + blockDim.x;
-  float *s_max_z = s_max_y + blockDim.x;
+  float* s_min_x = shared;
+  float* s_min_y = s_min_x + blockDim.x;
+  float* s_min_z = s_min_y + blockDim.x;
+  float* s_max_x = s_min_z + blockDim.x;
+  float* s_max_y = s_max_x + blockDim.x;
+  float* s_max_z = s_max_y + blockDim.x;
 
   int tid = threadIdx.x;
   int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -102,10 +109,10 @@ __global__ void computeBoundingBoxKernel(const float *pos_x, const float *pos_y,
 }
 
 // Compute Morton codes kernel
-__global__ void computeMortonCodesKernel(
-    const float *pos_x, const float *pos_y, const float *pos_z,
-    unsigned int *morton_codes, int *indices, float min_x, float min_y,
-    float min_z, float inv_size_x, float inv_size_y, float inv_size_z, int N) {
+__global__ void computeMortonCodesKernel(const float* pos_x, const float* pos_y, const float* pos_z,
+                                         unsigned int* morton_codes, int* indices, float min_x,
+                                         float min_y, float min_z, float inv_size_x,
+                                         float inv_size_y, float inv_size_z, int N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -119,12 +126,10 @@ __global__ void computeMortonCodesKernel(
 }
 
 // Barnes-Hut force calculation kernel
-__global__ void barnesHutForceKernel(const OctreeNode *nodes,
-                                     const float *pos_x, const float *pos_y,
-                                     const float *pos_z, const float *mass,
-                                     float *acc_x, float *acc_y, float *acc_z,
-                                     int N, int num_nodes, float theta2,
-                                     float G, float eps2) {
+__global__ void barnesHutForceKernel(const OctreeNode* nodes, const float* pos_x,
+                                     const float* pos_y, const float* pos_z, const float* mass,
+                                     float* acc_x, float* acc_y, float* acc_z, int N, int num_nodes,
+                                     float theta2, float G, float eps2) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -136,16 +141,20 @@ __global__ void barnesHutForceKernel(const OctreeNode *nodes,
   float ax = 0.0f, ay = 0.0f, az = 0.0f;
 
   // Stack for tree traversal
-  int stack[64];
+  // Stack size of 128 supports trees up to depth ~43 (log8(128*8) ≈ 43)
+  // For typical particle distributions, this is sufficient.
+  // If stack overflow occurs, some nodes will be skipped (graceful degradation).
+  constexpr int STACK_SIZE = 128;
+  int stack[STACK_SIZE];
   int stack_ptr = 0;
-  stack[stack_ptr++] = 0; // Start with root
+  stack[stack_ptr++] = 0;  // Start with root
 
   while (stack_ptr > 0) {
     int node_idx = stack[--stack_ptr];
     if (node_idx < 0 || node_idx >= num_nodes)
       continue;
 
-    const OctreeNode &node = nodes[node_idx];
+    const OctreeNode& node = nodes[node_idx];
 
     if (node.total_mass == 0.0f)
       continue;
@@ -160,7 +169,7 @@ __global__ void barnesHutForceKernel(const OctreeNode *nodes,
 
     if (node.is_leaf || size2 / dist2 < theta2) {
       // Use node's center of mass
-      if (node.particle_index != i) { // Don't compute self-interaction
+      if (node.particle_index != i) {  // Don't compute self-interaction
         float inv_dist = rsqrtf(dist2);
         float inv_dist3 = inv_dist * inv_dist * inv_dist;
         float f = G * node.total_mass * inv_dist3;
@@ -171,11 +180,16 @@ __global__ void barnesHutForceKernel(const OctreeNode *nodes,
       }
     } else {
       // Need to go deeper - add children to stack
-      for (int c = 0; c < 8; c++) {
-        if (node.children[c] >= 0) {
-          stack[stack_ptr++] = node.children[c];
+      // Check for stack overflow to prevent memory corruption
+      if (stack_ptr + 8 <= STACK_SIZE) {
+        for (int c = 0; c < 8; c++) {
+          if (node.children[c] >= 0) {
+            stack[stack_ptr++] = node.children[c];
+          }
         }
       }
+      // If stack overflow would occur, skip this node's children
+      // This results in approximate force calculation (graceful degradation)
     }
   }
 
@@ -186,12 +200,10 @@ __global__ void barnesHutForceKernel(const OctreeNode *nodes,
 
 // BarnesHutTree implementation
 BarnesHutTree::BarnesHutTree(size_t max_particles)
-    : max_particles_(max_particles), max_nodes_(max_particles * 2),
-      node_count_(0), max_depth_(0) {
+    : max_particles_(max_particles), max_nodes_(max_particles * 2), node_count_(0), max_depth_(0) {
   CUDA_CHECK(cudaMalloc(&d_nodes_, max_nodes_ * sizeof(OctreeNode)));
   CUDA_CHECK(cudaMalloc(&d_sorted_indices_, max_particles * sizeof(int)));
-  CUDA_CHECK(
-      cudaMalloc(&d_morton_codes_, max_particles * sizeof(unsigned int)));
+  CUDA_CHECK(cudaMalloc(&d_morton_codes_, max_particles * sizeof(unsigned int)));
   h_nodes_.resize(max_nodes_);
 }
 
@@ -201,7 +213,7 @@ BarnesHutTree::~BarnesHutTree() {
   cudaFree(d_morton_codes_);
 }
 
-void BarnesHutTree::computeBoundingBox(const ParticleData *d_particles) {
+void BarnesHutTree::computeBoundingBox(const ParticleData* d_particles) {
   int N = static_cast<int>(d_particles->count);
   int block_size = 256;
   int num_blocks = (N + block_size - 1) / block_size;
@@ -214,38 +226,26 @@ void BarnesHutTree::computeBoundingBox(const ParticleData *d_particles) {
   CUDA_CHECK(cudaMalloc(&d_max_y, sizeof(float)));
   CUDA_CHECK(cudaMalloc(&d_max_z, sizeof(float)));
 
-  float init_min = 1e30f, init_max = -1e30f;
-  CUDA_CHECK(
-      cudaMemcpy(d_min_x, &init_min, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_min_y, &init_min, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_min_z, &init_min, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_max_x, &init_max, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_max_y, &init_max, sizeof(float), cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_max_z, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+  float init_min = BBOX_INIT_MIN, init_max = BBOX_INIT_MAX;
+  CUDA_CHECK(cudaMemcpy(d_min_x, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_min_y, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_min_z, &init_min, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_max_x, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_max_y, &init_max, sizeof(float), cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_max_z, &init_max, sizeof(float), cudaMemcpyHostToDevice));
 
   size_t shared_size = 6 * block_size * sizeof(float);
   computeBoundingBoxKernel<<<num_blocks, block_size, shared_size>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_min_x,
-      d_min_y, d_min_z, d_max_x, d_max_y, d_max_z, N);
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_min_x, d_min_y, d_min_z,
+      d_max_x, d_max_y, d_max_z, N);
   CUDA_CHECK_KERNEL();
 
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_min_.x, d_min_x, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_min_.y, d_min_y, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_min_.z, d_min_z, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_max_.x, d_max_x, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_max_.y, d_max_y, sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(&bbox_max_.z, d_max_z, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_min_.x, d_min_x, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_min_.y, d_min_y, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_min_.z, d_min_z, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_max_.x, d_max_x, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_max_.y, d_max_y, sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(&bbox_max_.z, d_max_z, sizeof(float), cudaMemcpyDeviceToHost));
 
   cudaFree(d_min_x);
   cudaFree(d_min_y);
@@ -255,7 +255,7 @@ void BarnesHutTree::computeBoundingBox(const ParticleData *d_particles) {
   cudaFree(d_max_z);
 }
 
-void BarnesHutTree::computeMortonCodes(const ParticleData *d_particles) {
+void BarnesHutTree::computeMortonCodes(const ParticleData* d_particles) {
   int N = static_cast<int>(d_particles->count);
   int block_size = 256;
   int num_blocks = (N + block_size - 1) / block_size;
@@ -265,9 +265,9 @@ void BarnesHutTree::computeMortonCodes(const ParticleData *d_particles) {
   float size_z = bbox_max_.z - bbox_min_.z + 0.001f;
 
   computeMortonCodesKernel<<<num_blocks, block_size>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_morton_codes_, d_sorted_indices_, bbox_min_.x, bbox_min_.y, bbox_min_.z,
-      1.0f / size_x, 1.0f / size_y, 1.0f / size_z, N);
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_morton_codes_,
+      d_sorted_indices_, bbox_min_.x, bbox_min_.y, bbox_min_.z, 1.0f / size_x, 1.0f / size_y,
+      1.0f / size_z, N);
   CUDA_CHECK_KERNEL();
 }
 
@@ -277,7 +277,7 @@ void BarnesHutTree::sortParticlesByMorton() {
   thrust::sort_by_key(keys, keys + max_particles_, values);
 }
 
-void BarnesHutTree::build(const ParticleData *d_particles) {
+void BarnesHutTree::build(const ParticleData* d_particles) {
   computeBoundingBox(d_particles);
   computeMortonCodes(d_particles);
   sortParticlesByMorton();
@@ -285,37 +285,58 @@ void BarnesHutTree::build(const ParticleData *d_particles) {
   computeCentersOfMass(d_particles);
 }
 
-void BarnesHutTree::buildTreeGPU(const ParticleData *d_particles) {
-  // Simplified CPU tree building (for correctness)
-  // In production, this would be done on GPU
+void BarnesHutTree::buildTreeGPU(const ParticleData* d_particles) {
+  // =========================================================================
+  // PERFORMANCE NOTE: CPU Tree Building
+  // =========================================================================
+  // This implementation builds the Barnes-Hut octree on the CPU, then copies
+  // the result to GPU memory. This approach:
+  //
+  // Pros:
+  //   - Simpler implementation with guaranteed correctness
+  //   - Easier to debug and maintain
+  //   - Works reliably across all CUDA architectures
+  //
+  // Cons:
+  //   - Requires device-to-host memory copies (performance bottleneck)
+  //   - Tree building is not parallelized
+  //   - Scales poorly for very large particle counts (>1M particles)
+  //
+  // TODO: Implement GPU-native tree building using:
+  //   - Parallel Morton code computation (already done)
+  //   - GPU-based radix sort (already done via Thrust)
+  //   - Parallel tree construction using atomic operations
+  //   - This would eliminate device-host copies and improve scalability
+  //
+  // For typical use cases (<500K particles), CPU building is acceptable.
+  // =========================================================================
+
   int N = static_cast<int>(d_particles->count);
 
   // Copy particle data to host
   std::vector<float> h_pos_x(N), h_pos_y(N), h_pos_z(N), h_mass(N);
   std::vector<int> h_sorted_indices(N);
 
-  CUDA_CHECK(cudaMemcpy(h_pos_x.data(), d_particles->pos_x, N * sizeof(float),
+  CUDA_CHECK(
+      cudaMemcpy(h_pos_x.data(), d_particles->pos_x, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_pos_y.data(), d_particles->pos_y, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_pos_z.data(), d_particles->pos_z, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_mass.data(), d_particles->mass, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_sorted_indices.data(), d_sorted_indices_, N * sizeof(int),
                         cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_pos_y.data(), d_particles->pos_y, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_pos_z.data(), d_particles->pos_z, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_mass.data(), d_particles->mass, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_sorted_indices.data(), d_sorted_indices_,
-                        N * sizeof(int), cudaMemcpyDeviceToHost));
 
   // Initialize root node
   h_nodes_.clear();
   h_nodes_.resize(max_nodes_);
 
-  OctreeNode &root = h_nodes_[0];
-  root.center = Vec3((bbox_min_.x + bbox_max_.x) * 0.5f,
-                     (bbox_min_.y + bbox_max_.y) * 0.5f,
+  OctreeNode& root = h_nodes_[0];
+  root.center = Vec3((bbox_min_.x + bbox_max_.x) * 0.5f, (bbox_min_.y + bbox_max_.y) * 0.5f,
                      (bbox_min_.z + bbox_max_.z) * 0.5f);
   float max_size =
-      std::max({bbox_max_.x - bbox_min_.x, bbox_max_.y - bbox_min_.y,
-                bbox_max_.z - bbox_min_.z});
+      std::max({bbox_max_.x - bbox_min_.x, bbox_max_.y - bbox_min_.y, bbox_max_.z - bbox_min_.z});
   root.half_size = max_size * 0.5f + 0.001f;
   root.is_leaf = false;
   root.particle_index = -1;
@@ -336,7 +357,7 @@ void BarnesHutTree::buildTreeGPU(const ParticleData *d_particles) {
     int depth = 0;
 
     while (!h_nodes_[current].is_leaf && depth < 20) {
-      Vec3 &center = h_nodes_[current].center;
+      Vec3& center = h_nodes_[current].center;
       int octant = 0;
       if (pos.x >= center.x)
         octant |= 1;
@@ -350,11 +371,11 @@ void BarnesHutTree::buildTreeGPU(const ParticleData *d_particles) {
         int new_idx = node_count_++;
         h_nodes_[current].children[octant] = new_idx;
 
-        OctreeNode &child = h_nodes_[new_idx];
+        OctreeNode& child = h_nodes_[new_idx];
         float hs = h_nodes_[current].half_size * 0.5f;
-        child.center = Vec3(center.x + ((octant & 1) ? hs : -hs),
-                            center.y + ((octant & 2) ? hs : -hs),
-                            center.z + ((octant & 4) ? hs : -hs));
+        child.center =
+            Vec3(center.x + ((octant & 1) ? hs : -hs), center.y + ((octant & 2) ? hs : -hs),
+                 center.z + ((octant & 4) ? hs : -hs));
         child.half_size = hs;
         child.is_leaf = true;
         child.particle_index = idx;
@@ -374,28 +395,27 @@ void BarnesHutTree::buildTreeGPU(const ParticleData *d_particles) {
   }
 
   // Copy tree to device
-  CUDA_CHECK(cudaMemcpy(d_nodes_, h_nodes_.data(),
-                        node_count_ * sizeof(OctreeNode),
+  CUDA_CHECK(cudaMemcpy(d_nodes_, h_nodes_.data(), node_count_ * sizeof(OctreeNode),
                         cudaMemcpyHostToDevice));
 }
 
-void BarnesHutTree::computeCentersOfMass(const ParticleData *d_particles) {
+void BarnesHutTree::computeCentersOfMass(const ParticleData* d_particles) {
   // Compute centers of mass bottom-up (CPU for simplicity)
   int N = static_cast<int>(d_particles->count);
 
   std::vector<float> h_pos_x(N), h_pos_y(N), h_pos_z(N), h_mass(N);
-  CUDA_CHECK(cudaMemcpy(h_pos_x.data(), d_particles->pos_x, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_pos_y.data(), d_particles->pos_y, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_pos_z.data(), d_particles->pos_z, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaMemcpy(h_mass.data(), d_particles->mass, N * sizeof(float),
-                        cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_pos_x.data(), d_particles->pos_x, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_pos_y.data(), d_particles->pos_y, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_pos_z.data(), d_particles->pos_z, N * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_mass.data(), d_particles->mass, N * sizeof(float), cudaMemcpyDeviceToHost));
 
   // Process nodes in reverse order (bottom-up)
   for (int i = node_count_ - 1; i >= 0; i--) {
-    OctreeNode &node = h_nodes_[i];
+    OctreeNode& node = h_nodes_[i];
 
     if (node.is_leaf) {
       if (node.particle_index >= 0) {
@@ -409,7 +429,7 @@ void BarnesHutTree::computeCentersOfMass(const ParticleData *d_particles) {
 
       for (int c = 0; c < 8; c++) {
         if (node.children[c] >= 0) {
-          OctreeNode &child = h_nodes_[node.children[c]];
+          OctreeNode& child = h_nodes_[node.children[c]];
           total_mass += child.total_mass;
           com.x += child.center_of_mass.x * child.total_mass;
           com.y += child.center_of_mass.y * child.total_mass;
@@ -425,27 +445,24 @@ void BarnesHutTree::computeCentersOfMass(const ParticleData *d_particles) {
   }
 
   // Copy updated tree to device
-  CUDA_CHECK(cudaMemcpy(d_nodes_, h_nodes_.data(),
-                        node_count_ * sizeof(OctreeNode),
+  CUDA_CHECK(cudaMemcpy(d_nodes_, h_nodes_.data(), node_count_ * sizeof(OctreeNode),
                         cudaMemcpyHostToDevice));
 }
 
-void BarnesHutTree::computeForces(ParticleData *d_particles, float theta,
-                                  float G, float eps) {
+void BarnesHutTree::computeForces(ParticleData* d_particles, float theta, float G, float eps) {
   int N = static_cast<int>(d_particles->count);
   int block_size = 256;
   int num_blocks = (N + block_size - 1) / block_size;
 
   barnesHutForceKernel<<<num_blocks, block_size>>>(
-      d_nodes_, d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_particles->mass, d_particles->acc_x, d_particles->acc_y,
-      d_particles->acc_z, N, node_count_, theta * theta, G, eps * eps);
+      d_nodes_, d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particles->mass,
+      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z, N, node_count_, theta * theta, G,
+      eps * eps);
   CUDA_CHECK_KERNEL();
 }
 
 void BarnesHutTree::copyNodesToHost() {
-  CUDA_CHECK(cudaMemcpy(h_nodes_.data(), d_nodes_,
-                        node_count_ * sizeof(OctreeNode),
+  CUDA_CHECK(cudaMemcpy(h_nodes_.data(), d_nodes_, node_count_ * sizeof(OctreeNode),
                         cudaMemcpyDeviceToHost));
 }
 
@@ -455,8 +472,7 @@ bool BarnesHutTree::verifyTreeStructure() const {
   return node_count_ > 0;
 }
 
-bool BarnesHutTree::verifyMassConservation(
-    const ParticleData *h_particles) const {
+bool BarnesHutTree::verifyMassConservation(const ParticleData* h_particles) const {
   float total_mass = 0.0f;
   for (size_t i = 0; i < h_particles->count; i++) {
     total_mass += h_particles->mass[i];
@@ -471,7 +487,7 @@ BarnesHutCalculator::BarnesHutCalculator(float theta) : theta_(theta) {}
 
 BarnesHutCalculator::~BarnesHutCalculator() = default;
 
-void BarnesHutCalculator::computeForces(ParticleData *d_particles) {
+void BarnesHutCalculator::computeForces(ParticleData* d_particles) {
   if (!tree_) {
     tree_ = std::make_unique<BarnesHutTree>(d_particles->count);
   }
@@ -479,4 +495,4 @@ void BarnesHutCalculator::computeForces(ParticleData *d_particles) {
   tree_->computeForces(d_particles, theta_, G_, softening_eps_);
 }
 
-} // namespace nbody
+}  // namespace nbody

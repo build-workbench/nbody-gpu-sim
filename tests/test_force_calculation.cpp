@@ -25,15 +25,15 @@ TEST(ForceCalculationTest, TwoBodyForce) {
   EXPECT_NEAR(force.z, 0, 1e-6);
 
   // Magnitude should be G * m1 * m2 / r^2 = 1
-  float expected_mag = G * m1 * m2 / 1.0f; // r = 1
+  float expected_mag = G * m1 * m2 / 1.0f;  // r = 1
   EXPECT_NEAR(force.length(), expected_mag, 1e-5);
 }
 
 TEST(ForceCalculationTest, SofteningPreventsInfinity) {
   Vec3 p1(0, 0, 0);
-  Vec3 p2(0.001f, 0, 0); // Very close
+  Vec3 p2(0.001f, 0, 0);  // Very close
   float m1 = 1.0f, m2 = 1.0f;
-  float G = 1.0f, eps = 0.1f; // Softening
+  float G = 1.0f, eps = 0.1f;  // Softening
 
   Vec3 force = computeGravitationalForceCPU(p1, p2, m1, m2, G, eps);
 
@@ -99,8 +99,7 @@ TEST(DirectForceCalculatorTest, ComputeForces) {
 // Feature: n-body-simulation, Property 1: Force Calculation Correctness
 
 RC_GTEST_PROP(ForceCalculation, ForceMagnitudeCorrectness,
-              (float x1, float y1, float z1, float x2, float y2, float z2,
-               float m1, float m2)) {
+              (float x1, float y1, float z1, float x2, float y2, float z2, float m1, float m2)) {
   // Feature: n-body-simulation, Property 1: Force Calculation Correctness
   // Validates: Requirements 2.1, 2.4, 2.5
 
@@ -114,7 +113,7 @@ RC_GTEST_PROP(ForceCalculation, ForceMagnitudeCorrectness,
   Vec3 p2(x2, y2, z2);
   float r = (p2 - p1).length();
 
-  RC_PRE(r > 0.01f); // Minimum distance
+  RC_PRE(r > 0.01f);  // Minimum distance
 
   float G = 1.0f;
   float eps = 0.01f;
@@ -126,7 +125,7 @@ RC_GTEST_PROP(ForceCalculation, ForceMagnitudeCorrectness,
   float actual_mag = force.length();
   float relative_error = std::abs(actual_mag - expected_mag) / expected_mag;
 
-  RC_ASSERT(relative_error < 0.01f); // < 1% error
+  RC_ASSERT(relative_error < 0.01f);  // < 1% error
 }
 
 RC_GTEST_PROP(ForceCalculation, ForceDirectionCorrectness,
@@ -153,12 +152,11 @@ RC_GTEST_PROP(ForceCalculation, ForceDirectionCorrectness,
   Vec3 actual_dir = force.normalized();
 
   float dot = expected_dir.dot(actual_dir);
-  RC_ASSERT(dot > 0.999f); // Directions should be nearly identical
+  RC_ASSERT(dot > 0.999f);  // Directions should be nearly identical
 }
 
 RC_GTEST_PROP(ForceCalculation, SofteningFiniteness,
-              (float x1, float y1, float z1, float x2, float y2, float z2,
-               float eps)) {
+              (float x1, float y1, float z1, float x2, float y2, float z2, float eps)) {
   // Feature: n-body-simulation, Property 1: Force Calculation Correctness
   // Validates: Requirements 2.1, 2.4, 2.5
 
@@ -178,5 +176,5 @@ RC_GTEST_PROP(ForceCalculation, SofteningFiniteness,
   RC_ASSERT(std::isfinite(force.x));
   RC_ASSERT(std::isfinite(force.y));
   RC_ASSERT(std::isfinite(force.z));
-  RC_ASSERT(force.length() < 1e10f); // Bounded
+  RC_ASSERT(force.length() < 1e10f);  // Bounded
 }
