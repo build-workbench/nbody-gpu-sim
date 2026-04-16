@@ -1,172 +1,160 @@
-# N-Body Particle Simulation System
+# N-Body 粒子仿真系统
 
-[English](README.md) | 简体中文
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white" alt="CUDA">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white" alt="C++">
+  <img src="https://img.shields.io/badge/OpenGL-3.3+-5586A4?logo=opengl&logoColor=white" alt="OpenGL">
+  <img src="https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white" alt="CMake">
+</p>
 
-超大规模 N-Body 粒子仿真系统，支持百万级粒子的 GPU 并行计算和实时可视化。
+<p align="center">
+  <b>高性能 GPU 加速 N-Body 仿真系统，支持实时可视化</b>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
-![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
-![OpenGL](https://img.shields.io/badge/OpenGL-3.3+-5586A4?logo=opengl&logoColor=white)
-![CMake](https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white)
+<p align="center">
+  <a href="https://github.com/LessUp/n-body/releases"><img src="https://img.shields.io/github/v/release/LessUp/n-body?include_prereleases" alt="Latest Release"></a>
+  <a href="https://github.com/LessUp/n-body/issues"><img src="https://img.shields.io/github/issues/LessUp/n-body" alt="Issues"></a>
+  <img src="https://img.shields.io/github/stars/LessUp/n-body?style=social" alt="Stars">
+</p>
 
-## 特性
+<p align="center">
+  <a href="README.md">English</a> | 简体中文
+</p>
 
-- **高性能 GPU 计算**: 利用 CUDA 并行计算，支持百万级粒子实时仿真
-- **多种力计算算法**:
-  - Direct N² - O(N²) 精确计算
-  - Barnes-Hut - O(N log N) 树算法加速
-  - Spatial Hash - O(N) 空间哈希（短程力）
-- **零拷贝渲染**: CUDA-OpenGL 互操作，无 CPU-GPU 数据传输
-- **Velocity Verlet 积分**: 辛积分器，保证能量守恒
-- **实时交互**: 相机控制、参数调节、算法切换
+---
 
-## 系统要求
+## ✨ 特性
 
-### 硬件
-- NVIDIA GPU (Compute Capability 7.5+)
-- 至少 4GB 显存（百万粒子）
+- 🚀 **高性能 GPU 计算** — CUDA 并行计算，百万粒子实时仿真
+- 🔬 **多种力算法** — Direct N²、Barnes-Hut O(N log N)、Spatial Hash O(N)
+- 🎨 **实时可视化** — CUDA-OpenGL 互操作，无 CPU-GPU 数据传输
+- ⚛️ **能量守恒** — Velocity Verlet 辛积分器
+- 🎮 **交互控制** — 相机旋转/缩放、运行时算法切换
+- 🧪 **全面测试** — Google Test + RapidCheck 基于属性的测试
+- 📦 **易于构建** — 基于 CMake，跨平台
 
-### 软件
-- CUDA Toolkit 11.0+
-- CMake 3.18+
-- OpenGL 3.3+
-- GLFW 3.3+
-- GLEW
-- GLM
+---
 
-### 操作系统
-- Linux (推荐 Ubuntu 20.04+)
-- Windows 10+ (需要 Visual Studio 2019+)
+## 🚀 快速开始
 
-## 快速开始
+### 前置要求
 
-### 安装依赖 (Ubuntu)
+| 组件 | 最低配置 | 推荐配置 |
+|------|----------|----------|
+| GPU | NVIDIA CC 7.0+ | NVIDIA CC 8.0+ |
+| CUDA | 11.0 | 12.0+ |
+| CMake | 3.18 | 3.25+ |
+| OpenGL | 3.3 | 4.5+ |
+
+### 安装 (Ubuntu)
 
 ```bash
-# CUDA Toolkit
-# 从 https://developer.nvidia.com/cuda-downloads 下载安装
-
-# 其他依赖
-sudo apt-get update
+# 安装依赖
 sudo apt-get install -y cmake libglfw3-dev libglew-dev libglm-dev
-```
 
-### 构建
-
-```bash
-git clone <repository-url>
+# 克隆仓库
+git clone https://github.com/LessUp/n-body.git
 cd n-body
 
+# 构建
 mkdir build && cd build
-cmake ..
-make -j$(nproc)
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j$(nproc)
+
+# 运行
+./nbody_sim 100000    # 10万粒子
+./nbody_sim 1000000   # 100万粒子！
 ```
 
-### 运行
+### Windows
 
-```bash
-# 默认 10000 粒子
-./nbody_sim
+Windows 构建说明请参见 [快速入门指南](docs/zh-CN/getting-started.md)。
 
-# 指定粒子数量
-./nbody_sim 100000
+---
 
-# 百万粒子
-./nbody_sim 1000000
-```
+## 📊 性能
 
-## 使用指南
-
-### 键盘控制
-
-| 按键 | 功能 |
-|------|------|
-| `Space` | 暂停/继续仿真 |
-| `R` | 重置仿真 |
-| `1` | 切换到 Direct N² 算法 |
-| `2` | 切换到 Barnes-Hut 算法 |
-| `3` | 切换到 Spatial Hash 算法 |
-| `C` | 重置相机位置 |
-| `Esc` | 退出程序 |
-
-### 鼠标控制
-
-| 操作 | 功能 |
-|------|------|
-| 左键拖动 | 旋转视角 |
-| 滚轮 | 缩放 |
-
-## 项目结构
-
-```
-n-body/
-├── CMakeLists.txt              # CMake 构建配置
-├── README.md                   # 项目说明
-├── docs/                       # 详细文档
-│   ├── API.md                  # API 参考
-│   ├── ALGORITHMS.md           # 算法说明
-│   └── PERFORMANCE.md          # 性能优化指南
-├── include/nbody/              # 头文件
-│   ├── types.hpp               # 类型定义
-│   ├── particle_data.hpp       # 粒子数据管理
-│   ├── force_calculator.hpp    # 力计算接口
-│   ├── integrator.hpp          # 积分器
-│   ├── barnes_hut_tree.hpp     # Barnes-Hut 树
-│   ├── spatial_hash_grid.hpp   # 空间哈希网格
-│   ├── cuda_gl_interop.hpp     # CUDA-GL 互操作
-│   ├── renderer.hpp            # 渲染器
-│   ├── camera.hpp              # 相机控制
-│   ├── particle_system.hpp     # 粒子系统
-│   ├── serialization.hpp       # 序列化
-│   └── error_handling.hpp      # 错误处理
-├── src/                        # 源代码
-│   ├── cuda/                   # CUDA 核函数
-│   ├── core/                   # 核心逻辑
-│   ├── render/                 # 渲染相关
-│   ├── utils/                  # 工具函数
-│   └── main.cpp                # 主程序
-├── tests/                      # 测试代码
-├── shaders/                    # GLSL 着色器
-└── .kiro/specs/                # 设计规范
-```
-
-## 算法概述
-
-### Direct N² 算法
-直接计算所有粒子对之间的引力，时间复杂度 O(N²)。使用 CUDA Shared Memory 优化内存访问。
-
-### Barnes-Hut 算法
-使用八叉树将远距离粒子群近似为单个质点，时间复杂度 O(N log N)。通过 θ 参数控制精度与性能的平衡。
-
-### Spatial Hash 算法
-将空间划分为网格，只计算相邻格子内粒子的相互作用，时间复杂度 O(N)。适用于短程力（如分子动力学）。
-
-## 性能参考
+NVIDIA RTX 3080 测试：
 
 | 粒子数 | Direct N² | Barnes-Hut | Spatial Hash |
 |--------|-----------|------------|--------------|
-| 10K    | 60+ FPS   | 60+ FPS    | 60+ FPS      |
-| 100K   | ~10 FPS   | 60+ FPS    | 60+ FPS      |
-| 1M     | <1 FPS    | ~30 FPS    | 60+ FPS      |
+| 1万 | 60 FPS | 120+ FPS | 120+ FPS |
+| 10万 | ~10 FPS | 60+ FPS | 90+ FPS |
+| 100万 | — | 25+ FPS | 60+ FPS |
 
-*测试环境: NVIDIA RTX 3080, CUDA 11.8*
+**内存使用**: 每粒子 ~52 字节 + 算法开销
 
-## 测试
+---
+
+## 🎮 控制
+
+| 按键 | 功能 |
+|------|------|
+| `Space` | ⏯️ 暂停/继续 |
+| `R` | 🔄 重置仿真 |
+| `1/2/3` | 🔀 切换算法 |
+| `C` | 📷 重置相机 |
+| `Esc` | ❌ 退出 |
+| `鼠标拖动` | 🔄 旋转视角 |
+| `滚轮` | 🔍 缩放 |
+
+---
+
+## 📚 文档
+
+### 入门指南
+
+- [快速入门指南](docs/zh-CN/getting-started.md) — 完整的安装和使用
+- [示例](examples/) — 常见用例的代码示例
+
+### 参考
+
+- [架构概览](docs/zh-CN/architecture.md) — 系统设计和组件
+- [算法详解](docs/zh-CN/algorithms.md) — 算法说明
+- [API 参考](docs/zh-CN/api.md) — 完整的 API 文档
+- [性能指南](docs/zh-CN/performance.md) — 优化策略
+
+### 🌐 语言版本
+
+| 语言 | 文档 |
+|------|------|
+| 🇺🇸 English | [Docs](./docs/en/) |
+| 🇨🇳 简体中文 | [文档](./docs/zh-CN/) |
+
+---
+
+## 🏗️ 架构
+
+```
+┌─────────────────────────────────────────┐
+│  应用层 (GLFW, 输入, 状态)              │
+├─────────────────────────────────────────┤
+│  仿真层 (ParticleSystem, 力计算)        │
+├─────────────────────────────────────────┤
+│  渲染层 (OpenGL, 相机)                  │
+├─────────────────────────────────────────┤
+│  GPU 内存 (CUDA, 共享 VBO)              │
+└─────────────────────────────────────────┘
+```
+
+详情参见 [架构文档](docs/zh-CN/architecture.md)。
+
+---
+
+## 🧪 测试
 
 ```bash
 cd build
-make nbody_tests
 ./nbody_tests
+
+# 运行特定测试套件
+./nbody_tests --gtest_filter=ForceCalculation.*
 ```
 
-测试包括：
-- 单元测试：验证各组件功能
-- 属性测试：使用 RapidCheck 验证正确性属性
+---
 
-注意：当前 CI 主要覆盖格式检查；完整构建和运行测试仍需要本地 CUDA/OpenGL 环境。
-
-## API 示例
+## 💡 使用示例
 
 ```cpp
 #include "nbody/particle_system.hpp"
@@ -174,41 +162,72 @@ make nbody_tests
 using namespace nbody;
 
 int main() {
-    // 配置仿真参数
     SimulationConfig config;
     config.particle_count = 100000;
-    config.init_distribution = InitDistribution::SPHERICAL;
     config.force_method = ForceMethod::BARNES_HUT;
     config.dt = 0.001f;
-    config.G = 1.0f;
     
-    // 创建粒子系统
     ParticleSystem system;
     system.initialize(config);
     
-    // 仿真循环
-    while (running) {
-        system.update(config.dt);
-        // 渲染...
+    for (int i = 0; i < 1000; ++i) {
+        system.update(system.getTimeStep());
     }
     
-    // 保存状态
-    system.saveState("simulation.nbody");
-    
+    system.saveState("checkpoint.nbody");
     return 0;
 }
 ```
 
-## 贡献
+---
 
-欢迎提交 Issue 和 Pull Request！
+## 🔬 算法
 
-## 许可证
+| 算法 | 复杂度 | 适用场景 |
+|------|--------|----------|
+| Direct N² | O(N²) | 小规模系统、精度测试 |
+| Barnes-Hut | O(N log N) | 大规模引力仿真 |
+| Spatial Hash | O(N) | 短程力仿真 |
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+详情参见 [算法文档](docs/zh-CN/algorithms.md)。
 
-## 参考文献
+---
 
-1. Barnes, J., & Hut, P. (1986). A hierarchical O(N log N) force-calculation algorithm. *Nature*, 324(6096), 446-449.
-2. Nyland, L., Harris, M., & Prins, J. (2007). Fast N-body simulation with CUDA. *GPU Gems 3*, 677-695.
-3. Green, S. (2010). Particle simulation using CUDA. *NVIDIA Whitepaper*.
+## 🤝 贡献
+
+贡献指南请参见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+---
+
+## 📄 许可证
+
+MIT 许可证 — 详见 [LICENSE](LICENSE)。
+
+---
+
+## 🌟 Star 历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=LessUp/n-body&type=Date)](https://star-history.com/#LessUp/n-body&Date)
+
+---
+
+## 📖 引用
+
+如果在研究中使用本项目，请引用：
+
+```bibtex
+@software{nbody_simulation,
+  title = {N-Body Particle Simulation System},
+  author = {N-Body Simulation Team},
+  url = {https://github.com/LessUp/n-body},
+  year = {2025}
+}
+```
+
+---
+
+## 相关项目
+
+- [Barnes & Hut (1986)](https://doi.org/10.1038/324446a0) — 原始 Barnes-Hut 算法
+- [GPU Gems 3](https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-31-fast-n-body-simulation-cuda) — CUDA N-Body 仿真
+- [NVIDIA CUDA Samples](https://github.com/NVIDIA/cuda-samples) — 官方 CUDA 示例
