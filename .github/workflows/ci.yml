@@ -31,11 +31,43 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check C/C++/CUDA formatting
-        uses: jidicula/clang-format-action@v4.14.0
-        with:
-          clang-format-version: '18'
-          check-path: '.'
-          exclude-regex: '(^|/)(build|third_party|external|vendor|\.git|docs|examples)(/|$)'
+        run: |
+          set -e
+          echo "Installing clang-format..."
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y clang-format > /dev/null 2>&1
+          echo "Using clang-format version: $(clang-format --version)"
+          
+          echo "Checking formatting on all C/C++/CUDA files..."
+          FIND_CMD="find . -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.cu' -o -name '*.cuh' \) \
+            ! -path './build/*' \
+            ! -path './third_party/*' \
+            ! -path './external/*' \
+            ! -path './vendor/*' \
+            ! -path './.git/*' \
+            ! -path './docs/*' \
+            ! -path './examples/*'"
+          
+          FAIL_FILES=""
+          while IFS= read -r file; do
+            if ! clang-format --dry-run --Werror "$file" 2>/dev/null; then
+              echo "✗ $file"
+              FAIL_FILES="$FAIL_FILES $file"
+            fi
+          done < <(eval $FIND_CMD)
+          
+          if [ -n "$FAIL_FILES" ]; then
+            echo ""
+            echo "✗ Format check failed on:"
+            for f in $FAIL_FILES; do
+              echo "  - $f"
+            done
+            echo ""
+            echo "Please run: clang-format -i $FAIL_FILES"
+            exit 1
+          fi
+          
+          echo "✓ All files pass formatting check"
 
   docs-consistency:
     name: Documentation Consistency
