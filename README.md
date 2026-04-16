@@ -69,7 +69,7 @@ cmake --build . -j$(nproc)
 
 ### Windows
 
-See [Getting Started Guide](docs/en/getting-started.md) for Windows build instructions.
+See [Getting Started Guide](docs/setup/getting-started.md) for Windows build instructions.
 
 ---
 
@@ -143,7 +143,7 @@ Tested on NVIDIA RTX 3080:
 └─────────────────────────────────────────┘
 ```
 
-See [Architecture Documentation](docs/en/architecture.md) for details.
+See [Architecture Documentation](docs/architecture/architecture.md) for details.
 
 ---
 
@@ -194,7 +194,7 @@ int main() {
 | Barnes-Hut | O(N log N) | Large-scale gravity |
 | Spatial Hash | O(N) | Short-range forces |
 
-See [Algorithms Documentation](docs/en/algorithms.md) for details.
+See [Algorithms Documentation](docs/architecture/algorithms.md) for details.
 
 ---
 

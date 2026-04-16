@@ -20,13 +20,16 @@ public:
   // Cleanup resources
   void cleanup();
 
-  // Render particles from VBO
-  void render(GLuint position_vbo, size_t particle_count);
+  // Render particles from VBOs
+  // position_vbo: VBO containing particle positions (vec3)
+  // velocity_vbo: VBO containing particle velocities (vec3), optional
+  //               If 0, velocity-based coloring falls back to depth-based
+  void render(GLuint position_vbo, size_t particle_count, GLuint velocity_vbo = 0);
 
   // Camera access
-  void setCamera(const Camera &camera) { camera_ = camera; }
-  Camera &getCamera() { return camera_; }
-  const Camera &getCamera() const { return camera_; }
+  void setCamera(const Camera& camera) { camera_ = camera; }
+  Camera& getCamera() { return camera_; }
+  const Camera& getCamera() const { return camera_; }
 
   // Rendering settings
   void setColorMode(ColorMode mode) { color_mode_ = mode; }
@@ -68,13 +71,13 @@ private:
 
   // Shader compilation
   void compileShaders();
-  GLuint compileShader(GLenum type, const char *source);
+  GLuint compileShader(GLenum type, const char* source);
   void checkShaderCompilation(GLuint shader);
   void checkProgramLinking(GLuint program);
 };
 
 // Shader source code
-extern const char *VERTEX_SHADER_SOURCE;
-extern const char *FRAGMENT_SHADER_SOURCE;
+extern const char* VERTEX_SHADER_SOURCE;
+extern const char* FRAGMENT_SHADER_SOURCE;
 
-} // namespace nbody
+}  // namespace nbody

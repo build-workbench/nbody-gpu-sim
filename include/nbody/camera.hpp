@@ -8,8 +8,7 @@ namespace nbody {
 // Camera controller for 3D navigation
 class Camera {
 public:
-  Camera(float fov = 45.0f, float aspect = 16.0f / 9.0f, float near = 0.1f,
-         float far = 1000.0f);
+  Camera(float fov = 45.0f, float aspect = 16.0f / 9.0f, float near = 0.1f, float far = 1000.0f);
 
   // Get transformation matrices
   glm::mat4 getViewMatrix() const;
@@ -17,15 +16,15 @@ public:
   glm::mat4 getViewProjectionMatrix() const;
 
   // Camera positioning
-  void setPosition(const glm::vec3 &pos) {
+  void setPosition(const glm::vec3& pos) {
     position_ = pos;
     updateViewMatrix();
   }
-  void setTarget(const glm::vec3 &target) {
+  void setTarget(const glm::vec3& target) {
     target_ = target;
     updateViewMatrix();
   }
-  void setUp(const glm::vec3 &up) {
+  void setUp(const glm::vec3& up) {
     up_ = up;
     updateViewMatrix();
   }
@@ -34,9 +33,7 @@ public:
   glm::vec3 getTarget() const { return target_; }
   glm::vec3 getUp() const { return up_; }
   glm::vec3 getForward() const { return glm::normalize(target_ - position_); }
-  glm::vec3 getRight() const {
-    return glm::normalize(glm::cross(getForward(), up_));
-  }
+  glm::vec3 getRight() const { return glm::normalize(glm::cross(getForward(), up_)); }
 
   // Projection settings
   void setFOV(float fov) {
@@ -59,10 +56,10 @@ public:
   float getFar() const { return far_; }
 
   // Camera controls
-  void rotate(float yaw, float pitch); // Rotate around target
-  void pan(float dx, float dy);        // Pan in view plane
-  void zoom(float delta);              // Move toward/away from target
-  void orbit(float yaw, float pitch);  // Orbit around target
+  void rotate(float yaw, float pitch);  // Rotate around target
+  void pan(float dx, float dy);         // Pan in view plane
+  void zoom(float delta);               // Move toward/away from target
+  void orbit(float yaw, float pitch);   // Orbit around target
 
   // Reset to default position
   void reset();
@@ -105,8 +102,7 @@ struct ColorMapper {
   static glm::vec3 densityToColor(float density, float max_density);
 
   // Generic gradient mapping
-  static glm::vec3 gradientMap(float t, const glm::vec3 &color_low,
-                               const glm::vec3 &color_high);
+  static glm::vec3 gradientMap(float t, const glm::vec3& color_low, const glm::vec3& color_high);
 };
 
-} // namespace nbody
+}  // namespace nbody

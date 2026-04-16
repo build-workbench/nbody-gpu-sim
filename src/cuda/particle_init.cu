@@ -6,12 +6,10 @@
 namespace nbody {
 
 // CUDA kernel for uniform distribution initialization
-__global__ void initUniformKernel(float *pos_x, float *pos_y, float *pos_z,
-                                  float *vel_x, float *vel_y, float *vel_z,
-                                  float *mass, int N, float min_x, float min_y,
-                                  float min_z, float max_x, float max_y,
-                                  float max_z, float min_mass, float max_mass,
-                                  unsigned int seed) {
+__global__ void initUniformKernel(float* pos_x, float* pos_y, float* pos_z, float* vel_x,
+                                  float* vel_y, float* vel_z, float* mass, int N, float min_x,
+                                  float min_y, float min_z, float max_x, float max_y, float max_z,
+                                  float min_mass, float max_mass, unsigned int seed) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -31,11 +29,9 @@ __global__ void initUniformKernel(float *pos_x, float *pos_y, float *pos_z,
 }
 
 // CUDA kernel for spherical distribution initialization
-__global__ void initSphericalKernel(float *pos_x, float *pos_y, float *pos_z,
-                                    float *vel_x, float *vel_y, float *vel_z,
-                                    float *mass, int N, float center_x,
-                                    float center_y, float center_z,
-                                    float radius, float min_mass,
+__global__ void initSphericalKernel(float* pos_x, float* pos_y, float* pos_z, float* vel_x,
+                                    float* vel_y, float* vel_z, float* mass, int N, float center_x,
+                                    float center_y, float center_z, float radius, float min_mass,
                                     float max_mass, unsigned int seed) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
@@ -53,7 +49,7 @@ __global__ void initSphericalKernel(float *pos_x, float *pos_y, float *pos_z,
   } while (x * x + y * y + z * z > 1.0f);
 
   // Scale to desired radius
-  float r = cbrtf(curand_uniform(&state)) * radius; // Uniform in volume
+  float r = cbrtf(curand_uniform(&state)) * radius;  // Uniform in volume
   float len = sqrtf(x * x + y * y + z * z);
   if (len > 0.0f) {
     x = x / len * r;
@@ -73,12 +69,10 @@ __global__ void initSphericalKernel(float *pos_x, float *pos_y, float *pos_z,
 }
 
 // CUDA kernel for disk distribution initialization
-__global__ void initDiskKernel(float *pos_x, float *pos_y, float *pos_z,
-                               float *vel_x, float *vel_y, float *vel_z,
-                               float *mass, int N, float center_x,
-                               float center_y, float center_z, float radius,
-                               float thickness, float min_mass, float max_mass,
-                               float rotation_speed, unsigned int seed) {
+__global__ void initDiskKernel(float* pos_x, float* pos_y, float* pos_z, float* vel_x, float* vel_y,
+                               float* vel_z, float* mass, int N, float center_x, float center_y,
+                               float center_z, float radius, float thickness, float min_mass,
+                               float max_mass, float rotation_speed, unsigned int seed) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= N)
     return;
@@ -87,7 +81,7 @@ __global__ void initDiskKernel(float *pos_x, float *pos_y, float *pos_z,
   curand_init(seed, i, 0, &state);
 
   // Generate random point in disk
-  float r = sqrtf(curand_uniform(&state)) * radius; // Uniform in area
+  float r = sqrtf(curand_uniform(&state)) * radius;  // Uniform in area
   float theta = curand_uniform(&state) * 2.0f * 3.14159265f;
   float z = (curand_uniform(&state) - 0.5f) * thickness;
 
@@ -99,7 +93,7 @@ __global__ void initDiskKernel(float *pos_x, float *pos_y, float *pos_z,
   pos_z[i] = center_z + z;
 
   // Orbital velocity (perpendicular to radius in xy plane)
-  float v = rotation_speed * sqrtf(r); // Keplerian-like
+  float v = rotation_speed * sqrtf(r);  // Keplerian-like
   vel_x[i] = -v * sinf(theta);
   vel_y[i] = v * cosf(theta);
   vel_z[i] = 0.0f;
@@ -108,48 +102,45 @@ __global__ void initDiskKernel(float *pos_x, float *pos_y, float *pos_z,
 }
 
 // Launch wrappers
-void launchInitUniformKernel(ParticleData *d_data,
-                             const UniformDistParams &params, unsigned int seed,
-                             int block_size) {
+void launchInitUniformKernel(ParticleData* d_data, const UniformDistParams& params,
+                             unsigned int seed, int block_size) {
   int N = static_cast<int>(d_data->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
   initUniformKernel<<<num_blocks, block_size>>>(
-      d_data->pos_x, d_data->pos_y, d_data->pos_z, d_data->vel_x, d_data->vel_y,
-      d_data->vel_z, d_data->mass, N, params.min_bounds.x, params.min_bounds.y,
-      params.min_bounds.z, params.max_bounds.x, params.max_bounds.y,
-      params.max_bounds.z, params.min_mass, params.max_mass, seed);
+      d_data->pos_x, d_data->pos_y, d_data->pos_z, d_data->vel_x, d_data->vel_y, d_data->vel_z,
+      d_data->mass, N, params.min_bounds.x, params.min_bounds.y, params.min_bounds.z,
+      params.max_bounds.x, params.max_bounds.y, params.max_bounds.z, params.min_mass,
+      params.max_mass, seed);
   CUDA_CHECK_KERNEL();
 }
 
-void launchInitSphericalKernel(ParticleData *d_data,
-                               const SphericalDistParams &params,
+void launchInitSphericalKernel(ParticleData* d_data, const SphericalDistParams& params,
                                unsigned int seed, int block_size) {
   int N = static_cast<int>(d_data->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
   initSphericalKernel<<<num_blocks, block_size>>>(
-      d_data->pos_x, d_data->pos_y, d_data->pos_z, d_data->vel_x, d_data->vel_y,
-      d_data->vel_z, d_data->mass, N, params.center.x, params.center.y,
-      params.center.z, params.radius, params.min_mass, params.max_mass, seed);
+      d_data->pos_x, d_data->pos_y, d_data->pos_z, d_data->vel_x, d_data->vel_y, d_data->vel_z,
+      d_data->mass, N, params.center.x, params.center.y, params.center.z, params.radius,
+      params.min_mass, params.max_mass, seed);
   CUDA_CHECK_KERNEL();
 }
 
-void launchInitDiskKernel(ParticleData *d_data, const DiskDistParams &params,
-                          unsigned int seed, int block_size) {
+void launchInitDiskKernel(ParticleData* d_data, const DiskDistParams& params, unsigned int seed,
+                          int block_size) {
   int N = static_cast<int>(d_data->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
   initDiskKernel<<<num_blocks, block_size>>>(
-      d_data->pos_x, d_data->pos_y, d_data->pos_z, d_data->vel_x, d_data->vel_y,
-      d_data->vel_z, d_data->mass, N, params.center.x, params.center.y,
-      params.center.z, params.radius, params.thickness, params.min_mass,
-      params.max_mass, params.rotation_speed, seed);
+      d_data->pos_x, d_data->pos_y, d_data->pos_z, d_data->vel_x, d_data->vel_y, d_data->vel_z,
+      d_data->mass, N, params.center.x, params.center.y, params.center.z, params.radius,
+      params.thickness, params.min_mass, params.max_mass, params.rotation_speed, seed);
   CUDA_CHECK_KERNEL();
 }
 
 // ParticleDataManager implementation
-void ParticleDataManager::allocateDevice(ParticleData &data, size_t count) {
+void ParticleDataManager::allocateDevice(ParticleData& data, size_t count) {
   data.count = count;
   size_t size = count * sizeof(float);
 
@@ -176,7 +167,7 @@ void ParticleDataManager::allocateDevice(ParticleData &data, size_t count) {
   CUDA_CHECK(cudaMemset(data.acc_old_z, 0, size));
 }
 
-void ParticleDataManager::freeDevice(ParticleData &data) {
+void ParticleDataManager::freeDevice(ParticleData& data) {
   if (data.pos_x)
     cudaFree(data.pos_x);
   if (data.pos_y)
@@ -206,26 +197,47 @@ void ParticleDataManager::freeDevice(ParticleData &data) {
   data = ParticleData();
 }
 
-void ParticleDataManager::allocateHost(ParticleData &data, size_t count) {
+void ParticleDataManager::allocateHost(ParticleData& data, size_t count) {
   data.count = count;
-  size_t size = count * sizeof(float);
 
-  data.pos_x = new float[count];
-  data.pos_y = new float[count];
-  data.pos_z = new float[count];
-  data.vel_x = new float[count];
-  data.vel_y = new float[count];
-  data.vel_z = new float[count];
-  data.acc_x = new float[count];
-  data.acc_y = new float[count];
-  data.acc_z = new float[count];
-  data.acc_old_x = new float[count];
-  data.acc_old_y = new float[count];
-  data.acc_old_z = new float[count];
-  data.mass = new float[count];
+  // Use exception-safe allocation with cleanup on failure
+  // If any allocation fails, previously allocated memory will be freed
+  try {
+    data.pos_x = new float[count];
+    data.pos_y = new float[count];
+    data.pos_z = new float[count];
+    data.vel_x = new float[count];
+    data.vel_y = new float[count];
+    data.vel_z = new float[count];
+    data.acc_x = new float[count];
+    data.acc_y = new float[count];
+    data.acc_z = new float[count];
+    data.acc_old_x = new float[count];
+    data.acc_old_y = new float[count];
+    data.acc_old_z = new float[count];
+    data.mass = new float[count];
+  } catch (const std::bad_alloc& e) {
+    // Clean up any allocations that succeeded before the failure
+    delete[] data.pos_x;
+    delete[] data.pos_y;
+    delete[] data.pos_z;
+    delete[] data.vel_x;
+    delete[] data.vel_y;
+    delete[] data.vel_z;
+    delete[] data.acc_x;
+    delete[] data.acc_y;
+    delete[] data.acc_z;
+    delete[] data.acc_old_x;
+    delete[] data.acc_old_y;
+    delete[] data.acc_old_z;
+    delete[] data.mass;
+    data = ParticleData();
+    throw ResourceException("Failed to allocate host memory for particles",
+                            count * 13 * sizeof(float), 0);
+  }
 }
 
-void ParticleDataManager::freeHost(ParticleData &data) {
+void ParticleDataManager::freeHost(ParticleData& data) {
   delete[] data.pos_x;
   delete[] data.pos_y;
   delete[] data.pos_z;
@@ -242,54 +254,32 @@ void ParticleDataManager::freeHost(ParticleData &data) {
   data = ParticleData();
 }
 
-void ParticleDataManager::copyToDevice(ParticleData &d_data,
-                                       const ParticleData &h_data) {
+void ParticleDataManager::copyToDevice(ParticleData& d_data, const ParticleData& h_data) {
   size_t size = h_data.count * sizeof(float);
-  CUDA_CHECK(
-      cudaMemcpy(d_data.pos_x, h_data.pos_x, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.pos_y, h_data.pos_y, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.pos_z, h_data.pos_z, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.vel_x, h_data.vel_x, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.vel_y, h_data.vel_y, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.vel_z, h_data.vel_z, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.acc_x, h_data.acc_x, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.acc_y, h_data.acc_y, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.acc_z, h_data.acc_z, size, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_data.mass, h_data.mass, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.pos_x, h_data.pos_x, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.pos_y, h_data.pos_y, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.pos_z, h_data.pos_z, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.vel_x, h_data.vel_x, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.vel_y, h_data.vel_y, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.vel_z, h_data.vel_z, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.acc_x, h_data.acc_x, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.acc_y, h_data.acc_y, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.acc_z, h_data.acc_z, size, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_data.mass, h_data.mass, size, cudaMemcpyHostToDevice));
 }
 
-void ParticleDataManager::copyToHost(ParticleData &h_data,
-                                     const ParticleData &d_data) {
+void ParticleDataManager::copyToHost(ParticleData& h_data, const ParticleData& d_data) {
   size_t size = d_data.count * sizeof(float);
-  CUDA_CHECK(
-      cudaMemcpy(h_data.pos_x, d_data.pos_x, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.pos_y, d_data.pos_y, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.pos_z, d_data.pos_z, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.vel_x, d_data.vel_x, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.vel_y, d_data.vel_y, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.vel_z, d_data.vel_z, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.acc_x, d_data.acc_x, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.acc_y, d_data.acc_y, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.acc_z, d_data.acc_z, size, cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_data.mass, d_data.mass, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.pos_x, d_data.pos_x, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.pos_y, d_data.pos_y, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.pos_z, d_data.pos_z, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.vel_x, d_data.vel_x, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.vel_y, d_data.vel_y, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.vel_z, d_data.vel_z, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.acc_x, d_data.acc_x, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.acc_y, d_data.acc_y, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.acc_z, d_data.acc_z, size, cudaMemcpyDeviceToHost));
+  CUDA_CHECK(cudaMemcpy(h_data.mass, d_data.mass, size, cudaMemcpyDeviceToHost));
 }
 
 // Host-side initialization (CPU)
@@ -297,18 +287,13 @@ std::mt19937 ParticleInitializer::createRNG(unsigned int seed) {
   return std::mt19937(seed);
 }
 
-void ParticleInitializer::initUniform(ParticleData &h_data,
-                                      const UniformDistParams &params,
+void ParticleInitializer::initUniform(ParticleData& h_data, const UniformDistParams& params,
                                       unsigned int seed) {
   auto rng = createRNG(seed);
-  std::uniform_real_distribution<float> dist_x(params.min_bounds.x,
-                                               params.max_bounds.x);
-  std::uniform_real_distribution<float> dist_y(params.min_bounds.y,
-                                               params.max_bounds.y);
-  std::uniform_real_distribution<float> dist_z(params.min_bounds.z,
-                                               params.max_bounds.z);
-  std::uniform_real_distribution<float> dist_m(params.min_mass,
-                                               params.max_mass);
+  std::uniform_real_distribution<float> dist_x(params.min_bounds.x, params.max_bounds.x);
+  std::uniform_real_distribution<float> dist_y(params.min_bounds.y, params.max_bounds.y);
+  std::uniform_real_distribution<float> dist_z(params.min_bounds.z, params.max_bounds.z);
+  std::uniform_real_distribution<float> dist_m(params.min_mass, params.max_mass);
 
   for (size_t i = 0; i < h_data.count; i++) {
     h_data.pos_x[i] = dist_x(rng);
@@ -322,13 +307,11 @@ void ParticleInitializer::initUniform(ParticleData &h_data,
   zeroAccelerations(h_data);
 }
 
-void ParticleInitializer::initSpherical(ParticleData &h_data,
-                                        const SphericalDistParams &params,
+void ParticleInitializer::initSpherical(ParticleData& h_data, const SphericalDistParams& params,
                                         unsigned int seed) {
   auto rng = createRNG(seed);
   std::uniform_real_distribution<float> dist_01(0.0f, 1.0f);
-  std::uniform_real_distribution<float> dist_m(params.min_mass,
-                                               params.max_mass);
+  std::uniform_real_distribution<float> dist_m(params.min_mass, params.max_mass);
 
   for (size_t i = 0; i < h_data.count; i++) {
     // Uniform distribution in sphere volume
@@ -347,13 +330,11 @@ void ParticleInitializer::initSpherical(ParticleData &h_data,
   zeroAccelerations(h_data);
 }
 
-void ParticleInitializer::initDisk(ParticleData &h_data,
-                                   const DiskDistParams &params,
+void ParticleInitializer::initDisk(ParticleData& h_data, const DiskDistParams& params,
                                    unsigned int seed) {
   auto rng = createRNG(seed);
   std::uniform_real_distribution<float> dist_01(0.0f, 1.0f);
-  std::uniform_real_distribution<float> dist_m(params.min_mass,
-                                               params.max_mass);
+  std::uniform_real_distribution<float> dist_m(params.min_mass, params.max_mass);
 
   for (size_t i = 0; i < h_data.count; i++) {
     float r = std::sqrt(dist_01(rng)) * params.radius;
@@ -375,7 +356,7 @@ void ParticleInitializer::initDisk(ParticleData &h_data,
   zeroAccelerations(h_data);
 }
 
-void ParticleInitializer::zeroVelocities(ParticleData &h_data) {
+void ParticleInitializer::zeroVelocities(ParticleData& h_data) {
   for (size_t i = 0; i < h_data.count; i++) {
     h_data.vel_x[i] = 0.0f;
     h_data.vel_y[i] = 0.0f;
@@ -383,7 +364,7 @@ void ParticleInitializer::zeroVelocities(ParticleData &h_data) {
   }
 }
 
-void ParticleInitializer::zeroAccelerations(ParticleData &h_data) {
+void ParticleInitializer::zeroAccelerations(ParticleData& h_data) {
   for (size_t i = 0; i < h_data.count; i++) {
     h_data.acc_x[i] = 0.0f;
     h_data.acc_y[i] = 0.0f;
@@ -394,4 +375,4 @@ void ParticleInitializer::zeroAccelerations(ParticleData &h_data) {
   }
 }
 
-} // namespace nbody
+}  // namespace nbody

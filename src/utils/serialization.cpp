@@ -5,8 +5,7 @@
 
 namespace nbody {
 
-void Serializer::save(const std::string &filename,
-                      const SimulationState &state) {
+void Serializer::save(const std::string& filename, const SimulationState& state) {
   std::ofstream file(filename, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Failed to open file for writing: " + filename);
@@ -14,7 +13,7 @@ void Serializer::save(const std::string &filename,
   save(file, state);
 }
 
-SimulationState Serializer::load(const std::string &filename) {
+SimulationState Serializer::load(const std::string& filename) {
   std::ifstream file(filename, std::ios::binary);
   if (!file) {
     throw std::runtime_error("Failed to open file for reading: " + filename);
@@ -22,7 +21,7 @@ SimulationState Serializer::load(const std::string &filename) {
   return load(file);
 }
 
-void Serializer::save(std::ostream &out, const SimulationState &state) {
+void Serializer::save(std::ostream& out, const SimulationState& state) {
   writeHeader(out, state);
 
   // Write particle data
@@ -35,8 +34,15 @@ void Serializer::save(std::ostream &out, const SimulationState &state) {
   writeFloatArray(out, state.mass);
 }
 
-SimulationState Serializer::load(std::istream &in) {
+SimulationState Serializer::load(std::istream& in) {
   FileHeader header = readHeader(in);
+
+  // Validate particle count to prevent memory exhaustion
+  if (header.particle_count > MAX_PARTICLE_COUNT) {
+    throw ValidationException("Particle count (" + std::to_string(header.particle_count) +
+                              ") exceeds maximum allowed (" + std::to_string(MAX_PARTICLE_COUNT) +
+                              ")");
+  }
 
   SimulationState state;
   state.particle_count = header.particle_count;
@@ -58,14 +64,14 @@ SimulationState Serializer::load(std::istream &in) {
   return state;
 }
 
-bool Serializer::validateFile(const std::string &filename) {
+bool Serializer::validateFile(const std::string& filename) {
   std::ifstream file(filename, std::ios::binary);
   if (!file)
     return false;
   return validateStream(file);
 }
 
-bool Serializer::validateStream(std::istream &in) {
+bool Serializer::validateStream(std::istream& in) {
   try {
     FileHeader header = readHeader(in);
     return header.magic == NBODY_MAGIC && header.version == NBODY_VERSION;
@@ -74,7 +80,7 @@ bool Serializer::validateStream(std::istream &in) {
   }
 }
 
-void Serializer::writeHeader(std::ostream &out, const SimulationState &state) {
+void Serializer::writeHeader(std::ostream& out, const SimulationState& state) {
   FileHeader header;
   header.magic = NBODY_MAGIC;
   header.version = NBODY_VERSION;
@@ -86,12 +92,12 @@ void Serializer::writeHeader(std::ostream &out, const SimulationState &state) {
   header.force_method = static_cast<uint32_t>(state.force_method);
   std::memset(header.reserved, 0, sizeof(header.reserved));
 
-  out.write(reinterpret_cast<const char *>(&header), sizeof(header));
+  out.write(reinterpret_cast<const char*>(&header), sizeof(header));
 }
 
-FileHeader Serializer::readHeader(std::istream &in) {
+FileHeader Serializer::readHeader(std::istream& in) {
   FileHeader header;
-  in.read(reinterpret_cast<char *>(&header), sizeof(header));
+  in.read(reinterpret_cast<char*>(&header), sizeof(header));
 
   if (header.magic != NBODY_MAGIC) {
     throw std::runtime_error("Invalid file format: wrong magic number");
@@ -104,16 +110,14 @@ FileHeader Serializer::readHeader(std::istream &in) {
   return header;
 }
 
-void Serializer::writeFloatArray(std::ostream &out,
-                                 const std::vector<float> &data) {
-  out.write(reinterpret_cast<const char *>(data.data()),
-            data.size() * sizeof(float));
+void Serializer::writeFloatArray(std::ostream& out, const std::vector<float>& data) {
+  out.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(float));
 }
 
-std::vector<float> Serializer::readFloatArray(std::istream &in, size_t count) {
+std::vector<float> Serializer::readFloatArray(std::istream& in, size_t count) {
   std::vector<float> data(count);
-  in.read(reinterpret_cast<char *>(data.data()), count * sizeof(float));
+  in.read(reinterpret_cast<char*>(data.data()), count * sizeof(float));
   return data;
 }
 
-} // namespace nbody
+}  // namespace nbody

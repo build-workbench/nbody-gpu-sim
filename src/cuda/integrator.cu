@@ -2,15 +2,14 @@
 #include "nbody/integrator.hpp"
 #include <cub/cub.cuh>
 #include <cuda_runtime.h>
+#include <vector>
 
 namespace nbody {
 
 // Position update kernel: x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
-__global__ void updatePositionsKernel(float *pos_x, float *pos_y, float *pos_z,
-                                      const float *vel_x, const float *vel_y,
-                                      const float *vel_z, const float *acc_x,
-                                      const float *acc_y, const float *acc_z,
-                                      int N, float dt) {
+__global__ void updatePositionsKernel(float* pos_x, float* pos_y, float* pos_z, const float* vel_x,
+                                      const float* vel_y, const float* vel_z, const float* acc_x,
+                                      const float* acc_y, const float* acc_z, int N, float dt) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < N) {
     float dt2_half = 0.5f * dt * dt;
@@ -21,10 +20,11 @@ __global__ void updatePositionsKernel(float *pos_x, float *pos_y, float *pos_z,
 }
 
 // Velocity update kernel: v(t+dt) = v(t) + 0.5*(a(t) + a(t+dt))*dt
-__global__ void updateVelocitiesKernel(
-    float *vel_x, float *vel_y, float *vel_z, const float *acc_old_x,
-    const float *acc_old_y, const float *acc_old_z, const float *acc_new_x,
-    const float *acc_new_y, const float *acc_new_z, int N, float dt) {
+__global__ void updateVelocitiesKernel(float* vel_x, float* vel_y, float* vel_z,
+                                       const float* acc_old_x, const float* acc_old_y,
+                                       const float* acc_old_z, const float* acc_new_x,
+                                       const float* acc_new_y, const float* acc_new_z, int N,
+                                       float dt) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < N) {
     float dt_half = 0.5f * dt;
@@ -35,9 +35,8 @@ __global__ void updateVelocitiesKernel(
 }
 
 // Store current accelerations as old accelerations
-__global__ void storeAccelerationsKernel(const float *acc_x, const float *acc_y,
-                                         const float *acc_z, float *acc_old_x,
-                                         float *acc_old_y, float *acc_old_z,
+__global__ void storeAccelerationsKernel(const float* acc_x, const float* acc_y, const float* acc_z,
+                                         float* acc_old_x, float* acc_old_y, float* acc_old_z,
                                          int N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < N) {
@@ -48,10 +47,8 @@ __global__ void storeAccelerationsKernel(const float *acc_x, const float *acc_y,
 }
 
 // Kinetic energy kernel: KE = 0.5 * sum(m * v^2)
-__global__ void computeKineticEnergyKernel(const float *vel_x,
-                                           const float *vel_y,
-                                           const float *vel_z,
-                                           const float *mass, float *partial_ke,
+__global__ void computeKineticEnergyKernel(const float* vel_x, const float* vel_y,
+                                           const float* vel_z, const float* mass, float* partial_ke,
                                            int N) {
   extern __shared__ float shared_ke[];
 
@@ -80,10 +77,9 @@ __global__ void computeKineticEnergyKernel(const float *vel_x,
 }
 
 // Potential energy kernel: PE = -G * sum(m_i * m_j / r_ij) for i < j
-__global__ void
-computePotentialEnergyKernel(const float *pos_x, const float *pos_y,
-                             const float *pos_z, const float *mass,
-                             float *partial_pe, int N, float G, float eps) {
+__global__ void computePotentialEnergyKernel(const float* pos_x, const float* pos_y,
+                                             const float* pos_z, const float* mass,
+                                             float* partial_pe, int N, float G, float eps) {
   extern __shared__ float shared_pe[];
 
   int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -122,59 +118,53 @@ computePotentialEnergyKernel(const float *pos_x, const float *pos_y,
 }
 
 // Launch wrappers
-void launchUpdatePositionsKernel(ParticleData *d_particles, float dt,
-                                 int block_size) {
+void launchUpdatePositionsKernel(ParticleData* d_particles, float dt, int block_size) {
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
   updatePositionsKernel<<<num_blocks, block_size>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z,
-      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z, N, dt);
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particles->vel_x,
+      d_particles->vel_y, d_particles->vel_z, d_particles->acc_x, d_particles->acc_y,
+      d_particles->acc_z, N, dt);
   CUDA_CHECK_KERNEL();
 }
 
-void launchUpdateVelocitiesKernel(ParticleData *d_particles, float dt,
-                                  int block_size) {
+void launchUpdateVelocitiesKernel(ParticleData* d_particles, float dt, int block_size) {
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
   updateVelocitiesKernel<<<num_blocks, block_size>>>(
-      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z,
-      d_particles->acc_old_x, d_particles->acc_old_y, d_particles->acc_old_z,
-      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z, N, dt);
+      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z, d_particles->acc_old_x,
+      d_particles->acc_old_y, d_particles->acc_old_z, d_particles->acc_x, d_particles->acc_y,
+      d_particles->acc_z, N, dt);
   CUDA_CHECK_KERNEL();
 }
 
-void launchStoreAccelerationsKernel(ParticleData *d_particles, int block_size) {
+void launchStoreAccelerationsKernel(ParticleData* d_particles, int block_size) {
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
   storeAccelerationsKernel<<<num_blocks, block_size>>>(
-      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z,
-      d_particles->acc_old_x, d_particles->acc_old_y, d_particles->acc_old_z,
-      N);
+      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z, d_particles->acc_old_x,
+      d_particles->acc_old_y, d_particles->acc_old_z, N);
   CUDA_CHECK_KERNEL();
 }
 
-float launchComputeKineticEnergyKernel(const ParticleData *d_particles,
-                                       int block_size) {
+float launchComputeKineticEnergyKernel(const ParticleData* d_particles, int block_size) {
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
-  float *d_partial;
+  float* d_partial;
   CUDA_CHECK(cudaMalloc(&d_partial, num_blocks * sizeof(float)));
 
-  computeKineticEnergyKernel<<<num_blocks, block_size,
-                               block_size * sizeof(float)>>>(
-      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z,
-      d_particles->mass, d_partial, N);
+  computeKineticEnergyKernel<<<num_blocks, block_size, block_size * sizeof(float)>>>(
+      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z, d_particles->mass, d_partial, N);
   CUDA_CHECK_KERNEL();
 
   // Sum partial results on host
   std::vector<float> h_partial(num_blocks);
-  CUDA_CHECK(cudaMemcpy(h_partial.data(), d_partial, num_blocks * sizeof(float),
-                        cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_partial.data(), d_partial, num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
   CUDA_CHECK(cudaFree(d_partial));
 
   float total_ke = 0.0f;
@@ -184,24 +174,23 @@ float launchComputeKineticEnergyKernel(const ParticleData *d_particles,
   return total_ke;
 }
 
-float launchComputePotentialEnergyKernel(const ParticleData *d_particles,
-                                         float G, float eps, int block_size) {
+float launchComputePotentialEnergyKernel(const ParticleData* d_particles, float G, float eps,
+                                         int block_size) {
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size - 1) / block_size;
 
-  float *d_partial;
+  float* d_partial;
   CUDA_CHECK(cudaMalloc(&d_partial, num_blocks * sizeof(float)));
 
-  computePotentialEnergyKernel<<<num_blocks, block_size,
-                                 block_size * sizeof(float)>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_particles->mass, d_partial, N, G, eps);
+  computePotentialEnergyKernel<<<num_blocks, block_size, block_size * sizeof(float)>>>(
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particles->mass, d_partial, N,
+      G, eps);
   CUDA_CHECK_KERNEL();
 
   // Sum partial results on host
   std::vector<float> h_partial(num_blocks);
-  CUDA_CHECK(cudaMemcpy(h_partial.data(), d_partial, num_blocks * sizeof(float),
-                        cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_partial.data(), d_partial, num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
   CUDA_CHECK(cudaFree(d_partial));
 
   float total_pe = 0.0f;
@@ -222,8 +211,7 @@ Integrator::~Integrator() {
 }
 
 void Integrator::ensureScratchBuffer(size_t particle_count) {
-  int needed =
-      static_cast<int>((particle_count + block_size_ - 1) / block_size_);
+  int needed = static_cast<int>((particle_count + block_size_ - 1) / block_size_);
   if (needed > scratch_blocks_) {
     if (d_scratch_)
       cudaFree(d_scratch_);
@@ -232,8 +220,7 @@ void Integrator::ensureScratchBuffer(size_t particle_count) {
   }
 }
 
-void Integrator::integrate(ParticleData *d_particles,
-                           ForceCalculator *force_calc, float dt) {
+void Integrator::integrate(ParticleData* d_particles, ForceCalculator* force_calc, float dt) {
   // Velocity Verlet integration:
   // 1. Store old accelerations
   storeOldAccelerations(d_particles);
@@ -248,32 +235,30 @@ void Integrator::integrate(ParticleData *d_particles,
   updateVelocities(d_particles, dt);
 }
 
-void Integrator::updatePositions(ParticleData *d_particles, float dt) {
+void Integrator::updatePositions(ParticleData* d_particles, float dt) {
   launchUpdatePositionsKernel(d_particles, dt, block_size_);
 }
 
-void Integrator::updateVelocities(ParticleData *d_particles, float dt) {
+void Integrator::updateVelocities(ParticleData* d_particles, float dt) {
   launchUpdateVelocitiesKernel(d_particles, dt, block_size_);
 }
 
-void Integrator::storeOldAccelerations(ParticleData *d_particles) {
+void Integrator::storeOldAccelerations(ParticleData* d_particles) {
   launchStoreAccelerationsKernel(d_particles, block_size_);
 }
 
-float Integrator::computeKineticEnergy(const ParticleData *d_particles) {
+float Integrator::computeKineticEnergy(const ParticleData* d_particles) {
   ensureScratchBuffer(d_particles->count);
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size_ - 1) / block_size_;
 
-  computeKineticEnergyKernel<<<num_blocks, block_size_,
-                               block_size_ * sizeof(float)>>>(
-      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z,
-      d_particles->mass, d_scratch_, N);
+  computeKineticEnergyKernel<<<num_blocks, block_size_, block_size_ * sizeof(float)>>>(
+      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z, d_particles->mass, d_scratch_, N);
   CUDA_CHECK_KERNEL();
 
   std::vector<float> h_partial(num_blocks);
-  CUDA_CHECK(cudaMemcpy(h_partial.data(), d_scratch_,
-                        num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_partial.data(), d_scratch_, num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
 
   float total = 0.0f;
   for (int i = 0; i < num_blocks; i++)
@@ -281,21 +266,19 @@ float Integrator::computeKineticEnergy(const ParticleData *d_particles) {
   return total;
 }
 
-float Integrator::computePotentialEnergy(const ParticleData *d_particles,
-                                         float G, float eps) {
+float Integrator::computePotentialEnergy(const ParticleData* d_particles, float G, float eps) {
   ensureScratchBuffer(d_particles->count);
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size_ - 1) / block_size_;
 
-  computePotentialEnergyKernel<<<num_blocks, block_size_,
-                                 block_size_ * sizeof(float)>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_particles->mass, d_scratch_, N, G, eps);
+  computePotentialEnergyKernel<<<num_blocks, block_size_, block_size_ * sizeof(float)>>>(
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particles->mass, d_scratch_, N,
+      G, eps);
   CUDA_CHECK_KERNEL();
 
   std::vector<float> h_partial(num_blocks);
-  CUDA_CHECK(cudaMemcpy(h_partial.data(), d_scratch_,
-                        num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDA_CHECK(
+      cudaMemcpy(h_partial.data(), d_scratch_, num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
 
   float total = 0.0f;
   for (int i = 0; i < num_blocks; i++)
@@ -303,10 +286,8 @@ float Integrator::computePotentialEnergy(const ParticleData *d_particles,
   return total;
 }
 
-float Integrator::computeTotalEnergy(const ParticleData *d_particles, float G,
-                                     float eps) {
-  return computeKineticEnergy(d_particles) +
-         computePotentialEnergy(d_particles, G, eps);
+float Integrator::computeTotalEnergy(const ParticleData* d_particles, float G, float eps) {
+  return computeKineticEnergy(d_particles) + computePotentialEnergy(d_particles, G, eps);
 }
 
-} // namespace nbody
+}  // namespace nbody

@@ -32,8 +32,8 @@ TEST(ColorMappingTest, DensityToColor) {
 }
 
 TEST(ColorMappingTest, GradientMap) {
-  glm::vec3 start(1.0f, 0.0f, 0.0f); // Red
-  glm::vec3 end(0.0f, 0.0f, 1.0f);   // Blue
+  glm::vec3 start(1.0f, 0.0f, 0.0f);  // Red
+  glm::vec3 end(0.0f, 0.0f, 1.0f);    // Blue
 
   glm::vec3 mid = ColorMapper::gradientMap(0.5f, start, end);
 

@@ -48,22 +48,17 @@ jobs:
             ! -path './docs/*' \
             ! -path './examples/*'"
           
-          FAIL_FILES=""
+          FAIL=0
           while IFS= read -r file; do
-            if ! clang-format --dry-run --Werror "$file" 2>/dev/null; then
+            if ! clang-format --dry-run --Werror "$file" 2>&1; then
               echo "✗ $file"
-              FAIL_FILES="$FAIL_FILES $file"
+              FAIL=1
             fi
           done < <(eval $FIND_CMD)
           
-          if [ -n "$FAIL_FILES" ]; then
+          if [ $FAIL -eq 1 ]; then
             echo ""
-            echo "✗ Format check failed on:"
-            for f in $FAIL_FILES; do
-              echo "  - $f"
-            done
-            echo ""
-            echo "Please run: clang-format -i $FAIL_FILES"
+            echo "✗ Format check failed. Please run clang-format on the above files."
             exit 1
           fi
           

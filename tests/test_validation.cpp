@@ -27,10 +27,8 @@ TEST(ValidationTest, ValidTimeStep) {
 TEST(ValidationTest, InvalidTimeStep) {
   EXPECT_THROW(validateTimeStep(0.0f), ValidationException);
   EXPECT_THROW(validateTimeStep(-0.001f), ValidationException);
-  EXPECT_THROW(validateTimeStep(std::numeric_limits<float>::quiet_NaN()),
-               ValidationException);
-  EXPECT_THROW(validateTimeStep(std::numeric_limits<float>::infinity()),
-               ValidationException);
+  EXPECT_THROW(validateTimeStep(std::numeric_limits<float>::quiet_NaN()), ValidationException);
+  EXPECT_THROW(validateTimeStep(std::numeric_limits<float>::infinity()), ValidationException);
 }
 
 TEST(ValidationTest, ValidSoftening) {
@@ -41,8 +39,7 @@ TEST(ValidationTest, ValidSoftening) {
 
 TEST(ValidationTest, InvalidSoftening) {
   EXPECT_THROW(validateSoftening(-0.01f), ValidationException);
-  EXPECT_THROW(validateSoftening(std::numeric_limits<float>::quiet_NaN()),
-               ValidationException);
+  EXPECT_THROW(validateSoftening(std::numeric_limits<float>::quiet_NaN()), ValidationException);
 }
 
 TEST(ValidationTest, ValidTheta) {
@@ -54,8 +51,7 @@ TEST(ValidationTest, ValidTheta) {
 TEST(ValidationTest, InvalidTheta) {
   EXPECT_THROW(validateTheta(-0.1f), ValidationException);
   EXPECT_THROW(validateTheta(2.5f), ValidationException);
-  EXPECT_THROW(validateTheta(std::numeric_limits<float>::quiet_NaN()),
-               ValidationException);
+  EXPECT_THROW(validateTheta(std::numeric_limits<float>::quiet_NaN()), ValidationException);
 }
 
 TEST(ValidationTest, ValidSimulationConfig) {
@@ -72,7 +68,7 @@ TEST(ValidationTest, ValidSimulationConfig) {
 
 TEST(ValidationTest, InvalidSimulationConfig) {
   SimulationConfig config;
-  config.particle_count = 0; // Invalid
+  config.particle_count = 0;  // Invalid
   config.dt = 0.001f;
   config.G = 1.0f;
   config.softening = 0.01f;
@@ -93,7 +89,7 @@ RC_GTEST_PROP(Validation, RejectsNegativeParticleCount, (int count)) {
   bool threw = false;
   try {
     validateParticleCount(static_cast<size_t>(count));
-  } catch (const ValidationException &) {
+  } catch (const ValidationException&) {
     threw = true;
   }
 
@@ -110,7 +106,7 @@ RC_GTEST_PROP(Validation, RejectsInvalidTimeStep, (float dt)) {
   bool threw = false;
   try {
     validateTimeStep(dt);
-  } catch (const ValidationException &) {
+  } catch (const ValidationException&) {
     threw = true;
   }
 
@@ -127,7 +123,7 @@ RC_GTEST_PROP(Validation, RejectsNaNSoftening, ()) {
   bool threw = false;
   try {
     validateSoftening(nan_value);
-  } catch (const ValidationException &) {
+  } catch (const ValidationException&) {
     threw = true;
   }
 
@@ -144,7 +140,7 @@ RC_GTEST_PROP(Validation, RejectsOutOfRangeTheta, (float theta)) {
   bool threw = false;
   try {
     validateTheta(theta);
-  } catch (const ValidationException &) {
+  } catch (const ValidationException&) {
     threw = true;
   }
 
@@ -170,7 +166,7 @@ RC_GTEST_PROP(Validation, AcceptsValidParameters,
     validateTimeStep(dt);
     validateSoftening(softening);
     validateTheta(theta);
-  } catch (const ValidationException &) {
+  } catch (const ValidationException&) {
     threw = true;
   }
 
@@ -190,7 +186,7 @@ RC_GTEST_PROP(Validation, StateUnchangedAfterRejection, ()) {
   bool threw = false;
   try {
     validateTimeStep(invalid_dt);
-  } catch (const ValidationException &e) {
+  } catch (const ValidationException& e) {
     threw = true;
     // Verify exception message is meaningful
     std::string msg = e.what();

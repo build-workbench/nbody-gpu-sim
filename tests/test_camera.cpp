@@ -112,7 +112,7 @@ RC_GTEST_PROP(Camera, ViewMatrixTransformsCorrectly,
   glm::vec4 target_view = view * glm::vec4(target, 1.0f);
   RC_ASSERT(std::abs(target_view.x) < 0.01f);
   RC_ASSERT(std::abs(target_view.y) < 0.01f);
-  RC_ASSERT(target_view.z < 0); // In front of camera
+  RC_ASSERT(target_view.z < 0);  // In front of camera
 }
 
 RC_GTEST_PROP(Camera, ProjectionPreservesRelativePositions,
@@ -122,7 +122,7 @@ RC_GTEST_PROP(Camera, ProjectionPreservesRelativePositions,
 
   RC_PRE(std::abs(x1) < 50 && std::abs(y1) < 50 && std::abs(z1) < 50);
   RC_PRE(std::abs(x2) < 50 && std::abs(y2) < 50 && std::abs(z2) < 50);
-  RC_PRE(z1 < -1.0f && z2 < -1.0f); // Both in front of camera
+  RC_PRE(z1 < -1.0f && z2 < -1.0f);  // Both in front of camera
 
   Camera camera;
   camera.setPosition(glm::vec3(0, 0, 0));
@@ -140,7 +140,7 @@ RC_GTEST_PROP(Camera, ProjectionPreservesRelativePositions,
 
     // Property: Closer objects (larger z, less negative) should have larger w
     // and appear larger after projection
-    if (z1 > z2) { // p1 is closer
+    if (z1 > z2) {  // p1 is closer
       // Closer objects should have smaller depth value
       RC_ASSERT(p1.z < p2.z);
     }
@@ -149,14 +149,12 @@ RC_GTEST_PROP(Camera, ProjectionPreservesRelativePositions,
 
 // Feature: n-body-simulation, Property 10: Color Mapping Correctness
 
-RC_GTEST_PROP(ColorMapper, ValidRGBRange,
-              (float velocity, float max_velocity)) {
+RC_GTEST_PROP(ColorMapper, ValidRGBRange, (float velocity, float max_velocity)) {
   // Feature: n-body-simulation, Property 10: Color Mapping Correctness
   // Validates: Requirements 7.4
 
   RC_PRE(max_velocity > 0.0f && max_velocity < 1000.0f);
-  RC_PRE(velocity >= 0.0f &&
-         velocity <= max_velocity * 2.0f); // Allow out of range
+  RC_PRE(velocity >= 0.0f && velocity <= max_velocity * 2.0f);  // Allow out of range
   RC_PRE(std::isfinite(velocity) && std::isfinite(max_velocity));
 
   glm::vec3 color = ColorMapper::velocityToColor(velocity, max_velocity);
@@ -167,8 +165,7 @@ RC_GTEST_PROP(ColorMapper, ValidRGBRange,
   RC_ASSERT(color.b >= 0.0f && color.b <= 1.0f);
 }
 
-RC_GTEST_PROP(ColorMapper, MonotonicMapping,
-              (float v1, float v2, float max_velocity)) {
+RC_GTEST_PROP(ColorMapper, MonotonicMapping, (float v1, float v2, float max_velocity)) {
   // Feature: n-body-simulation, Property 10: Color Mapping Correctness
   // Validates: Requirements 7.4
 
@@ -196,11 +193,10 @@ RC_GTEST_PROP(ColorMapper, BoundaryColors, (float max_velocity)) {
   RC_PRE(std::isfinite(max_velocity));
 
   glm::vec3 color_zero = ColorMapper::velocityToColor(0.0f, max_velocity);
-  glm::vec3 color_max =
-      ColorMapper::velocityToColor(max_velocity, max_velocity);
+  glm::vec3 color_max = ColorMapper::velocityToColor(max_velocity, max_velocity);
 
   // Property: Edge cases produce expected boundary colors
   // For velocity mapping: blue (low) to red (high)
-  RC_ASSERT(color_zero.b > color_zero.r); // More blue at low velocity
-  RC_ASSERT(color_max.r > color_max.b);   // More red at high velocity
+  RC_ASSERT(color_zero.b > color_zero.r);  // More blue at low velocity
+  RC_ASSERT(color_max.r > color_max.b);    // More red at high velocity
 }

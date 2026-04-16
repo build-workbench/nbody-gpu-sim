@@ -4,7 +4,7 @@
 
 namespace nbody {
 
-bool SimulationState::operator==(const SimulationState &other) const {
+bool SimulationState::operator==(const SimulationState& other) const {
   if (particle_count != other.particle_count)
     return false;
   if (std::abs(simulation_time - other.simulation_time) > 1e-6f)
@@ -38,12 +38,12 @@ bool SimulationState::operator==(const SimulationState &other) const {
   return true;
 }
 
-void SimulationState::serialize(std::ostream &out) const {
+void SimulationState::serialize(std::ostream& out) const {
   Serializer::save(out, *this);
 }
 
-SimulationState SimulationState::deserialize(std::istream &in) {
+SimulationState SimulationState::deserialize(std::istream& in) {
   return Serializer::load(in);
 }
 
-} // namespace nbody
+}  // namespace nbody

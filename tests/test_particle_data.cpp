@@ -115,8 +115,7 @@ TEST(ParticleInitializerTest, DiskDistribution) {
 // Feature: n-body-simulation, Property 14: Particle Distribution Bounds
 
 RC_GTEST_PROP(ParticleDistribution, UniformBoundsProperty,
-              (float min_x, float max_x, float min_y, float max_y, float min_z,
-               float max_z)) {
+              (float min_x, float max_x, float min_y, float max_y, float min_z, float max_z)) {
   // Feature: n-body-simulation, Property 14: Particle Distribution Bounds
   // Validates: Requirements 1.3
 

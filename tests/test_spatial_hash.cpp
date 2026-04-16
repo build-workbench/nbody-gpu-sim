@@ -138,7 +138,7 @@ RC_GTEST_PROP(SpatialHashGrid, NeighborCutoffProperty, (float cutoff)) {
   RC_PRE(cutoff > 1.0f && cutoff < 10.0f);
 
   size_t N = 30;
-  float cell_size = cutoff / 2.0f; // Cell size should be related to cutoff
+  float cell_size = cutoff / 2.0f;  // Cell size should be related to cutoff
 
   ParticleData d_particles;
   ParticleDataManager::allocateDevice(d_particles, N);
@@ -217,7 +217,7 @@ RC_GTEST_PROP(ForceMethodEquivalence, DirectVsBarnesHut, ()) {
   }
 
   // Compute Barnes-Hut forces with small theta
-  BarnesHutCalculator bh_calc(0.1f); // Small theta for accuracy
+  BarnesHutCalculator bh_calc(0.1f);  // Small theta for accuracy
   bh_calc.setGravitationalConstant(1.0f);
   bh_calc.setSofteningParameter(0.1f);
   bh_calc.computeForces(&d_particles);
@@ -227,9 +227,9 @@ RC_GTEST_PROP(ForceMethodEquivalence, DirectVsBarnesHut, ()) {
   // Property: Forces should be similar within tolerance
   float max_relative_error = 0.0f;
   for (size_t i = 0; i < N; i++) {
-    float direct_mag = std::sqrt(direct_acc_x[i] * direct_acc_x[i] +
-                                 direct_acc_y[i] * direct_acc_y[i] +
-                                 direct_acc_z[i] * direct_acc_z[i]);
+    float direct_mag =
+        std::sqrt(direct_acc_x[i] * direct_acc_x[i] + direct_acc_y[i] * direct_acc_y[i] +
+                  direct_acc_z[i] * direct_acc_z[i]);
 
     float bh_mag = std::sqrt(h_particles.acc_x[i] * h_particles.acc_x[i] +
                              h_particles.acc_y[i] * h_particles.acc_y[i] +

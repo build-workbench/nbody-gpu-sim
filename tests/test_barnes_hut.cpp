@@ -46,7 +46,7 @@ TEST(BarnesHutTreeTest, MassConservation) {
   params.center = Vec3(0, 0, 0);
   params.radius = 5.0f;
   params.min_mass = 1.0f;
-  params.max_mass = 1.0f; // Uniform mass for easy verification
+  params.max_mass = 1.0f;  // Uniform mass for easy verification
   ParticleInitializer::initSpherical(h_particles, params);
 
   ParticleDataManager::copyToDevice(d_particles, h_particles);
@@ -100,7 +100,7 @@ RC_GTEST_PROP(BarnesHutTree, TreeContainsAllParticles, (int seed)) {
   // Feature: n-body-simulation, Property 2: Barnes-Hut Tree Structure
   // Correctness Validates: Requirements 3.1, 3.2
 
-  size_t N = 50; // Small for testing
+  size_t N = 50;  // Small for testing
 
   ParticleData d_particles;
   ParticleDataManager::allocateDevice(d_particles, N);
@@ -163,7 +163,7 @@ RC_GTEST_PROP(BarnesHutTree, ApproximationConvergence, ()) {
 
   // Compute Barnes-Hut forces with different theta values
   float theta1 = 0.8f;
-  float theta2 = 0.3f; // Smaller theta = more accurate
+  float theta2 = 0.3f;  // Smaller theta = more accurate
 
   BarnesHutCalculator bh_calc1(theta1);
   bh_calc1.setGravitationalConstant(1.0f);
@@ -194,7 +194,7 @@ RC_GTEST_PROP(BarnesHutTree, ApproximationConvergence, ()) {
   }
 
   // Property: Smaller theta should give smaller error
-  RC_ASSERT(error2 <= error1 * 1.1f); // Allow small tolerance
+  RC_ASSERT(error2 <= error1 * 1.1f);  // Allow small tolerance
 
   ParticleDataManager::freeDevice(d_particles);
   ParticleDataManager::freeHost(h_particles);

@@ -6,20 +6,19 @@
 namespace nbody {
 
 // Direct N² force calculation kernel with shared memory tiling
-__global__ void computeForcesDirectKernel(const float *__restrict__ pos_x,
-                                          const float *__restrict__ pos_y,
-                                          const float *__restrict__ pos_z,
-                                          const float *__restrict__ mass,
-                                          float *acc_x, float *acc_y,
-                                          float *acc_z, int N, float G,
-                                          float eps2 // softening^2
+__global__ void computeForcesDirectKernel(const float* __restrict__ pos_x,
+                                          const float* __restrict__ pos_y,
+                                          const float* __restrict__ pos_z,
+                                          const float* __restrict__ mass, float* acc_x,
+                                          float* acc_y, float* acc_z, int N, float G,
+                                          float eps2  // softening^2
 ) {
   extern __shared__ float shared_data[];
 
-  float *s_pos_x = shared_data;
-  float *s_pos_y = s_pos_x + blockDim.x;
-  float *s_pos_z = s_pos_y + blockDim.x;
-  float *s_mass = s_pos_z + blockDim.x;
+  float* s_pos_x = shared_data;
+  float* s_pos_y = s_pos_x + blockDim.x;
+  float* s_pos_z = s_pos_y + blockDim.x;
+  float* s_mass = s_pos_z + blockDim.x;
 
   int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -85,32 +84,28 @@ __global__ void computeForcesDirectKernel(const float *__restrict__ pos_x,
 }
 
 // Launch wrapper
-void launchDirectForceKernel(ParticleData *d_particles, float G, float eps2,
-                             int block_size) {
+void launchDirectForceKernel(ParticleData* d_particles, float G, float eps2, int block_size) {
   int N = static_cast<int>(d_particles->count);
   int num_blocks = (N + block_size - 1) / block_size;
-  size_t shared_mem_size =
-      4 * block_size * sizeof(float); // pos_x, pos_y, pos_z, mass
+  size_t shared_mem_size = 4 * block_size * sizeof(float);  // pos_x, pos_y, pos_z, mass
 
   computeForcesDirectKernel<<<num_blocks, block_size, shared_mem_size>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z,
-      d_particles->mass, d_particles->acc_x, d_particles->acc_y,
-      d_particles->acc_z, N, G, eps2);
+      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particles->mass,
+      d_particles->acc_x, d_particles->acc_y, d_particles->acc_z, N, G, eps2);
 
   CUDA_CHECK_KERNEL();
 }
 
 // DirectForceCalculator implementation
-DirectForceCalculator::DirectForceCalculator(int block_size)
-    : block_size_(block_size) {}
+DirectForceCalculator::DirectForceCalculator(int block_size) : block_size_(block_size) {}
 
-void DirectForceCalculator::computeForces(ParticleData *d_particles) {
+void DirectForceCalculator::computeForces(ParticleData* d_particles) {
   launchDirectForceKernel(d_particles, G_, softening_eps2_, block_size_);
 }
 
 // CPU reference implementation for testing
-Vec3 computeGravitationalForceCPU(const Vec3 &p1, const Vec3 &p2, float m1,
-                                  float m2, float G, float eps) {
+Vec3 computeGravitationalForceCPU(const Vec3& p1, const Vec3& p2, float m1, float m2, float G,
+                                  float eps) {
   Vec3 r = p2 - p1;
   float dist2 = r.length2() + eps * eps;
   float inv_dist = 1.0f / sqrtf(dist2);
@@ -119,4 +114,4 @@ Vec3 computeGravitationalForceCPU(const Vec3 &p1, const Vec3 &p2, float m1,
   return r * f;
 }
 
-} // namespace nbody
+}  // namespace nbody

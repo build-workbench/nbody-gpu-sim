@@ -12,8 +12,12 @@ namespace nbody {
 // Header: magic number, version, particle count, parameters
 // Data: positions, velocities, masses
 
-constexpr uint32_t NBODY_MAGIC = 0x4E424F44; // "NBOD"
+constexpr uint32_t NBODY_MAGIC = 0x4E424F44;  // "NBOD"
 constexpr uint32_t NBODY_VERSION = 1;
+
+// Maximum allowed particle count for serialization (100 million)
+// This prevents memory exhaustion from corrupted or malicious files
+constexpr uint64_t MAX_PARTICLE_COUNT = 100'000'000;
 
 struct FileHeader {
   uint32_t magic;
@@ -24,33 +28,32 @@ struct FileHeader {
   float G;
   float softening;
   uint32_t force_method;
-  uint32_t reserved[4]; // For future use
+  uint32_t reserved[4];  // For future use
 };
 
 class Serializer {
 public:
   // Save simulation state to file
-  static void save(const std::string &filename, const SimulationState &state);
+  static void save(const std::string& filename, const SimulationState& state);
 
   // Load simulation state from file
-  static SimulationState load(const std::string &filename);
+  static SimulationState load(const std::string& filename);
 
   // Save to stream
-  static void save(std::ostream &out, const SimulationState &state);
+  static void save(std::ostream& out, const SimulationState& state);
 
   // Load from stream
-  static SimulationState load(std::istream &in);
+  static SimulationState load(std::istream& in);
 
   // Validate file format
-  static bool validateFile(const std::string &filename);
-  static bool validateStream(std::istream &in);
+  static bool validateFile(const std::string& filename);
+  static bool validateStream(std::istream& in);
 
 private:
-  static void writeHeader(std::ostream &out, const SimulationState &state);
-  static FileHeader readHeader(std::istream &in);
-  static void writeFloatArray(std::ostream &out,
-                              const std::vector<float> &data);
-  static std::vector<float> readFloatArray(std::istream &in, size_t count);
+  static void writeHeader(std::ostream& out, const SimulationState& state);
+  static FileHeader readHeader(std::istream& in);
+  static void writeFloatArray(std::ostream& out, const std::vector<float>& data);
+  static std::vector<float> readFloatArray(std::istream& in, size_t count);
 };
 
-} // namespace nbody
+}  // namespace nbody
