@@ -8,11 +8,18 @@
 namespace nbody {
 
 ParticleSystem::ParticleSystem()
-    : particle_count_(0), dt_(0.001f), G_(1.0f), softening_(0.01f),
-      simulation_time_(0.0f), force_method_(ForceMethod::DIRECT_N2),
-      is_paused_(false), is_initialized_(false) {}
+    : particle_count_(0),
+      dt_(0.001f),
+      G_(1.0f),
+      softening_(0.01f),
+      simulation_time_(0.0f),
+      force_method_(ForceMethod::DIRECT_N2),
+      is_paused_(false),
+      is_initialized_(false) {}
 
-ParticleSystem::~ParticleSystem() { freeMemory(); }
+ParticleSystem::~ParticleSystem() {
+  freeMemory();
+}
 
 void ParticleSystem::allocateMemory(size_t count) {
   particle_count_ = count;
@@ -28,7 +35,7 @@ void ParticleSystem::freeMemory() {
   }
 }
 
-void ParticleSystem::initialize(const SimulationConfig &config) {
+void ParticleSystem::initialize(const SimulationConfig& config) {
   validateSimulationConfig(config);
   validateResourceRequirements(config.particle_count);
 
@@ -90,8 +97,7 @@ void ParticleSystem::initialize(const SimulationConfig &config) {
   }
 }
 
-void ParticleSystem::initializeWithDistribution(size_t particle_count,
-                                                InitDistribution dist) {
+void ParticleSystem::initializeWithDistribution(size_t particle_count, InitDistribution dist) {
   SimulationConfig config;
   config.particle_count = particle_count;
   config.init_distribution = dist;
@@ -165,7 +171,7 @@ void ParticleSystem::setBarnesHutTheta(float theta) {
   validateTheta(theta);
   config_.barnes_hut_theta = theta;
   if (force_method_ == ForceMethod::BARNES_HUT) {
-    auto *bh = dynamic_cast<BarnesHutCalculator *>(force_calculator_.get());
+    auto* bh = dynamic_cast<BarnesHutCalculator*>(force_calculator_.get());
     if (bh)
       bh->setTheta(theta);
   }
@@ -178,7 +184,7 @@ void ParticleSystem::setSpatialHashCellSize(float size) {
 
   config_.spatial_hash_cell_size = size;
   if (force_method_ == ForceMethod::SPATIAL_HASH) {
-    auto *sh = dynamic_cast<SpatialHashCalculator *>(force_calculator_.get());
+    auto* sh = dynamic_cast<SpatialHashCalculator*>(force_calculator_.get());
     if (sh)
       sh->setCellSize(size);
   }
@@ -191,13 +197,13 @@ void ParticleSystem::setSpatialHashCutoff(float cutoff) {
 
   config_.spatial_hash_cutoff = cutoff;
   if (force_method_ == ForceMethod::SPATIAL_HASH) {
-    auto *sh = dynamic_cast<SpatialHashCalculator *>(force_calculator_.get());
+    auto* sh = dynamic_cast<SpatialHashCalculator*>(force_calculator_.get());
     if (sh)
       sh->setCutoffRadius(cutoff);
   }
 }
 
-void ParticleSystem::copyToHost(ParticleData &h_particles) const {
+void ParticleSystem::copyToHost(ParticleData& h_particles) const {
   ParticleDataManager::copyToHost(h_particles, d_particles_);
 }
 
@@ -228,7 +234,7 @@ SimulationState ParticleSystem::getState() const {
   return state;
 }
 
-void ParticleSystem::setState(const SimulationState &state) {
+void ParticleSystem::setState(const SimulationState& state) {
   SimulationConfig config = config_;
   config.particle_count = state.particle_count;
   config.dt = state.dt;
@@ -282,12 +288,12 @@ void ParticleSystem::setState(const SimulationState &state) {
   }
 }
 
-void ParticleSystem::saveState(const std::string &filename) const {
+void ParticleSystem::saveState(const std::string& filename) const {
   SimulationState state = getState();
   Serializer::save(filename, state);
 }
 
-void ParticleSystem::loadState(const std::string &filename) {
+void ParticleSystem::loadState(const std::string& filename) {
   SimulationState state = Serializer::load(filename);
   setState(state);
 }
@@ -319,7 +325,8 @@ void ParticleSystem::initializeInterop() {
 void ParticleSystem::updateInteropBuffer() {
   if (interop_ && is_initialized_) {
     interop_->updatePositions(&d_particles_);
+    interop_->updateVelocities(&d_particles_);
   }
 }
 
-} // namespace nbody
+}  // namespace nbody

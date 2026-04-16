@@ -5,7 +5,7 @@
 
 namespace nbody {
 
-void checkGLError(const char *operation) {
+void checkGLError(const char* operation) {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
     throw OpenGLException(operation, err);
@@ -29,7 +29,7 @@ void validateResourceRequirements(size_t particle_count) {
   }
 }
 
-void validateSimulationConfig(const SimulationConfig &config) {
+void validateSimulationConfig(const SimulationConfig& config) {
   validateParticleCountRange(config.particle_count);
   validateTimeStep(config.dt);
   validateSoftening(config.softening);
@@ -43,14 +43,12 @@ void validateSimulationConfig(const SimulationConfig &config) {
   }
 
   if (config.force_method == ForceMethod::SPATIAL_HASH) {
-    if (config.spatial_hash_cell_size <= 0 ||
-        std::isnan(config.spatial_hash_cell_size) ||
+    if (config.spatial_hash_cell_size <= 0 || std::isnan(config.spatial_hash_cell_size) ||
         std::isinf(config.spatial_hash_cell_size)) {
       throw ValidationException("Spatial hash cell size must be positive and finite");
     }
 
-    if (config.spatial_hash_cutoff <= 0 ||
-        std::isnan(config.spatial_hash_cutoff) ||
+    if (config.spatial_hash_cutoff <= 0 || std::isnan(config.spatial_hash_cutoff) ||
         std::isinf(config.spatial_hash_cutoff)) {
       throw ValidationException("Spatial hash cutoff must be positive and finite");
     }
@@ -66,9 +64,8 @@ void validateParticleCountRange(size_t count) {
     throw ValidationException("Particle count must be greater than 0");
   }
 
-  if (count > 100000000) { // 100 million
-    throw ValidationException(
-        "Particle count exceeds maximum supported (100M)");
+  if (count > 100000000) {  // 100 million
+    throw ValidationException("Particle count exceeds maximum supported (100M)");
   }
 }
 
@@ -111,4 +108,4 @@ void validateTheta(float theta) {
   }
 }
 
-} // namespace nbody
+}  // namespace nbody

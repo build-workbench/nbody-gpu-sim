@@ -182,7 +182,6 @@ jobs:
             docs/**/*.md
             changelog/**/*.md
             examples/**/*.md
-          config_file: .markdownlint.json
 
   build-info:
     name: Build Information
