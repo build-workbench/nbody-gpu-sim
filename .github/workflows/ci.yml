@@ -30,42 +30,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format-17
-          sudo ln -sf /usr/bin/clang-format-17 /usr/bin/clang-format
-
       - name: Check C/C++/CUDA formatting
-        run: |
-          echo "Running clang-format check..."
-          
-          # Find all C/C++/CUDA files, excluding build and third-party directories
-          FILES=$(find . -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.cu" -o -name "*.cuh" \) \
-            ! -path "./build/*" \
-            ! -path "./third_party/*" \
-            ! -path "./external/*" \
-            ! -path "./vendor/*" \
-            ! -path "./.git/*" \
-            ! -path "./docs/*" \
-            ! -path "./examples/*")
-          
-          # Check formatting
-          FAIL=0
-          for FILE in $FILES; do
-            if ! clang-format --dry-run --Werror "$FILE" 2>/dev/null; then
-              echo "✗ Formatting issue in $FILE"
-              FAIL=1
-            fi
-          done
-          
-          if [ $FAIL -eq 1 ]; then
-            echo ""
-            echo "✗ Format check failed. Please run clang-format on the above files."
-            exit 1
-          fi
-          
-          echo "✓ All files pass formatting check"
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '18'
+          check-path: '.'
+          exclude-regex: '(^|/)(build|third_party|external|vendor|\.git|docs|examples)(/|$)'
 
   docs-consistency:
     name: Documentation Consistency
