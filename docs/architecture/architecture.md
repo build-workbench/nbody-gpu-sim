@@ -365,4 +365,4 @@ case GLFW_KEY_4:
 - [API Reference](./api.md) - Detailed API documentation
 - [Algorithms](./algorithms.md) - Algorithm explanations
 - [Performance Guide](./performance.md) - Optimization strategies
-- [Getting Started](./getting-started.md) - Setup and usage
+- [Getting Started](../setup/getting-started.md) - Setup and usage

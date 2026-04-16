@@ -105,21 +105,26 @@ Tested on NVIDIA RTX 3080:
 
 ### Getting Started
 
-- [Getting Started Guide](docs/en/getting-started.md) — Complete setup and usage
+- [Getting Started Guide](docs/setup/getting-started.md) — Complete setup and usage
 - [Examples](examples/) — Code examples for common use cases
 
 ### Reference
 
-- [Architecture](docs/en/architecture.md) — System design and components
-- [Algorithms](docs/en/algorithms.md) — Algorithm explanations
-- [API Reference](docs/en/api.md) — Complete API documentation
-- [Performance Guide](docs/en/performance.md) — Optimization strategies
+- [Architecture](docs/architecture/architecture.md) — System design and components
+- [Algorithms](docs/architecture/algorithms.md) — Algorithm explanations
+- [API Reference](docs/architecture/api.md) — Complete API documentation
+- [Performance Guide](docs/architecture/performance.md) — Optimization strategies
+
+### Specifications (Single Source of Truth)
+
+- [Product Spec](specs/product/n-body-simulation.md) — Requirements and acceptance criteria
+- [Architecture RFC](specs/rfc/0001-core-architecture.md) — Technical design decisions
 
 ### 🌐 Available Languages
 
 | Language | Documentation |
 |----------|---------------|
-| 🇺🇸 English | [Docs](./docs/en/) |
+| 🇺🇸 English | [Docs](./docs/) |
 | 🇨🇳 简体中文 | [文档](./docs/zh-CN/) |
 
 ---
