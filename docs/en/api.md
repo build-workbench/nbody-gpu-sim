@@ -1,41 +1,61 @@
-# API 参考文档
+---
+layout: default
+title: API Reference
+parent: Documentation
+nav_order: 3
+---
 
-## 目录
+# API Reference
 
-- [核心类](#核心类)
-- [数据结构](#数据结构)
-- [枚举类型](#枚举类型)
-- [工具函数](#工具函数)
+Complete API reference for the N-Body Particle Simulation library.
 
 ---
 
-## 核心类
+## 📑 Table of Contents
+
+- [Core Classes](#core-classes)
+  - [ParticleSystem](#particlesystem)
+  - [ForceCalculator](#forcecalculator)
+  - [Integrator](#integrator)
+  - [Camera](#camera)
+  - [Renderer](#renderer)
+  - [CudaGLInterop](#cudaglintinterop)
+- [Data Structures](#data-structures)
+  - [ParticleData](#particledata)
+  - [SimulationConfig](#simulationconfig)
+  - [SimulationState](#simulationstate)
+- [Enumerations](#enumerations)
+- [Utility Functions](#utility-functions)
+
+---
+
+## Core Classes
 
 ### ParticleSystem
 
-粒子系统主类，管理仿真的所有组件。
+Main orchestrator class for managing the entire simulation.
 
 ```cpp
 namespace nbody {
 
 class ParticleSystem {
 public:
-    // 构造与析构
+    // Lifecycle
     ParticleSystem();
     ~ParticleSystem();
     
-    // 初始化
+    // Initialization
     void initialize(const SimulationConfig& config);
     void initializeWithDistribution(size_t particle_count, InitDistribution dist);
     
-    // 仿真控制
+    // Simulation Control
     void update(float dt);
     void pause();
     void resume();
     void reset();
     bool isPaused() const;
     
-    // 参数设置
+    // Parameter Configuration
     void setForceMethod(ForceMethod method);
     void setGravitationalConstant(float G);
     void setSofteningParameter(float eps);
@@ -44,7 +64,7 @@ public:
     void setSpatialHashCellSize(float size);
     void setSpatialHashCutoff(float cutoff);
     
-    // 参数获取
+    // Parameter Accessors
     ForceMethod getForceMethod() const;
     float getGravitationalConstant() const;
     float getSofteningParameter() const;
@@ -52,59 +72,72 @@ public:
     float getSimulationTime() const;
     size_t getParticleCount() const;
     
-    // 数据访问
+    // Data Access
     ParticleData* getDeviceData();
     void copyToHost(ParticleData& h_particles) const;
     
-    // 状态管理
+    // State Management
     void saveState(const std::string& filename) const;
     void loadState(const std::string& filename);
     SimulationState getState() const;
     void setState(const SimulationState& state);
     
-    // 能量计算
+    // Energy Computation
     float computeKineticEnergy() const;
     float computePotentialEnergy() const;
     float computeTotalEnergy() const;
     
-    // CUDA-GL 互操作
+    // CUDA-GL Interop
     CudaGLInterop* getInterop();
     void initializeInterop();
     void updateInteropBuffer();
 };
 
-}
+} // namespace nbody
 ```
 
-#### 使用示例
+#### Usage Example
 
 ```cpp
-// 基本使用
-ParticleSystem system;
-SimulationConfig config;
-config.particle_count = 10000;
-system.initialize(config);
+#include "nbody/particle_system.hpp"
 
-// 仿真循环
-while (running) {
-    if (!system.isPaused()) {
-        system.update(0.001f);
+using namespace nbody;
+
+int main() {
+    // Configure simulation
+    SimulationConfig config;
+    config.particle_count = 100000;
+    config.force_method = ForceMethod::BARNES_HUT;
+    config.dt = 0.001f;
+    config.G = 1.0f;
+    
+    // Initialize system
+    ParticleSystem system;
+    system.initialize(config);
+    
+    // Run simulation
+    for (int i = 0; i < 1000; ++i) {
+        system.update(system.getTimeStep());
+        
+        // Monitor energy every 100 steps
+        if (i % 100 == 0) {
+            float E = system.computeTotalEnergy();
+            printf("Step %d: Total Energy = %.6f\n", i, E);
+        }
     }
+    
+    // Save checkpoint
+    system.saveState("checkpoint.nbody");
+    
+    return 0;
 }
-
-// 切换算法
-system.setForceMethod(ForceMethod::BARNES_HUT);
-
-// 保存/加载状态
-system.saveState("checkpoint.nbody");
-system.loadState("checkpoint.nbody");
 ```
 
 ---
 
 ### ForceCalculator
 
-力计算器抽象基类。
+Abstract base class for force calculation algorithms.
 
 ```cpp
 namespace nbody {
@@ -113,32 +146,34 @@ class ForceCalculator {
 public:
     virtual ~ForceCalculator() = default;
     
-    // 计算所有粒子的加速度
+    // Compute forces for all particles
     virtual void computeForces(ParticleData* d_particles) = 0;
     
-    // 获取算法类型
+    // Get algorithm type
     virtual ForceMethod getMethod() const = 0;
     
-    // 参数设置
-    void setSofteningParameter(float eps);
+    // Parameters
     void setGravitationalConstant(float G);
+    void setSofteningParameter(float eps);
     
-    // 参数获取
-    float getSofteningParameter() const;
     float getGravitationalConstant() const;
+    float getSofteningParameter() const;
+    
+protected:
+    float G_ = 1.0f;           // Gravitational constant
+    float softening_eps_ = 0.1f;  // Softening length
+    float softening_eps2_ = 0.01f; // Squared softening
 };
 
-}
+} // namespace nbody
 ```
 
-#### 具体实现
-
-##### DirectForceCalculator
+#### DirectForceCalculator
 
 ```cpp
 class DirectForceCalculator : public ForceCalculator {
 public:
-    DirectForceCalculator(int block_size = 256);
+    explicit DirectForceCalculator(int block_size = 256);
     
     void computeForces(ParticleData* d_particles) override;
     ForceMethod getMethod() const override;
@@ -148,24 +183,25 @@ public:
 };
 ```
 
-##### BarnesHutCalculator
+#### BarnesHutCalculator
 
 ```cpp
 class BarnesHutCalculator : public ForceCalculator {
 public:
-    BarnesHutCalculator(float theta = 0.5f);
+    explicit BarnesHutCalculator(float theta = 0.5f);
     
     void computeForces(ParticleData* d_particles) override;
     ForceMethod getMethod() const override;
     
-    void setTheta(float theta);  // 开角参数 (0-1)
+    // Opening angle parameter (0 = exact, 1 = fastest)
+    void setTheta(float theta);
     float getTheta() const;
     
-    BarnesHutTree* getTree();  // 访问内部树结构
+    BarnesHutTree* getTree() const;
 };
 ```
 
-##### SpatialHashCalculator
+#### SpatialHashCalculator
 
 ```cpp
 class SpatialHashCalculator : public ForceCalculator {
@@ -180,7 +216,7 @@ public:
     float getCellSize() const;
     float getCutoffRadius() const;
     
-    SpatialHashGrid* getGrid();  // 访问内部网格结构
+    SpatialHashGrid* getGrid() const;
 };
 ```
 
@@ -188,49 +224,43 @@ public:
 
 ### Integrator
 
-Velocity Verlet 积分器。
+Velocity Verlet symplectic integrator.
 
 ```cpp
 namespace nbody {
 
 class Integrator {
 public:
-    Integrator(int block_size = 256);
+    explicit Integrator(int block_size = 256);
     
-    // 完整积分步骤
-    void integrate(ParticleData* d_particles, ForceCalculator* force_calc, float dt);
+    // Full integration step
+    void integrate(ParticleData* d_particles, 
+                   ForceCalculator* force_calc, 
+                   float dt);
     
-    // 分步操作
+    // Step components (for custom schemes)
     void updatePositions(ParticleData* d_particles, float dt);
     void updateVelocities(ParticleData* d_particles, float dt);
     void storeOldAccelerations(ParticleData* d_particles);
     
-    // 能量计算
+    // Energy computation
     float computeKineticEnergy(const ParticleData* d_particles);
     float computePotentialEnergy(const ParticleData* d_particles, float G, float eps);
     float computeTotalEnergy(const ParticleData* d_particles, float G, float eps);
     
+    // Configuration
     void setBlockSize(int size);
     int getBlockSize() const;
 };
 
-}
-```
-
-#### Velocity Verlet 算法
-
-```
-1. 保存旧加速度: a_old = a
-2. 更新位置: x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt²
-3. 计算新加速度: a(t+dt) = F(x(t+dt)) / m
-4. 更新速度: v(t+dt) = v(t) + 0.5*(a_old + a)*dt
+} // namespace nbody
 ```
 
 ---
 
 ### Camera
 
-3D 相机控制器。
+3D orbit camera controller.
 
 ```cpp
 namespace nbody {
@@ -238,30 +268,29 @@ namespace nbody {
 class Camera {
 public:
     Camera(float fov = 45.0f, float aspect = 16.0f/9.0f, 
-           float near = 0.1f, float far = 1000.0f);
+           float near_plane = 0.1f, float far_plane = 1000.0f);
     
-    // 变换矩阵
+    // Transformation matrices
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjectionMatrix() const;
     glm::mat4 getViewProjectionMatrix() const;
     
-    // 位置设置
+    // Positioning
     void setPosition(const glm::vec3& pos);
     void setTarget(const glm::vec3& target);
     void setUp(const glm::vec3& up);
     
-    // 位置获取
     glm::vec3 getPosition() const;
     glm::vec3 getTarget() const;
     glm::vec3 getForward() const;
     glm::vec3 getRight() const;
     
-    // 投影设置
+    // Projection
     void setFOV(float fov);
     void setAspectRatio(float aspect);
-    void setNearFar(float near, float far);
+    void setNearFar(float near_plane, float far_plane);
     
-    // 相机控制
+    // Controls
     void rotate(float yaw, float pitch);
     void pan(float dx, float dy);
     void zoom(float delta);
@@ -272,14 +301,14 @@ public:
     float getOrbitDistance() const;
 };
 
-}
+} // namespace nbody
 ```
 
 ---
 
 ### Renderer
 
-OpenGL 粒子渲染器。
+OpenGL-based particle renderer.
 
 ```cpp
 namespace nbody {
@@ -292,31 +321,36 @@ public:
     void initialize(int width, int height);
     void cleanup();
     
-    // 渲染
+    // Rendering
     void render(GLuint position_vbo, size_t particle_count);
+    void render(const ParticleData* d_particles);
     
-    // 相机
+    // Camera
     void setCamera(const Camera& camera);
     Camera& getCamera();
     
-    // 渲染设置
+    // Settings
     void setColorMode(ColorMode mode);
     void setPointSize(float size);
     void setMaxDepth(float depth);
     void setMaxVelocity(float velocity);
     
-    // 窗口事件
+    // Window events
     void onResize(int width, int height);
+    
+    // Info
+    int getWidth() const;
+    int getHeight() const;
 };
 
-}
+} // namespace nbody
 ```
 
 ---
 
 ### CudaGLInterop
 
-CUDA-OpenGL 零拷贝互操作。
+CUDA-OpenGL zero-copy interoperation.
 
 ```cpp
 namespace nbody {
@@ -329,103 +363,101 @@ public:
     void initialize(size_t particle_count);
     void cleanup();
     
-    // 映射/解映射
-    float* mapPositionBuffer();    // 返回 CUDA 设备指针
-    void unmapPositionBuffer();    // 渲染前必须调用
+    // Map/unmap
+    float* mapPositionBuffer();     // Returns CUDA device pointer
+    void unmapPositionBuffer();     // Release for OpenGL
     
     bool isMapped() const;
     GLuint getPositionVBO() const;
     size_t getParticleCount() const;
     
-    // 更新位置数据
+    // Update VBO from ParticleData
     void updatePositions(const ParticleData* d_particles);
 };
 
-}
-```
-
-#### 使用流程
-
-```cpp
-CudaGLInterop interop;
-interop.initialize(particle_count);
-
-// 仿真循环
-while (running) {
-    // 更新粒子位置到 VBO
-    interop.updatePositions(&d_particles);
-    
-    // 渲染 (VBO 已自动解映射)
-    renderer.render(interop.getPositionVBO(), particle_count);
-}
+} // namespace nbody
 ```
 
 ---
 
-## 数据结构
+## Data Structures
 
 ### ParticleData
 
-粒子数据 (Structure of Arrays 布局)。
+Structure of Arrays (SoA) layout for GPU efficiency.
 
 ```cpp
 struct ParticleData {
-    // 位置
+    // Positions
     float* pos_x;
     float* pos_y;
     float* pos_z;
     
-    // 速度
+    // Velocities
     float* vel_x;
     float* vel_y;
     float* vel_z;
     
-    // 加速度
+    // Current accelerations
     float* acc_x;
     float* acc_y;
     float* acc_z;
     
-    // 旧加速度 (Verlet 积分用)
+    // Old accelerations (for Verlet)
     float* acc_old_x;
     float* acc_old_y;
     float* acc_old_z;
     
-    // 质量
+    // Masses
     float* mass;
     
-    // 粒子数量
+    // Count
     size_t count;
 };
 ```
 
+**Memory usage:** 52 bytes per particle (13 floats × 4 bytes)
+
+---
+
 ### SimulationConfig
 
-仿真配置。
+Configuration for simulation setup.
 
 ```cpp
 struct SimulationConfig {
+    // Particle settings
     size_t particle_count = 10000;
     InitDistribution init_distribution = InitDistribution::SPHERICAL;
+    
+    // Physics settings
     ForceMethod force_method = ForceMethod::DIRECT_N2;
     float dt = 0.001f;
     float G = 1.0f;
     float softening = 0.01f;
+    
+    // Algorithm-specific settings
     float barnes_hut_theta = 0.5f;
     float spatial_hash_cell_size = 1.0f;
     float spatial_hash_cutoff = 2.0f;
+    
+    // Performance settings
     int cuda_block_size = 256;
 };
 ```
 
+---
+
 ### SimulationState
 
-仿真状态 (用于保存/加载)。
+Serializable simulation state.
 
 ```cpp
 struct SimulationState {
     std::vector<float> pos_x, pos_y, pos_z;
     std::vector<float> vel_x, vel_y, vel_z;
     std::vector<float> mass;
+    
     size_t particle_count;
     float simulation_time;
     float dt;
@@ -433,77 +465,110 @@ struct SimulationState {
     float softening;
     ForceMethod force_method;
     
+    // Serialization
     void serialize(std::ostream& out) const;
     static SimulationState deserialize(std::istream& in);
+    
     bool operator==(const SimulationState& other) const;
 };
 ```
 
 ---
 
-## 枚举类型
+## Enumerations
 
 ### ForceMethod
 
+Available force calculation algorithms.
+
 ```cpp
 enum class ForceMethod {
-    DIRECT_N2,      // O(N²) 直接计算
-    BARNES_HUT,     // O(N log N) 树算法
-    SPATIAL_HASH    // O(N) 空间哈希
+    DIRECT_N2,      // O(N²) exact calculation
+    BARNES_HUT,     // O(N log N) tree approximation
+    SPATIAL_HASH    // O(N) grid-based (short-range)
 };
 ```
 
 ### InitDistribution
 
+Particle initial distribution types.
+
 ```cpp
 enum class InitDistribution {
-    UNIFORM,        // 均匀分布 (立方体)
-    SPHERICAL,      // 球形分布
-    DISK            // 圆盘分布 (星系)
+    UNIFORM,        // Uniform box
+    SPHERICAL,      // Uniform sphere
+    DISK            // Flat disk with rotation
 };
 ```
 
 ### ColorMode
 
+Particle coloring modes.
+
 ```cpp
 enum class ColorMode {
-    DEPTH,          // 按深度着色
-    VELOCITY,       // 按速度着色
-    DENSITY         // 按密度着色
+    DEPTH,          // Color by depth (z-coordinate)
+    VELOCITY,       // Color by velocity magnitude
+    DENSITY         // Color by local density
 };
 ```
 
 ---
 
-## 工具函数
+## Utility Functions
 
-### 粒子数据管理
+### ParticleDataManager
+
+Memory management utilities.
 
 ```cpp
 namespace nbody {
 
 class ParticleDataManager {
 public:
-    // 设备内存
+    // Device memory
     static void allocateDevice(ParticleData& data, size_t count);
     static void freeDevice(ParticleData& data);
     
-    // 主机内存
+    // Host memory
     static void allocateHost(ParticleData& data, size_t count);
     static void freeHost(ParticleData& data);
     
-    // 数据传输
+    // Data transfer
     static void copyToDevice(ParticleData& d_data, const ParticleData& h_data);
     static void copyToHost(ParticleData& h_data, const ParticleData& d_data);
 };
 
-}
+} // namespace nbody
 ```
 
-### 粒子初始化
+### ParticleInitializer
+
+Particle distribution initialization.
 
 ```cpp
 namespace nbody {
+
+struct UniformDistParams {
+    glm::vec3 min_bounds;
+    glm::vec3 max_bounds;
+    float min_mass = 1.0f;
+    float max_mass = 1.0f;
+};
+
+struct SphericalDistParams {
+    glm::vec3 center;
+    float radius;
+    float mass = 1.0f;
+};
+
+struct DiskDistParams {
+    glm::vec3 center;
+    float radius;
+    float thickness;
+    float rotation_speed;
+    float mass = 1.0f;
+};
 
 class ParticleInitializer {
 public:
@@ -518,10 +583,12 @@ public:
     static void zeroAccelerations(ParticleData& h_data);
 };
 
-}
+} // namespace nbody
 ```
 
-### 序列化
+### Serializer
+
+State persistence utilities.
 
 ```cpp
 namespace nbody {
@@ -537,47 +604,58 @@ public:
     static bool validateFile(const std::string& filename);
 };
 
-}
+} // namespace nbody
 ```
 
-### 颜色映射
+### Error Handling
 
 ```cpp
 namespace nbody {
 
-struct ColorMapper {
-    static glm::vec3 velocityToColor(float velocity, float max_velocity);
-    static glm::vec3 depthToColor(float depth, float max_depth);
-    static glm::vec3 densityToColor(float density, float max_density);
-    static glm::vec3 gradientMap(float t, const glm::vec3& low, const glm::vec3& high);
+// Exception types
+class CudaException : public std::runtime_error {
+    using std::runtime_error::runtime_error;
 };
 
-}
-```
+class OpenGLException : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 
-### 错误处理
+class ValidationException : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 
-```cpp
-namespace nbody {
+// CUDA error checking
+#define CUDA_CHECK(call) \
+    do { \
+        cudaError_t err = call; \
+        if (err != cudaSuccess) { \
+            throw CudaException(cudaGetErrorString(err)); \
+        } \
+    } while(0)
 
-// CUDA 错误检查宏
-#define CUDA_CHECK(call) ...
-#define CUDA_CHECK_KERNEL() ...
+#define CUDA_CHECK_KERNEL() \
+    do { \
+        cudaError_t err = cudaGetLastError(); \
+        if (err != cudaSuccess) { \
+            throw CudaException(cudaGetErrorString(err)); \
+        } \
+    } while(0)
 
-// 异常类
-class CudaException : public std::runtime_error { ... };
-class OpenGLException : public std::runtime_error { ... };
-class ValidationException : public std::runtime_error { ... };
-class ResourceException : public std::runtime_error { ... };
-
-// 验证函数
+// Validation functions
 void validateSimulationConfig(const SimulationConfig& config);
 void validateParticleCount(size_t count);
 void validateTimeStep(float dt);
 void validateSoftening(float eps);
-void validateTheta(float theta);
-void validateResourceRequirements(size_t particle_count);
-void checkGLError(const char* operation);
 
-}
+} // namespace nbody
 ```
+
+---
+
+## 📚 Related Documentation
+
+- [Getting Started](./getting-started.md) - Setup and usage guide
+- [Architecture](./architecture.md) - System design overview
+- [Algorithms](./algorithms.md) - Algorithm explanations
+- [Performance Guide](./performance.md) - Optimization strategies
