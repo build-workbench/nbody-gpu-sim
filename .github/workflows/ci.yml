@@ -26,6 +26,8 @@ jobs:
   format-check:
     name: Format Check
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,6 +69,8 @@ jobs:
   docs-consistency:
     name: Documentation Consistency
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -167,6 +171,8 @@ jobs:
   markdown-lint:
     name: Markdown Lint
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -184,6 +190,8 @@ jobs:
     name: Build Information
     runs-on: ubuntu-latest
     needs: [format-check, docs-consistency]
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Display build requirements
         run: |
