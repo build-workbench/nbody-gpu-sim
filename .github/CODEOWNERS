@@ -1,0 +1,31 @@
+# CODEOWNERS - Define code ownership for automatic PR reviews
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @LessUp
+
+# CUDA kernel code
+/src/cuda/ @LessUp
+
+# Core simulation logic
+/src/core/ @LessUp
+/include/nbody/ @LessUp
+
+# Rendering code
+/src/render/ @LessUp
+/shaders/ @LessUp
+
+# Build system
+/CMakeLists.txt @LessUp
+
+# Documentation
+/docs/ @Lessup
+/README.md @LessUp
+/README.zh-CN.md @LessUp
+/CHANGELOG.md @LessUp
+
+# Tests
+/tests/ @LessUp
+
+# CI/CD
+/.github/workflows/ @LessUp

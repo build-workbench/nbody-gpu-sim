@@ -1,0 +1,91 @@
+# Doxyfile - Configuration for N-Body Simulation Documentation
+
+PROJECT_NAME           = "N-Body Particle Simulation"
+PROJECT_NUMBER         = 2.0.0
+PROJECT_BRIEF          = "GPU-accelerated N-Body particle simulation with real-time visualization"
+
+OUTPUT_DIRECTORY       = docs/doxygen
+INPUT                  = include/nbody src examples
+RECURSIVE              = YES
+
+# File patterns
+FILE_PATTERNS          = *.hpp *.cpp *.cu *.h *.c
+EXCLUDE_PATTERNS       = */build/* */.git/* */third_party/*
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+
+# Output formats
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+
+# Navigation
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+
+# Preprocessing
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = __host__= \
+                         __device__= \
+                         __global__= \
+                         __shared__= \
+                         __restrict__= \
+                         CUDA_CALLABLE=
+
+# Extraction settings
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+# Source code styling
+OPTIMIZE_OUTPUT_FOR_C  = YES
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = YES
+
+# Grouping
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = YES
+SORT_MEMBERS_CTORS_1ST = YES
+
+# Warnings
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+
+# Graphs (requires Graphviz)
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+CLASS_DIAGRAMS         = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+GRAPHICAL_HIERARCHY    = YES
+DIRECTORY_GRAPH        = YES
+
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+
+# Theme
+HTML_COLORSTYLE_HUE    = 215
+HTML_COLORSTYLE_SAT    = 45
+HTML_COLORSTYLE_GAMMA  = 240
+HTML_TIMESTAMP         = YES
+
+# Index entries
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 3

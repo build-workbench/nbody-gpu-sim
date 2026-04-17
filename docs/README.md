@@ -7,7 +7,7 @@ Welcome to the N-Body Particle Simulation documentation.
 | Directory | Purpose |
 |-----------|---------|
 | [`setup/`](./setup/) | Environment setup, build instructions, troubleshooting |
-| [`tutorials/`](./tutorials/) | User guides and usage examples |
+| [`tutorials/`](./tutorials/) | User guides, tutorials, and usage examples |
 | [`architecture/`](./architecture/) | System design, algorithms, API reference, performance |
 | [`assets/`](./assets/) | Images, diagrams, and other static resources |
 

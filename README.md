@@ -57,7 +57,10 @@ sudo apt-get install -y cmake libglfw3-dev libglew-dev libglm-dev
 git clone https://github.com/LessUp/n-body.git
 cd n-body
 
-# Build
+# Build (Option 1: Using build script)
+./scripts/build.sh
+
+# Build (Option 2: Manual)
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j$(nproc)
@@ -65,6 +68,14 @@ cmake --build . -j$(nproc)
 # Run
 ./nbody_sim 100000    # 100K particles
 ./nbody_sim 1000000   # 1 million particles!
+```
+
+### Useful Scripts
+
+```bash
+./scripts/build.sh       # Build the project
+./scripts/test.sh        # Run tests
+./scripts/format.sh      # Format code with clang-format
 ```
 
 ### Windows

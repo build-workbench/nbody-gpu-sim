@@ -90,15 +90,24 @@ When you (the AI agent) are asked to develop a new feature, modify an existing f
 
 ```
 n-body/
+├── site/                     # GitHub Pages site files
+│   ├── _config.yml           # Jekyll configuration
+│   ├── index.md              # Site entry point
+│   └── Gemfile               # Ruby dependencies
 ├── specs/                    # Spec documents (Single Source of Truth)
 │   ├── product/              # Product requirements
 │   │   └── n-body-simulation.md
 │   └── rfc/                  # Technical design documents
 │       └── 0001-core-architecture.md
-├── docs/                     # User documentation
+├── docs/                     # User-facing documentation
 │   ├── setup/                # Setup guides
+│   ├── tutorials/            # Tutorials and usage examples
 │   ├── architecture/         # Architecture documentation
+│   ├── assets/               # Images and diagrams
 │   └── zh-CN/                # Chinese translations
+├── changelog/                # Version changelog
+│   ├── en/                   # English releases
+│   └── zh-CN/                # Chinese releases
 ├── include/nbody/            # Public headers
 ├── src/                      # Implementation
 │   ├── core/                 # Core simulation logic
@@ -107,8 +116,15 @@ n-body/
 │   └── utils/                # Utility functions
 ├── tests/                    # Test files
 ├── examples/                 # Usage examples
+├── scripts/                  # Build and automation scripts
+├── .github/                  # GitHub workflows and templates
+├── .vscode/                  # VS Code settings
 ├── AGENTS.md                 # This file - AI agent instructions
+├── CHANGELOG.md              # Changelog summary
+├── CMakeLists.txt            # Build system
 ├── CONTRIBUTING.md           # Contribution guidelines
+├── Doxyfile                  # API documentation config
+├── LICENSE                   # License
 ├── README.md                 # Project overview (English)
 └── README.zh-CN.md           # Project overview (Chinese)
 ```
