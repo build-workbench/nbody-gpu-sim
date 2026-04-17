@@ -34,6 +34,18 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ./site
+
+      - name: Install dependencies
+        run: |
+          cd site
+          bundle install
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
