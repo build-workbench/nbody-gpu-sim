@@ -1,35 +1,28 @@
-title: N-Body Particle Simulation
+# Site Settings
+title: N-Body Simulation
+tagline: Million-Particle GPU Physics Engine
 description: >-
-  Million-particle GPU simulation — Direct N², Barnes-Hut, Spatial Hash
-  with CUDA-OpenGL interop real-time rendering
-remote_theme: pages-themes/cayman@v0.2.0
+  High-performance N-body simulation with Direct N², Barnes-Hut, and Spatial Hash algorithms.
+  Real-time CUDA-OpenGL interop rendering for up to 1 million particles.
+url: "https://lessup.github.io"
+baseurl: "/n-body"
+
+# Theme & Plugins
+remote_theme: pmarsceill/just-the-docs
 plugins:
   - jekyll-remote-theme
   - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Repository
 repository: LessUp/n-body
-show_downloads: true
+gh_repo: https://github.com/LessUp/n-body
 
-# SEO & metadata
-url: https://lessup.github.io
-baseurl: /n-body
+# Language & Encoding
 lang: en
-author: LessUp
+encoding: utf-8
 
-# Navigation
-nav:
-  - title: Home
-    url: /
-  - title: Documentation
-    url: docs/
-  - title: API Reference
-    url: docs/API.html
-  - title: Changelog
-    url: changelog/
-  - title: GitHub
-    url: https://github.com/LessUp/n-body
-    external: true
-
-# Markdown rendering
+# Markdown Settings
 markdown: kramdown
 kramdown:
   input: GFM
@@ -37,73 +30,69 @@ kramdown:
   syntax_highlighter: rouge
   syntax_highlighter_opts:
     css_class: 'highlight'
+    line_numbers: false
 
-# Default layout for all pages
+# Just the Docs Theme Settings
+color_scheme: dark
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+  preview_words_before: 3
+  preview_words_after: 3
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: true
+
+# Navigation Structure
+nav_enabled: true
+nav_sort: case_sensitive
+
+# Aux Links
+aux_links:
+  "View on GitHub":
+    - "https://github.com/LessUp/n-body"
+aux_links_new_tab: true
+
+# Footer
+footer_content: "Copyright &copy; 2024-2026 LessUp. Released under MIT License."
+back_to_top: true
+back_to_top_text: "Back to Top"
+
+# Last Modified Timestamp
+last_edit_timestamp: true
+last_edit_time_format: "%b %e %Y at %I:%M %p"
+
+# Collections
+collections:
+  docs:
+    permalink: "/:collection/:path"
+    output: true
+
+# Defaults
 defaults:
   - scope:
       path: ""
     values:
-      layout: default
+      layout: "default"
+      nav_order: 1
   - scope:
       path: "docs"
     values:
-      layout: default
+      layout: "default"
+      has_children: true
+      nav_order: 2
   - scope:
       path: "changelog"
     values:
-      layout: default
+      layout: "default"
+      nav_order: 3
 
-# Exclude irrelevant files from Jekyll build
+# Exclude from Build
 exclude:
   - .git
-  - .github
-  - .kiro
-  - .vscode
-  - include
-  - src
-  - shaders
-  - tests
-  - examples
-  - build
-  - cmake-build-*
-  - CMakeLists.txt
-  - .clang-format
-  - .editorconfig
-  - .gitignore
-  - .markdownlint.json
+  - node_modules
+  - vendor
+  - "*.gem"
   - Gemfile
   - Gemfile.lock
-  - vendor
-  - "*.cu"
-  - "*.cuh"
-  - "*.cpp"
-  - "*.hpp"
-  - "*.o"
-  - "*.so"
-  - "*.a"
-  - Doxyfile
-  - Doxyfile.in
-
-# Include specific files
-include:
-  - LICENSE
-  - CHANGELOG.md
-
-# Plugins configuration
-whitelist:
-  - jekyll-remote-theme
-  - jekyll-seo-tag
-
-# GitHub metadata
-github:
-  repository_name: n-body
-  owner_name: LessUp
-
-# Collections (optional for future use)
-collections:
-  docs:
-    output: true
-    permalink: /:collection/:path
-  changelog:
-    output: true
-    permalink: /:collection/:path

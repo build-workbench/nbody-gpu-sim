@@ -1,23 +1,53 @@
 ---
-layout: default
-title: N-Body Particle Simulation
-description: Million-particle GPU simulation with real-time visualization
-nav_order: 0
+layout: home
+title: Home
+nav_order: 1
+description: "N-Body Simulation - Million-Particle GPU Physics Engine with Real-Time Visualization"
+permalink: /
 ---
 
-# N-Body Particle Simulation
+<div markdown="1" class="hero-section">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![CUDA](https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white)
-![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white)
-![OpenGL](https://img.shields.io/badge/OpenGL-3.3+-5586A4?logo=opengl&logoColor=white)
+# N-Body Particle Simulation {: .fs-9 }
 
-A million-particle GPU simulation system with real-time visualization. Implements three force-calculation algorithms — Direct N², Barnes-Hut, and Spatial Hash — running entirely on the GPU via CUDA, with zero-copy CUDA-OpenGL interop rendering.
+High-performance GPU physics engine with real-time visualization{: .fs-6 .text-green-300 }
 
-## Performance
+</div>
+
+<div markdown="1" class="grid grid-3-col">
+
+<div markdown="1" class="card">
+
+### 🚀 Million Particles
+
+Simulate up to **1 million particles** in real-time on modern GPUs with CUDA parallel processing.
+
+</div>
+
+<div markdown="1" class="card">
+
+### ⚡ Three Algorithms
+
+Choose from **Direct N²**, **Barnes-Hut**, or **Spatial Hash** - hot-swap algorithms during simulation.
+
+</div>
+
+<div markdown="1" class="card">
+
+### 🎨 Zero-Copy Rendering
+
+CUDA-OpenGL interop eliminates CPU↔GPU data transfer for maximum performance.
+
+</div>
+
+</div>
+
+---
+
+## Performance Benchmarks
 
 | Particles | Direct N² | Barnes-Hut | Spatial Hash |
-|-----------|-----------|------------|--------------|
+|:---------:|:---------:|:----------:|:------------:|
 | 10 K      | 60+ FPS   | 60+ FPS    | 60+ FPS      |
 | 100 K     | ~10 FPS   | 60+ FPS    | 60+ FPS      |
 | **1 M**   | <1 FPS    | ~30 FPS    | **60+ FPS**  |
@@ -26,22 +56,43 @@ A million-particle GPU simulation system with real-time visualization. Implement
 
 ## Key Features
 
-- **Million-particle real-time simulation** — CUDA parallel physics with three switchable algorithms
-- **Zero-copy rendering** — CUDA-OpenGL interop eliminates CPU↔GPU data transfer
-- **Symplectic integrator** — Velocity Verlet ensures long-term energy conservation
-- **Interactive controls** — Camera orbit, zoom, reset, and force-algorithm hot-swap at runtime
+- **Symplectic Integration** — Velocity Verlet ensures long-term energy conservation
+- **Interactive Controls** — Camera orbit, zoom, and algorithm switching at runtime
+- **Multiple Distributions** — Uniform sphere, shell, cube, or Gaussian initial conditions
+- **Real-Time Visualization** — Point sprite rendering with customizable particle sizes
+- **Cross-Platform** — Linux, Windows, macOS with CUDA-capable NVIDIA GPU
 
-## Force Algorithms
+## Quick Start
 
-| Algorithm | Complexity | Best For |
-|-----------|------------|----------|
-| **Direct N²** | O(N²) | Small systems, exact results |
-| **Barnes-Hut** | O(N log N) | Large-scale gravitational simulation |
-| **Spatial Hash** | O(N) | Short-range forces (molecular dynamics) |
+```bash
+# Install dependencies (Ubuntu)
+sudo apt-get install -y cmake libglfw3-dev libglew-dev libglm-dev
 
-**Barnes-Hut** builds an octree each frame, approximating distant particle clusters as single mass points (controlled by θ parameter). **Spatial Hash** bins particles into a uniform grid so only neighboring cells interact — ideal for short-range potentials.
+# Build
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j$(nproc)
 
-## Architecture
+# Run simulation (default: 10K particles)
+./nbody_sim
+
+# Million-particle simulation
+./nbody_sim 1000000
+```
+
+## Simulation Controls
+
+| Key | Action |
+|:---:|:-------|
+| `1` / `2` / `3` | Switch Direct / Barnes-Hut / Spatial Hash |
+| `Space` | Pause / resume |
+| `R` | Reset simulation |
+| `C` | Reset camera |
+| `Esc` | Quit |
+| 🖱️ Drag | Rotate view |
+| 🔲 Scroll | Zoom |
+
+## Architecture Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -58,65 +109,19 @@ A million-particle GPU simulation system with real-time visualization. Implement
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
-
-```bash
-# Dependencies (Ubuntu)
-sudo apt-get install -y cmake libglfw3-dev libglew-dev libglm-dev
-
-# Build
-mkdir build && cd build
-cmake .. && make -j$(nproc)
-
-# Run (default 10K particles)
-./nbody_sim
-
-# Million-particle simulation
-./nbody_sim 1000000
-```
-
-## Controls
-
-| Key | Action |
-|-----|--------|
-| `1` / `2` / `3` | Switch Direct / Barnes-Hut / Spatial Hash |
-| `Space` | Pause / resume |
-| `R` | Reset simulation |
-| `C` | Reset camera |
-| `Esc` | Quit |
-| Mouse drag | Rotate view |
-| Scroll wheel | Zoom |
-
 ## Documentation
 
-### Getting Started
+{: .fs-6 }
 
-- **[Getting Started Guide](docs/GETTING_STARTED.html)** — Setup and usage instructions
-- **[Examples](examples/README.md)** — Code examples for common scenarios
+Explore our comprehensive documentation to get started:
 
-### Reference
-
-- **[API Reference](docs/API.html)** — Complete API documentation
-- **[Architecture](docs/ARCHITECTURE.html)** — System design and components
-- **[Algorithms](docs/ALGORITHMS.html)** — Algorithm explanations
-- **[Performance Guide](docs/PERFORMANCE.html)** — Optimization strategies
-
-## Tech Stack
-
-| Category | Technology |
-|----------|------------|
-| Language | CUDA C++17 |
-| Rendering | OpenGL 3.3+, GLFW, GLEW, GLM |
-| Build | CMake 3.18+ |
-| GPU | Compute Capability 7.5+ (Turing → Hopper) |
-| Testing | Google Test + RapidCheck |
-
-## References
-
-1. Barnes & Hut (1986). *A hierarchical O(N log N) force-calculation algorithm.* Nature 324.
-2. Nyland, Harris & Prins (2007). *Fast N-body simulation with CUDA.* GPU Gems 3.
-3. Green (2010). *Particle simulation using CUDA.* NVIDIA Whitepaper.
+- **[Getting Started](docs/getting-started/)** — Installation and first run
+- **[Architecture](docs/architecture/)** — System design and components
+- **[Algorithms](docs/algorithms/)** — Force calculation algorithms explained
+- **[Performance Guide](docs/performance/)** — Optimization strategies
+- **[API Reference](docs/api/)** — Complete API documentation
 
 ---
 
-[View on GitHub](https://github.com/LessUp/n-body)
+{: .fs-6 }
+**Ready to dive in?** [View Documentation](docs/){: .btn .btn-primary .mr-2 } [GitHub Repository](https://github.com/LessUp/n-body){: .btn }
