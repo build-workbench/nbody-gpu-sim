@@ -111,17 +111,14 @@ cmake --build . -j$(nproc)
 
 ## Documentation
 
-{: .fs-6 }
-
 Explore our comprehensive documentation to get started:
 
-- **[Getting Started](docs/getting-started/)** — Installation and first run
-- **[Architecture](docs/architecture/)** — System design and components
-- **[Algorithms](docs/algorithms/)** — Force calculation algorithms explained
-- **[Performance Guide](docs/performance/)** — Optimization strategies
-- **[API Reference](docs/api/)** — Complete API documentation
+- **[Getting Started](docs-content/setup/getting-started.md)** — Installation and first run
+- **[Architecture](docs-content/architecture/architecture.md)** — System design and components
+- **[Algorithms](docs-content/architecture/algorithms.md)** — Force calculation algorithms explained
+- **[Performance Guide](docs-content/architecture/performance.md)** — Optimization strategies
+- **[API Reference](docs-content/architecture/api.md)** — Complete API documentation
 
 ---
 
-{: .fs-6 }
-**Ready to dive in?** [View Documentation](docs/){: .btn .btn-primary .mr-2 } [GitHub Repository](https://github.com/LessUp/n-body){: .btn }
+**Ready to dive in?** [View Documentation](docs.md){: .btn .btn-primary .mr-2 } [GitHub Repository](https://github.com/LessUp/n-body){: .btn }
