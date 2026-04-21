@@ -357,7 +357,6 @@ case GLFW_KEY_4:
 - [ ] 为粒子数选择最佳算法
 - [ ] 调整 Barnes-Hut θ 参数
 - [ ] 设置合适的 Spatial Hash 单元格大小
-
 ---
 
 ## 📚 相关文档
@@ -365,4 +364,4 @@ case GLFW_KEY_4:
 - [API 参考](./api.md) - 详细 API 文档
 - [算法详解](./algorithms.md) - 算法说明
 - [性能指南](./performance.md) - 优化策略
-- [快速入门](./getting-started.md) - 安装和使用
+- [快速入门](../setup/getting-started.md) - 安装和使用

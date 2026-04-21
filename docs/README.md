@@ -22,9 +22,8 @@ Welcome to the N-Body Particle Simulation documentation.
 - [API Reference](./architecture/api.md) — Complete API documentation
 - [Performance Guide](./architecture/performance.md) — Optimization strategies and profiling
 
-### Specs (Single Source of Truth)
-- [Product Spec](../specs/product/n-body-simulation.md) — Requirements and acceptance criteria
-- [Architecture RFC](../specs/rfc/0001-core-architecture.md) — Technical design decisions
+### Tutorials
+- [Tutorials & Examples](./tutorials/README.md) — Code examples and common use cases
 
 ## 🌐 Available Languages
 

@@ -25,6 +25,10 @@ Understand the system design and components:
 - **[API Reference](docs-content/architecture/api.md)** — Complete API documentation
 - **[Performance Guide](docs-content/architecture/performance.md)** — Optimization strategies and profiling
 
+## 📖 Tutorials
+
+- **[Tutorials & Examples](docs-content/tutorials/README.md)** — Code examples and common use cases
+
 ## 🌐 Internationalization
 
 Documentation available in multiple languages:
@@ -34,7 +38,7 @@ Documentation available in multiple languages:
 
 ## 📖 Additional Resources
 
-- **[CHANGELOG](CHANGELOG.md)** — Version history and release notes
+- **[Changelog](changelog-content/en/index.md)** — Version history and release notes
 - **[GitHub Repository](https://github.com/LessUp/n-body)** — Source code and issue tracker
 - **[Contributing Guide](CONTRIBUTING.md)** — How to contribute to the project
 

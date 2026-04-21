@@ -20,10 +20,6 @@ N-Body 粒子模拟系统的中文文档。
 - [API 参考](./architecture/api.md) — 完整的 API 文档
 - [性能指南](./architecture/performance.md) — 优化策略和性能分析
 
-### 规范文档（唯一事实来源）
-- [产品规范](../../specs/product/n-body-simulation.md) — 需求和验收标准
-- [架构 RFC](../../specs/rfc/0001-core-architecture.md) — 技术设计决策
-
 ## 🌐 切换语言
 
 | 语言 | 文档链接 |
@@ -40,6 +36,15 @@ N-Body 粒子模拟系统的中文文档。
 | 实时渲染 | OpenGL 3.3+ |
 | 算法 | 3 种（直接 N²、Barnes-Hut、Spatial Hash） |
 | 积分器 | Velocity Verlet（辛积分器） |
+
+## 🔗 快速链接
+
+| 文档 | 说明 |
+|------|------|
+| [主 README](../../README.zh-CN.md) | 项目概览和快速开始 |
+| [更新日志](../../CHANGELOG.md) | 版本历史和变更记录 |
+| [示例代码](../../examples/) | 代码示例 |
+| [贡献指南](../../CONTRIBUTING.md) | 参与贡献 |
 
 ## 🔗 外部资源
 

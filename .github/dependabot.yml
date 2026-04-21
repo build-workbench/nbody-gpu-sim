@@ -19,15 +19,3 @@ updates:
       - "github-actions"
     reviewers:
       - "LessUp"
-
-  # CMake dependencies (manual tracking)
-  - package-ecosystem: "gitsubmodule"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-    open-pull-requests-limit: 3
-    commit-message:
-      prefix: "build"
-    labels:
-      - "dependencies"
-      - "submodules"

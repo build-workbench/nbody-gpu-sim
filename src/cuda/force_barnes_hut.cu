@@ -391,6 +391,38 @@ void BarnesHutTree::buildTreeGPU(const ParticleData* d_particles) {
       depth++;
     }
 
+    // Handle particles at max depth by inserting into current node
+    // This ensures no particles are lost even with extreme distributions
+    if (!h_nodes_[current].is_leaf && depth >= 20) {
+      // Force insert at max depth - treat non-leaf as leaf for this particle
+      // The center of mass computation will handle aggregation correctly
+      int new_idx = node_count_++;
+      Vec3& center = h_nodes_[current].center;
+      int octant = 0;
+      if (pos.x >= center.x)
+        octant |= 1;
+      if (pos.y >= center.y)
+        octant |= 2;
+      if (pos.z >= center.z)
+        octant |= 4;
+
+      // Create the child node even if it would normally be skipped
+      h_nodes_[current].children[octant] = new_idx;
+      float hs = h_nodes_[current].half_size * 0.5f;
+      OctreeNode& child = h_nodes_[new_idx];
+      child.center =
+          Vec3(center.x + ((octant & 1) ? hs : -hs), center.y + ((octant & 2) ? hs : -hs),
+               center.z + ((octant & 4) ? hs : -hs));
+      child.half_size = hs;
+      child.is_leaf = true;
+      child.particle_index = idx;
+      child.particle_count = 1;
+      child.total_mass = m;
+      child.center_of_mass = pos;
+      for (int j = 0; j < 8; j++)
+        child.children[j] = -1;
+    }
+
     max_depth_ = std::max(max_depth_, depth);
   }
 
