@@ -99,6 +99,11 @@ FileHeader Serializer::readHeader(std::istream& in) {
   FileHeader header;
   in.read(reinterpret_cast<char*>(&header), sizeof(header));
 
+  // Check if read succeeded
+  if (!in || in.gcount() != sizeof(header)) {
+    throw std::runtime_error("Failed to read file header: file may be truncated or corrupted");
+  }
+
   if (header.magic != NBODY_MAGIC) {
     throw std::runtime_error("Invalid file format: wrong magic number");
   }
@@ -117,6 +122,12 @@ void Serializer::writeFloatArray(std::ostream& out, const std::vector<float>& da
 std::vector<float> Serializer::readFloatArray(std::istream& in, size_t count) {
   std::vector<float> data(count);
   in.read(reinterpret_cast<char*>(data.data()), count * sizeof(float));
+
+  // Check if read succeeded
+  if (!in || in.gcount() != static_cast<std::streamsize>(count * sizeof(float))) {
+    throw std::runtime_error("Failed to read particle data: file may be truncated or corrupted");
+  }
+
   return data;
 }
 

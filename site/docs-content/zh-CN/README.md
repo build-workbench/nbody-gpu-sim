@@ -7,6 +7,7 @@ N-Body 粒子模拟系统的中文文档。
 | 目录 | 用途 |
 |------|------|
 | [`setup/`](./setup/) | 环境搭建、构建说明、故障排除 |
+| [`tutorials/`](./tutorials/) | 教程、使用指南和代码示例 |
 | [`architecture/`](./architecture/) | 系统设计、算法、API 参考、性能 |
 
 ## 🚀 快速导航
@@ -20,9 +21,8 @@ N-Body 粒子模拟系统的中文文档。
 - [API 参考](./architecture/api.md) — 完整的 API 文档
 - [性能指南](./architecture/performance.md) — 优化策略和性能分析
 
-### 规范文档（唯一事实来源）
-- [产品规范](../../specs/product/n-body-simulation.md) — 需求和验收标准
-- [架构 RFC](../../specs/rfc/0001-core-architecture.md) — 技术设计决策
+### 教程
+- [教程和示例](./tutorials/README.md) — 代码示例和常见场景
 
 ## 🌐 切换语言
 
@@ -43,7 +43,7 @@ N-Body 粒子模拟系统的中文文档。
 
 ## 🔗 外部资源
 
-- [主 README](../../README.md) | [中文版 README](../../README.zh-CN.md)
-- [更新日志](../../CHANGELOG.md)
-- [示例代码](../../examples/)
-- [贡献指南](../../CONTRIBUTING.md)
+- [主 README](https://github.com/LessUp/n-body#readme) | [中文版 README](https://github.com/LessUp/n-body#n-body-粒子仿真系统)
+- [更新日志](../changelog-content/zh-CN/index.md)
+- [示例代码](https://github.com/LessUp/n-body/tree/main/examples)
+- [贡献指南](https://github.com/LessUp/n-body/blob/main/CONTRIBUTING.md)

@@ -118,6 +118,12 @@ Explore our comprehensive documentation to get started:
 - **[Algorithms](docs-content/architecture/algorithms.md)** — Force calculation algorithms explained
 - **[Performance Guide](docs-content/architecture/performance.md)** — Optimization strategies
 - **[API Reference](docs-content/architecture/api.md)** — Complete API documentation
+- **[Changelog](changelog-content/en/index.md)** — Version history and release notes
+
+### 🌐 Languages
+
+- 🇺🇸 [English Documentation](docs-content/README.md)
+- 🇨🇳 [中文文档](docs-content/zh-CN/README.md)
 
 ---
 

@@ -244,10 +244,18 @@ void SpatialHashGrid::build(const ParticleData* d_particles) {
   grid_dims_.y = static_cast<int>(ceilf((bbox_max_.y - bbox_min_.y) / cell_size_)) + 1;
   grid_dims_.z = static_cast<int>(ceilf((bbox_max_.z - bbox_min_.z) / cell_size_)) + 1;
 
-  int new_total_cells = grid_dims_.x * grid_dims_.y * grid_dims_.z;
+  // Use int64_t to prevent integer overflow for large grids
+  int64_t new_total_cells =
+      static_cast<int64_t>(grid_dims_.x) * grid_dims_.y * grid_dims_.z;
+
+  // Sanity check: limit total cells to prevent memory exhaustion
+  if (new_total_cells > 100000000) {  // 100 million cells max
+    throw std::runtime_error("Spatial hash grid too large: reduce cell_size or bounding box");
+  }
+  int new_total_cells_int = static_cast<int>(new_total_cells);
 
   // Reallocate if needed
-  if (new_total_cells != total_cells_) {
+  if (new_total_cells_int != total_cells_) {
     if (d_cell_start_)
       cudaFree(d_cell_start_);
     if (d_cell_end_)
@@ -255,7 +263,7 @@ void SpatialHashGrid::build(const ParticleData* d_particles) {
     if (d_cell_counts_)
       cudaFree(d_cell_counts_);
 
-    total_cells_ = new_total_cells;
+    total_cells_ = new_total_cells_int;
     CUDA_CHECK(cudaMalloc(&d_cell_start_, total_cells_ * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_cell_end_, total_cells_ * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_cell_counts_, total_cells_ * sizeof(int)));

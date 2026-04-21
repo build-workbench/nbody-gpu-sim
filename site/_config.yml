@@ -6,6 +6,7 @@ description: >-
   Real-time CUDA-OpenGL interop rendering for up to 1 million particles.
 url: "https://lessup.github.io"
 baseurl: "/n-body"
+author: LessUp
 
 # Theme & Plugins
 remote_theme: pmarsceill/just-the-docs
@@ -13,6 +14,19 @@ plugins:
   - jekyll-remote-theme
   - jekyll-seo-tag
   - jekyll-sitemap
+
+# SEO & Social
+twitter:
+  card: summary_large_image
+  username: lessup_dev
+github_username: LessUp
+social:
+  name: LessUp
+  links:
+    - https://github.com/LessUp
+
+# Logo
+logo: "/assets/logo.png"
 
 # Repository
 repository: LessUp/n-body
@@ -59,6 +73,10 @@ footer_content: "Copyright &copy; 2024-2026 LessUp. Released under MIT License."
 back_to_top: true
 back_to_top_text: "Back to Top"
 
+# Google Analytics (optional - uncomment to enable)
+# ga_tracking: UA-XXXXXXXX-X
+# ga_tracking_anonymize_ip: true
+
 # Last Modified Timestamp
 last_edit_timestamp: true
 last_edit_time_format: "%b %e %Y at %I:%M %p"
@@ -69,6 +87,18 @@ collections:
     permalink: "/:collection/:path"
     output: true
 
+# Callouts
+callouts:
+  warning:
+    title: Warning
+    color: red
+  note:
+    title: Note
+    color: blue
+  tip:
+    title: Tip
+    color: green
+
 # Defaults
 defaults:
   - scope:
@@ -77,15 +107,16 @@ defaults:
       layout: "default"
       nav_order: 1
   - scope:
-      path: "docs"
+      path: "docs-content"
     values:
       layout: "default"
       has_children: true
       nav_order: 2
   - scope:
-      path: "changelog"
+      path: "changelog-content"
     values:
       layout: "default"
+      has_children: true
       nav_order: 3
 
 # Exclude from Build
@@ -96,3 +127,4 @@ exclude:
   - "*.gem"
   - Gemfile
   - Gemfile.lock
+  - DIRECTORY_RESTRUCTURE_SUMMARY.md
