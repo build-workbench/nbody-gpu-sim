@@ -245,8 +245,7 @@ void SpatialHashGrid::build(const ParticleData* d_particles) {
   grid_dims_.z = static_cast<int>(ceilf((bbox_max_.z - bbox_min_.z) / cell_size_)) + 1;
 
   // Use int64_t to prevent integer overflow for large grids
-  int64_t new_total_cells =
-      static_cast<int64_t>(grid_dims_.x) * grid_dims_.y * grid_dims_.z;
+  int64_t new_total_cells = static_cast<int64_t>(grid_dims_.x) * grid_dims_.y * grid_dims_.z;
 
   // Sanity check: limit total cells to prevent memory exhaustion
   if (new_total_cells > 100000000) {  // 100 million cells max
