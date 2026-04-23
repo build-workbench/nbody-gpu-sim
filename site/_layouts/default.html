@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'en' }}" data-theme="dark">
+<head>
+  {% include head.html %}
+</head>
+<body class="{% if page.layout == 'home' %}home{% endif %}">
+  {% include header.html %}
+  
+  <main class="main-content" id="main-content">
+    {{ content }}
+  </main>
+  
+  {% include footer.html %}
+  {% include scripts.html %}
+</body>
+</html>

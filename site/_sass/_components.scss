@@ -1,0 +1,215 @@
+// Components
+// =============================================================================
+
+// Buttons
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+
+  svg {
+    width: 1.125em;
+    height: 1.125em;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-md);
+
+  &:hover {
+    background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    transform: translateY(-1px);
+    color: white;
+  }
+}
+
+.btn-secondary {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+
+  &:hover {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-border-hover);
+    color: var(--color-text);
+  }
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-6);
+  font-size: 1rem;
+}
+
+// Section
+.section {
+  padding: var(--space-24) 0;
+
+  @media (max-width: $breakpoint-md) {
+    padding: var(--space-16) 0;
+  }
+}
+
+.section-header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto var(--space-12);
+}
+
+.section-title {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-4);
+
+  @media (max-width: $breakpoint-md) {
+    font-size: 2rem;
+  }
+}
+
+.section-description {
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+}
+
+// Badges
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--color-primary-600);
+  color: white;
+  border-radius: var(--radius-full);
+}
+
+// Cards
+.feature-card {
+  padding: var(--space-6);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
+  border-radius: var(--radius-lg);
+  color: white;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.feature-title {
+  font-size: 1.125rem;
+  margin-bottom: var(--space-2);
+}
+
+.feature-description {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+}
+
+// Code Block
+.code-example {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-elevated);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.code-filename {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  &.copied {
+    background-color: var(--algo-green);
+    color: white;
+    border-color: var(--algo-green);
+  }
+}
+
+// CTA Container
+.cta-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: center;
+  margin-top: var(--space-8);
+}
+
+// Gradient Text
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary-400), #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

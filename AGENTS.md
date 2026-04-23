@@ -1,174 +1,68 @@
-# AGENTS.md — AI Agent Workflow Instructions
+# AGENTS.md — n-body Repository Workflow
 
-## Project Philosophy: Spec-Driven Development (SDD)
+## Mission
 
-This project strictly follows the **Spec-Driven Development (SDD)** paradigm. All code implementations must use the `/specs` directory as the **Single Source of Truth**.
+Maintain and stabilize a CUDA/OpenGL N-body simulation project that is now in a final quality-focused cleanup phase. Optimize for clarity, correctness, and reduced maintenance burden rather than feature expansion.
 
----
+## Canonical Repository Surfaces
 
-## Directory Context
+| Path | Role |
+|------|------|
+| `openspec/specs/` | Active requirements and repository rules |
+| `openspec/changes/` | Active proposals, designs, delta specs, and task lists |
+| `openspec/changes/archive/` | Completed changes |
+| `specs-legacy/` | Historical-only material; never use as the active source of truth |
+| `docs/` | Repository-local reader and contributor documentation |
+| `site/` | GitHub Pages showcase surface |
+| `.github/` | CI, Pages, issue/PR templates, and Copilot instructions |
 
-| Path | Purpose |
-|------|---------|
-| `/specs/product/` | Product feature definitions, requirements, and acceptance criteria |
-| `/specs/rfc/` | Technical design documents and architecture decisions |
-| `/docs/` | User-facing documentation (setup guides, tutorials, architecture guides) |
-| `/docs/zh-CN/` | Chinese translations of user-facing documentation |
-| `/examples/` | Code examples for common use cases |
+## Capability Map
 
----
+- `simulation-core.md` — particle data, force calculation, Barnes-Hut
+- `force-computation.md` — spatial hash and integration
+- `visualization.md` — CUDA/OpenGL interop and rendering
+- `simulation-control.md` — runtime control, serialization, validation
+- `quality-attributes.md` — performance, reliability, maintainability, validation quality
+- `repository-governance.md` — OpenSpec workflow, docs policy, automation quality, GitHub presentation, closeout rules
 
-## AI Agent Workflow Instructions
+## Required Workflow
 
-When you (the AI agent) are asked to develop a new feature, modify an existing feature, or fix a bug, **you must strictly follow this workflow without skipping any steps**:
+1. Read the relevant files in `openspec/specs/` before changing code, docs, workflows, or project behavior.
+2. If the work changes behavior, workflow, docs policy, automation, or repository structure, create or update an OpenSpec change in `openspec/changes/` before implementation.
+3. Keep proposal, design, specs, and tasks aligned. Do not implement from vague intent alone.
+4. Implement in small coherent batches and mark task checkboxes immediately.
+5. Run the highest-value existing checks for the surfaces you changed.
+6. Use `/review` before finalizing major structural, workflow, or documentation refactors.
 
-### Step 1: Review Specs
+## Project-Specific Rules
 
-- Before writing any code, first read the relevant product spec and RFC in `/specs/`.
-- If the user's request conflicts with an existing spec, **stop immediately** and point out the conflict. Ask the user whether to update the spec first.
+- Treat `openspec/` as the only active specification system.
+- During the current cleanup effort, treat existing unstaged repository edits as the working baseline unless the user explicitly says otherwise.
+- Prefer deletion, consolidation, or redirection over keeping duplicate docs and site mirrors.
+- Do not add generic engineering or AI boilerplate; every file must be specific to this project.
+- Keep user-facing docs focused on the product and contributor workflow; do not announce archive/maintenance intent publicly.
+- Update required bilingual counterparts when touching core specs or primary onboarding docs.
 
-### Step 2: Spec-First Update
+## Tooling and Automation Rules
 
-- If this is a new feature, or if existing interfaces/architecture need to change, **you must first propose modifications to the relevant spec documents** (e.g., `/specs/product/`, `/specs/rfc/`).
-- Wait for user confirmation on the spec changes before proceeding to the code implementation phase.
+- Prefer the canonical CMake build path and scripts in `scripts/`.
+- Keep dependency versions and GitHub Actions versions pinned or explicitly bounded.
+- Prefer high-signal workflows over broad or ceremonial checks.
+- Default LSP baseline: `clangd` using `compile_commands.json` from the canonical build.
+- Keep MCP/plugin usage minimal; prefer native OpenSpec, GitHub, and editor capabilities first.
+- Prefer longer `autopilot` execution over routine `/fleet` usage unless the work is genuinely parallel-heavy.
 
-### Step 3: Implementation
+## Documentation Rules
 
-- When writing code, **strictly follow 100% of the definitions in the specs** (including variable naming, API paths, data types, status codes, etc.).
-- **Do not add features not defined in the specs** (No Gold-Plating).
-- Maintain consistency with existing code style and patterns.
+- `README.md` / `README.zh-CN.md` explain the project, quick start, and canonical links.
+- `CONTRIBUTING.md` defines the contributor workflow and quality gates.
+- `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` must agree on the same operating model.
+- `QWEN.md` is a compatibility stub only if retained; it must not become an independent source of instructions.
+- GitHub Pages should complement the repository and market the project; it should not mirror every markdown file.
 
-### Step 4: Test Against Spec
+## Working Style
 
-- Write unit and integration tests based on the acceptance criteria in `/specs/`.
-- Ensure test cases cover all boundary conditions described in the specs.
-- Run existing tests to ensure no regressions.
-
----
-
-## Code Generation Rules
-
-- Any externally exposed API changes **must** be accompanied by corresponding updates to specs.
-- If uncertain about technical details, consult `/specs/rfc/` for architectural conventions. **Do not invent design patterns on your own.**
-- When generating a Pull Request, reference the relevant spec files and describe how the implementation satisfies each requirement.
-
----
-
-## Spec Files
-
-| Spec | Path | Description |
-|------|------|-------------|
-| Product Requirements | `specs/product/n-body-simulation.md` | Functional requirements, acceptance criteria, traceability matrix |
-| Core Architecture | `specs/rfc/0001-core-architecture.md` | System design, components, algorithms, correctness properties |
-
----
-
-## Key Conventions
-
-### Technology Stack
-- **C++17** with **CUDA 11.0+**
-- **OpenGL 3.3+** for rendering
-- **CMake 3.18+** for build system
-
-### Design Patterns
-- **Strategy Pattern** for force calculators (runtime algorithm switching)
-- **Bridge Pattern** for CUDA-OpenGL interop
-- **Facade Pattern** for ParticleSystem API
-
-### Data Structures
-- **SoA (Structure of Arrays)** for GPU particle data (memory coalescing)
-- **Velocity Verlet** symplectic integration (energy conservation)
-
-### Code Style
-- Formatting via **clang-format** (see `.clang-format`)
-- Editor settings via `.editorconfig`
-- Commit messages follow **Conventional Commits**
-
----
-
-## Project Structure
-
-```
-n-body/
-├── site/                     # GitHub Pages site files
-│   ├── _config.yml           # Jekyll configuration
-│   ├── index.md              # Site entry point
-│   └── Gemfile               # Ruby dependencies
-├── specs/                    # Spec documents (Single Source of Truth)
-│   ├── product/              # Product requirements
-│   │   └── n-body-simulation.md
-│   └── rfc/                  # Technical design documents
-│       └── 0001-core-architecture.md
-├── docs/                     # User-facing documentation
-│   ├── setup/                # Setup guides
-│   ├── tutorials/            # Tutorials and usage examples
-│   ├── architecture/         # Architecture documentation
-│   ├── assets/               # Images and diagrams
-│   └── zh-CN/                # Chinese translations
-├── changelog/                # Version changelog
-│   ├── en/                   # English releases
-│   └── zh-CN/                # Chinese releases
-├── include/nbody/            # Public headers
-├── src/                      # Implementation
-│   ├── core/                 # Core simulation logic
-│   ├── cuda/                 # CUDA kernels
-│   ├── render/               # OpenGL rendering
-│   └── utils/                # Utility functions
-├── tests/                    # Test files
-├── examples/                 # Usage examples
-├── scripts/                  # Build and automation scripts
-├── .github/                  # GitHub workflows and templates
-├── .vscode/                  # VS Code settings
-├── AGENTS.md                 # This file - AI agent instructions
-├── CHANGELOG.md              # Changelog summary
-├── CMakeLists.txt            # Build system
-├── CONTRIBUTING.md           # Contribution guidelines
-├── Doxyfile                  # API documentation config
-├── LICENSE                   # License
-├── README.md                 # Project overview (English)
-└── README.zh-CN.md           # Project overview (Chinese)
-```
-
----
-
-## Testing
-
-```bash
-cd build
-./nbody_tests                           # Run all tests
-./nbody_tests --gtest_filter=ForceCalculation.*  # Specific suite
-```
-
----
-
-## Common Tasks
-
-### Adding a New Force Method
-
-1. Create class inheriting from `ForceCalculator`
-2. Implement `computeForces(ParticleData*)`
-3. Add enum value to `ForceMethod`
-4. Register in `createForceCalculator()` factory
-5. Update specs if interface changes
-
-### Adding a New Particle Distribution
-
-1. Create parameter struct
-2. Implement initialization kernel
-3. Add enum value to `InitDistribution`
-4. Update product spec with new requirement
-
-### Performance Optimization
-
-1. Profile with Nsight Compute/Systems
-2. Identify bottlenecks (memory bandwidth, compute, etc.)
-3. Consult architecture RFC for optimization guidelines
-4. Ensure changes don't violate correctness properties
-
----
-
-## References
-
-- [CONTRIBUTING.md](CONTRIBUTING.md) — Contribution guidelines
-- [Product Spec](specs/product/n-body-simulation.md) — Requirements and acceptance criteria
-- [Architecture RFC](specs/rfc/0001-core-architecture.md) — Technical design decisions
+- Be surgical but complete.
+- Reuse existing patterns where they are sound; rewrite when the current structure is the problem.
+- Fix closely related drift or bugs you uncover while touching a surface.
+- Leave the repository easier to understand than you found it.

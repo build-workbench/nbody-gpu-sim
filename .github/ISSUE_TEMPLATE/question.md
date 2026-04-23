@@ -23,9 +23,9 @@ Provide context for your question:
 Did you check the following?
 
 - [ ] README.md
-- [ ] docs/ARCHITECTURE.md
-- [ ] docs/GETTING_STARTED.md
-- [ ] docs/API.md (if available)
+- [ ] docs/architecture/architecture.md
+- [ ] docs/setup/getting-started.md
+- [ ] docs/architecture/api.md
 - [ ] Existing issues
 
 ## Code Snippet (if applicable)

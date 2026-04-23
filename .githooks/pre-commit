@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+mapfile -t staged_files < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ "${#staged_files[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+cpp_like_files=()
+for file in "${staged_files[@]}"; do
+  case "$file" in
+    *.cpp|*.hpp|*.cu|*.cuh)
+      cpp_like_files+=("$file")
+      ;;
+  esac
+done
+
+if [ "${#cpp_like_files[@]}" -gt 0 ]; then
+  if ! command -v clang-format >/dev/null 2>&1; then
+    echo "clang-format is required for staged C++/CUDA files."
+    echo "Install clang-format or unstage the affected files."
+    exit 1
+  fi
+
+  echo "Checking staged C++/CUDA formatting..."
+  for file in "${cpp_like_files[@]}"; do
+    clang-format --dry-run --Werror "$file"
+  done
+fi
+
+echo "pre-commit checks passed."
