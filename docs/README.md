@@ -1,54 +1,25 @@
 # Documentation
 
-Welcome to the N-Body Particle Simulation documentation.
+This directory contains the canonical repository-local documentation for n-body.
 
-## 📚 Documentation Structure
+## Start Here
 
-| Directory | Purpose |
-|-----------|---------|
-| [`setup/`](./setup/) | Environment setup, build instructions, troubleshooting |
-| [`tutorials/`](./tutorials/) | User guides, tutorials, and usage examples |
-| [`architecture/`](./architecture/) | System design, algorithms, API reference, performance |
-| [`assets/`](./assets/) | Images, diagrams, and other static resources |
+- [Getting Started](setup/getting-started.md)
+- [Architecture](architecture/architecture.md)
+- [Algorithms](architecture/algorithms.md)
+- [API Reference](architecture/api.md)
+- [Performance](architecture/performance.md)
 
-## 🚀 Quick Navigation
+## Principles
 
-### Getting Started
-- [Setup Guide](./setup/getting-started.md) — Installation, build, and first run
+- `docs/` is the canonical repository-local documentation surface.
+- `site/` is the GitHub Pages showcase surface and should complement `docs/`, not mirror it.
+- Core onboarding and specification surfaces must stay aligned with their bilingual counterparts when required.
+- Historical cleanup notes belong in OpenSpec changes or git history, not as long-lived user docs.
 
-### Architecture & Design
-- [Architecture Overview](./architecture/architecture.md) — System design, components, and data flow
-- [Algorithms](./architecture/algorithms.md) — Force calculation algorithms explained
-- [API Reference](./architecture/api.md) — Complete API documentation
-- [Performance Guide](./architecture/performance.md) — Optimization strategies and profiling
+## Related Surfaces
 
-### Tutorials
-- [Tutorials & Examples](./tutorials/README.md) — Code examples and common use cases
-
-## 🌐 Available Languages
-
-| Language | Documentation |
-|----------|---------------|
-| 🇺🇸 English | [This directory](./) |
-| 🇨🇳 简体中文 | [中文文档](./zh-CN/) |
-
-## 🎯 What is N-Body Simulation?
-
-N-Body simulation is a computational method that models the motion of particles under the influence of physical forces, typically gravity. This project provides a high-performance GPU-accelerated implementation supporting millions of particles with real-time visualization.
-
-## 📊 System Capabilities
-
-| Feature | Capability |
-|---------|------------|
-| Max Particles | 10+ million |
-| GPU Acceleration | CUDA 11.0+ |
-| Real-time Rendering | OpenGL 3.3+ |
-| Algorithms | 3 (Direct N², Barnes-Hut, Spatial Hash) |
-| Integration | Velocity Verlet (Symplectic) |
-
-## 🔗 External Resources
-
-- [Main README](../README.md)
-- [Changelog](../CHANGELOG.md)
-- [Examples](../examples/)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [README](../README.md)
+- [Contributing](../CONTRIBUTING.md)
+- [OpenSpec Specs](../openspec/specs/)
+- [GitHub Pages Site](../site/)

@@ -1,0 +1,286 @@
+<!-- Theme Toggle Script -->
+<script>
+(function() {
+  'use strict';
+  
+  // Theme Management
+  const THEME_KEY = 'nbody-theme';
+  const themeToggle = document.getElementById('theme-toggle');
+  const html = document.documentElement;
+  
+  // Get saved theme or use system preference
+  function getTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  
+  // Apply theme
+  function setTheme(theme) {
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+  }
+  
+  // Toggle theme
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const current = html.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+    });
+  }
+  
+  // Initialize theme
+  setTheme(getTheme());
+  
+  // Mobile Menu Toggle
+  const menuToggle = document.getElementById('menu-toggle');
+  const mainNav = document.getElementById('main-nav');
+  
+  if (menuToggle && mainNav) {
+    menuToggle.addEventListener('click', () => {
+      menuToggle.classList.toggle('active');
+      mainNav.classList.toggle('active');
+    });
+  }
+  
+  // Sidebar Toggle (Docs)
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebar = document.getElementById('docs-sidebar');
+  
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+  }
+  
+  // Header Scroll Effect
+  const header = document.getElementById('site-header');
+  let lastScroll = 0;
+  
+  window.addEventListener('scroll', () => {
+    const currentScroll = window.pageYOffset;
+    
+    if (header) {
+      if (currentScroll > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    }
+    
+    lastScroll = currentScroll;
+  });
+  
+  // Smooth Scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (targetId === '#') return;
+      
+      const target = document.querySelector(targetId);
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+  });
+  
+  // Copy Code Functionality
+  const copyButtons = document.querySelectorAll('.copy-btn');
+  
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.getAttribute('data-clipboard-target');
+      const target = document.querySelector(targetId);
+      
+      if (target) {
+        try {
+          await navigator.clipboard.writeText(target.textContent);
+          btn.classList.add('copied');
+          btn.innerHTML = `
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Copied!
+          `;
+          
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = `
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy
+            `;
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+      }
+    });
+  });
+  
+  // Table of Contents Generation (Docs)
+  const toc = document.getElementById('docs-toc');
+  const article = document.querySelector('.docs-article');
+  
+  if (toc && article) {
+    const headings = article.querySelectorAll('h2[id], h3[id]');
+    const tocList = toc.querySelector('.toc-list');
+    
+    if (tocList && headings.length > 0) {
+      headings.forEach(heading => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#' + heading.id;
+        a.textContent = heading.textContent;
+        a.className = 'toc-link';
+        
+        if (heading.tagName === 'H3') {
+          li.className = 'toc-item toc-sub';
+        } else {
+          li.className = 'toc-item';
+        }
+        
+        li.appendChild(a);
+        tocList.appendChild(li);
+        
+        // Smooth scroll
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          heading.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+      
+      // Highlight active section
+      const observerOptions = {
+        rootMargin: '-100px 0px -60% 0px',
+        threshold: 0
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            toc.querySelectorAll('.toc-link').forEach(link => {
+              link.classList.remove('active');
+              if (link.getAttribute('href') === '#' + id) {
+                link.classList.add('active');
+              }
+            });
+          }
+        });
+      }, observerOptions);
+      
+      headings.forEach(heading => observer.observe(heading));
+    } else {
+      toc.style.display = 'none';
+    }
+  }
+  
+  // Hero Canvas Particle Animation
+  const canvas = document.getElementById('hero-canvas');
+  
+  if (canvas && !window.matchMedia('(pointer: coarse)').matches) {
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let particles = [];
+    const particleCount = 60;
+    const connectionDistance = 100;
+    const maxConnections = 3;
+    
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    
+    function createParticle() {
+      return {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        radius: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.5 + 0.2
+      };
+    }
+    
+    function init() {
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(createParticle());
+      }
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      const particleColor = isDark ? '255, 255, 255' : '0, 0, 0';
+      
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        let connections = 0;
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < connectionDistance && connections < maxConnections) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(${particleColor}, ${0.1 * (1 - distance / connectionDistance)})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+            connections++;
+          }
+        }
+      }
+      
+      // Draw particles
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${particleColor}, ${p.alpha})`;
+        ctx.fill();
+        
+        // Update position
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        // Wrap around
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+      });
+      
+      animationId = requestAnimationFrame(draw);
+    }
+    
+    window.addEventListener('resize', () => {
+      resize();
+      init();
+    });
+    
+    // Visibility check
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationId);
+      } else {
+        draw();
+      }
+    });
+    
+    resize();
+    init();
+    draw();
+  }
+})();
+</script>

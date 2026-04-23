@@ -1,0 +1,56 @@
+# OpenSpec Configuration
+
+project:
+  name: n-body-simulation
+  version: 2.0.0
+  description: High-performance GPU-accelerated N-body particle simulation
+
+structure:
+  specs_dir: openspec/specs
+  changes_dir: openspec/changes
+  archive_dir: openspec/changes/archive
+
+conventions:
+  language: en-US
+  bilingual: true
+  bilingual_suffix: zh-CN
+  requirement_keywords:
+    - SHALL
+    - MUST
+    - SHOULD
+
+templates:
+  proposal: .claude/skills/openspec-propose/SKILL.md
+  apply: .claude/skills/openspec-apply-change/SKILL.md
+  archive: .claude/skills/openspec-archive-change/SKILL.md
+
+capabilities:
+  - name: simulation-core
+    description: Particle data, force calculation, Barnes-Hut algorithm
+    spec: openspec/specs/simulation-core.md
+
+  - name: force-computation
+    description: Spatial hash, Velocity Verlet integration
+    spec: openspec/specs/force-computation.md
+
+  - name: visualization
+    description: CUDA-GL interop, real-time rendering
+    spec: openspec/specs/visualization.md
+
+  - name: simulation-control
+    description: Pause/resume, serialization, error handling
+    spec: openspec/specs/simulation-control.md
+
+  - name: quality-attributes
+    description: Performance, reliability, usability requirements
+    spec: openspec/specs/quality-attributes.md
+
+  - name: repository-governance
+    description: OpenSpec workflow, documentation, automation, GitHub presentation, and closeout rules
+    spec: openspec/specs/repository-governance.md
+
+archived_changes:
+  - name: 0001-core-architecture
+    description: Foundational system architecture
+    archived_date: 2026-03-13
+    path: openspec/changes/archive/0001-core-architecture

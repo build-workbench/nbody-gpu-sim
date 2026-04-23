@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  
+  <!-- Particles -->
+  <circle cx="200" cy="150" r="4" fill="#6366f1" opacity="0.8"/>
+  <circle cx="400" cy="200" r="6" fill="#6366f1" opacity="0.6"/>
+  <circle cx="800" cy="180" r="5" fill="#6366f1" opacity="0.7"/>
+  <circle cx="1000" cy="120" r="4" fill="#6366f1" opacity="0.5"/>
+  <circle cx="300" cy="400" r="5" fill="#6366f1" opacity="0.6"/>
+  <circle cx="700" cy="450" r="4" fill="#6366f1" opacity="0.8"/>
+  <circle cx="950" cy="380" r="6" fill="#6366f1" opacity="0.4"/>
+  <circle cx="150" cy="500" r="4" fill="#6366f1" opacity="0.5"/>
+  
+  <!-- Connections -->
+  <line x1="200" y1="150" x2="400" y2="200" stroke="#6366f1" stroke-width="1" opacity="0.2"/>
+  <line x1="400" y1="200" x2="800" y2="180" stroke="#6366f1" stroke-width="1" opacity="0.15"/>
+  <line x1="800" y1="180" x2="1000" y2="120" stroke="#6366f1" stroke-width="1" opacity="0.1"/>
+  <line x1="300" y1="400" x2="700" y2="450" stroke="#6366f1" stroke-width="1" opacity="0.2"/>
+  <line x1="700" y1="450" x2="950" y2="380" stroke="#6366f1" stroke-width="1" opacity="0.15"/>
+  
+  <!-- Title -->
+  <text x="600" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#f1f5f9">N-Body Simulation</text>
+  <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#94a3b8">Million-Particle GPU Physics Engine</text>
+  
+  <!-- Features -->
+  <text x="600" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#64748b">CUDA • OpenGL • Real-time Visualization</text>
+</svg>

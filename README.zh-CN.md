@@ -1,233 +1,129 @@
-# N-Body 粒子仿真系统
+# n-body
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/CUDA-11.0+-76B900?logo=nvidia&logoColor=white" alt="CUDA">
-  <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=c%2B%2B&logoColor=white" alt="C++">
-  <img src="https://img.shields.io/badge/OpenGL-3.3+-5586A4?logo=opengl&logoColor=white" alt="OpenGL">
-  <img src="https://img.shields.io/badge/CMake-3.18+-064F8C?logo=cmake&logoColor=white" alt="CMake">
-</p>
+基于 GPU 的高性能 N 体模拟项目，提供实时 CUDA/OpenGL 可视化。
 
-<p align="center">
-  <b>高性能 GPU 加速 N-Body 仿真系统，支持实时可视化</b>
-</p>
+[GitHub Pages](https://lessup.github.io/n-body/) · [快速开始](docs/setup/getting-started.md) · [示例](examples/) · [OpenSpec](openspec/specs/)
 
-<p align="center">
-  <a href="https://github.com/LessUp/n-body/releases"><img src="https://img.shields.io/github/v/release/LessUp/n-body?include_prereleases" alt="Latest Release"></a>
-  <a href="https://github.com/LessUp/n-body/issues"><img src="https://img.shields.io/github/issues/LessUp/n-body" alt="Issues"></a>
-  <img src="https://img.shields.io/github/stars/LessUp/n-body?style=social" alt="Stars">
-</p>
+## 项目价值
 
-<p align="center">
-  <a href="README.md">English</a> | 简体中文
-</p>
+这个项目把三种力计算策略统一到同一套仿真/运行时 API 中：
 
----
+- **Direct N²**：用于精确的成对参考结果
+- **Barnes-Hut**：用于可扩展的长程近似
+- **Spatial Hash**：用于高效的短程作用力计算
+- **Velocity Verlet**：用于稳定的辛积分
+- **CUDA/OpenGL 互操作**：用于零拷贝可视化
 
-## ✨ 特性
+项目的目标不只是“把粒子渲染得更快”，而是让算法对比、仿真结构和工程质量都保持可理解、可测试、可维护。
 
-- 🚀 **高性能 GPU 计算** — CUDA 并行计算，百万粒子实时仿真
-- 🔬 **多种力算法** — Direct N²、Barnes-Hut O(N log N)、Spatial Hash O(N)
-- 🎨 **实时可视化** — CUDA-OpenGL 互操作，无 CPU-GPU 数据传输
-- ⚛️ **能量守恒** — Velocity Verlet 辛积分器
-- 🎮 **交互控制** — 相机旋转/缩放、运行时算法切换
-- 🧪 **全面测试** — Google Test + RapidCheck 基于属性的测试
-- 📦 **易于构建** — 基于 CMake，跨平台
+## 技术亮点
 
----
+| 领域 | 提供内容 |
+|------|----------|
+| 计算 | CUDA 力计算与积分内核 |
+| 算法 | Direct N²、Barnes-Hut、Spatial Hash |
+| 渲染 | OpenGL 渲染器与 CUDA/OpenGL 互操作 |
+| 架构 | `ParticleSystem` 外观 + `ForceCalculator` 策略 |
+| 质量 | GoogleTest + RapidCheck、OpenSpec 驱动流程 |
 
-## 🚀 快速开始
-
-### 前置要求
-
-| 组件 | 最低配置 | 推荐配置 |
-|------|----------|----------|
-| GPU | NVIDIA CC 7.0+ | NVIDIA CC 8.0+ |
-| CUDA | 11.0 | 12.0+ |
-| CMake | 3.18 | 3.25+ |
-| OpenGL | 3.3 | 4.5+ |
-
-### 安装 (Ubuntu)
-
-```bash
-# 安装依赖
-sudo apt-get install -y cmake libglfw3-dev libglew-dev libglm-dev
-
-# 克隆仓库
-git clone https://github.com/LessUp/n-body.git
-cd n-body
-
-# 构建
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -j$(nproc)
-
-# 运行
-./nbody_sim 100000    # 10万粒子
-./nbody_sim 1000000   # 100万粒子！
-```
-
-### Windows
-
-Windows 构建说明请参见 [快速入门指南](docs/zh-CN/getting-started.md)。
-
----
-
-## 📊 性能
-
-NVIDIA RTX 3080 测试：
-
-| 粒子数 | Direct N² | Barnes-Hut | Spatial Hash |
-|--------|-----------|------------|--------------|
-| 1万 | 60 FPS | 120+ FPS | 120+ FPS |
-| 10万 | ~10 FPS | 60+ FPS | 90+ FPS |
-| 100万 | — | 25+ FPS | 60+ FPS |
-
-**内存使用**: 每粒子 ~52 字节 + 算法开销
-
----
-
-## 🎮 控制
-
-| 按键 | 功能 |
-|------|------|
-| `Space` | ⏯️ 暂停/继续 |
-| `R` | 🔄 重置仿真 |
-| `1/2/3` | 🔀 切换算法 |
-| `C` | 📷 重置相机 |
-| `Esc` | ❌ 退出 |
-| `鼠标拖动` | 🔄 旋转视角 |
-| `滚轮` | 🔍 缩放 |
-
----
-
-## 📚 文档
-
-### 入门指南
-
-- [快速入门指南](docs/zh-CN/getting-started.md) — 完整的安装和使用
-- [示例](examples/) — 常见用例的代码示例
-
-### 参考
-
-- [架构概览](docs/zh-CN/architecture.md) — 系统设计和组件
-- [算法详解](docs/zh-CN/algorithms.md) — 算法说明
-- [API 参考](docs/zh-CN/api.md) — 完整的 API 文档
-- [性能指南](docs/zh-CN/performance.md) — 优化策略
-
-### 🌐 语言版本
-
-| 语言 | 文档 |
-|------|------|
-| 🇺🇸 English | [Docs](./docs/en/) |
-| 🇨🇳 简体中文 | [文档](./docs/zh-CN/) |
-
----
-
-## 🏗️ 架构
-
-```
-┌─────────────────────────────────────────┐
-│  应用层 (GLFW, 输入, 状态)              │
-├─────────────────────────────────────────┤
-│  仿真层 (ParticleSystem, 力计算)        │
-├─────────────────────────────────────────┤
-│  渲染层 (OpenGL, 相机)                  │
-├─────────────────────────────────────────┤
-│  GPU 内存 (CUDA, 共享 VBO)              │
-└─────────────────────────────────────────┘
-```
-
-详情参见 [架构文档](docs/zh-CN/architecture.md)。
-
----
-
-## 🧪 测试
-
-```bash
-cd build
-./nbody_tests
-
-# 运行特定测试套件
-./nbody_tests --gtest_filter=ForceCalculation.*
-```
-
----
-
-## 💡 使用示例
-
-```cpp
-#include "nbody/particle_system.hpp"
-
-using namespace nbody;
-
-int main() {
-    SimulationConfig config;
-    config.particle_count = 100000;
-    config.force_method = ForceMethod::BARNES_HUT;
-    config.dt = 0.001f;
-    
-    ParticleSystem system;
-    system.initialize(config);
-    
-    for (int i = 0; i < 1000; ++i) {
-        system.update(system.getTimeStep());
-    }
-    
-    system.saveState("checkpoint.nbody");
-    return 0;
-}
-```
-
----
-
-## 🔬 算法
+## 算法选型
 
 | 算法 | 复杂度 | 适用场景 |
 |------|--------|----------|
-| Direct N² | O(N²) | 小规模系统、精度测试 |
-| Barnes-Hut | O(N log N) | 大规模引力仿真 |
-| Spatial Hash | O(N) | 短程力仿真 |
+| Direct N² | O(N²) | 小规模系统、基准校验 |
+| Barnes-Hut | O(N log N) | 大规模引力系统 |
+| Spatial Hash | O(N) | 短程作用力工作负载 |
 
-详情参见 [算法文档](docs/zh-CN/algorithms.md)。
+## 快速开始
 
----
+### 环境要求
 
-## 🤝 贡献
+- 支持 CUDA 的 NVIDIA GPU
+- CUDA Toolkit 11+
+- CMake 3.18+
+- OpenGL、GLFW、GLEW、GLM
 
-贡献指南请参见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+### 构建
 
----
-
-## 📄 许可证
-
-MIT 许可证 — 详见 [LICENSE](LICENSE)。
-
----
-
-## 🌟 Star 历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=LessUp/n-body&type=Date)](https://star-history.com/#LessUp/n-body&Date)
-
----
-
-## 📖 引用
-
-如果在研究中使用本项目，请引用：
-
-```bibtex
-@software{nbody_simulation,
-  title = {N-Body Particle Simulation System},
-  author = {N-Body Simulation Team},
-  url = {https://github.com/LessUp/n-body},
-  year = {2025}
-}
+```bash
+./scripts/build.sh
 ```
 
----
+手动构建路径：
 
-## 相关项目
+```bash
+mkdir -p build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j"$(nproc)"
+```
 
-- [Barnes & Hut (1986)](https://doi.org/10.1038/324446a0) — 原始 Barnes-Hut 算法
-- [GPU Gems 3](https://developer.nvidia.com/gpugems/gpugems3/part-v-physics-simulation/chapter-31-fast-n-body-simulation-cuda) — CUDA N-Body 仿真
-- [NVIDIA CUDA Samples](https://github.com/NVIDIA/cuda-samples) — 官方 CUDA 示例
+### 运行
+
+```bash
+./build/nbody_sim
+./build/nbody_sim 100000
+```
+
+### 测试
+
+```bash
+./scripts/test.sh
+```
+
+## 项目结构
+
+| 路径 | 作用 |
+|------|------|
+| `include/nbody/` | 公共头文件 |
+| `src/` | 核心逻辑、CUDA、渲染、工具代码 |
+| `tests/` | 单元测试与属性测试 |
+| `examples/` | 示例程序与使用模式 |
+| `docs/` | 仓库内规范文档入口 |
+| `site/` | GitHub Pages 展示站点 |
+| `openspec/specs/` | 当前活跃规格 |
+| `openspec/changes/` | 活跃提案与实施任务 |
+
+## 规范文档入口
+
+- [快速开始](docs/setup/getting-started.md)
+- [架构说明](docs/architecture/architecture.md)
+- [算法说明](docs/architecture/algorithms.md)
+- [API 参考](docs/architecture/api.md)
+- [性能说明](docs/architecture/performance.md)
+- [贡献指南](CONTRIBUTING.md)
+
+## OpenSpec 工作流
+
+本仓库以 OpenSpec 为治理核心。
+
+1. 先阅读 [`openspec/specs/`](openspec/specs/) 中的相关规格。
+2. 任何会改变行为或工作流的修改，都应先在 [`openspec/changes/`](openspec/changes/) 中创建或更新变更。
+3. 实现必须来自变更任务清单。
+4. 重大结构或治理性重构在完成前应使用 `/review` 做显式审查。
+
+当前能力规格：
+
+- [simulation-core](openspec/specs/simulation-core.md)
+- [force-computation](openspec/specs/force-computation.md)
+- [visualization](openspec/specs/visualization.md)
+- [simulation-control](openspec/specs/simulation-control.md)
+- [quality-attributes](openspec/specs/quality-attributes.md)
+- [repository-governance](openspec/specs/repository-governance.md)
+
+## 示例
+
+- [`example_basic.cpp`](examples/example_basic.cpp)
+- [`example_force_methods.cpp`](examples/example_force_methods.cpp)
+- [`example_custom_distribution.cpp`](examples/example_custom_distribution.cpp)
+- [`example_energy_conservation.cpp`](examples/example_energy_conservation.cpp)
+
+## 开发提示
+
+- 规范构建路径：CMake + `scripts/build.sh`
+- 规范 LSP 基线：`clangd` + `compile_commands.json`
+- 规范 AI 协作入口：[AGENTS.md](AGENTS.md)、[CLAUDE.md](CLAUDE.md)、[.github/copilot-instructions.md](.github/copilot-instructions.md)
+
+## 许可证
+
+[MIT](LICENSE)
