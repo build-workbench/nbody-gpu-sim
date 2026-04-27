@@ -5,13 +5,13 @@ option(NBODY_ENABLE_CUDA "Enable CUDA support" ON)
 
 if(NBODY_ENABLE_CUDA)
     project(NBodySimulation
-        VERSION 2.0.0
+        VERSION 2.1.0
         DESCRIPTION "GPU-accelerated N-Body particle simulation with real-time visualization"
         LANGUAGES CXX CUDA
     )
 else()
     project(NBodySimulation
-        VERSION 2.0.0
+        VERSION 2.1.0
         DESCRIPTION "N-Body particle simulation with real-time visualization"
         LANGUAGES CXX
     )
@@ -33,7 +33,8 @@ if(NBODY_ENABLE_CUDA)
         if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
             set(CMAKE_CUDA_ARCHITECTURES native)
         else()
-            set(CMAKE_CUDA_ARCHITECTURES 75 80 86 89)
+            # Support RTX 20/30/40 series: 75 (Turing), 80 (Ampere), 86 (Ampere), 89 (Ada), 90 (Hopper)
+            set(CMAKE_CUDA_ARCHITECTURES 75 80 86 89 90)
         endif()
     endif()
 else()
@@ -43,8 +44,8 @@ endif()
 # ── 第三方依赖 ───────────────────────────────────────────────────
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glm REQUIRED)
+find_package(GLEW 2.1 REQUIRED)
+find_package(glm 0.9.9 REQUIRED)
 
 # ── 构建选项 ─────────────────────────────────────────────────────
 option(NBODY_BUILD_TESTS "Build unit tests" ON)
@@ -61,7 +62,7 @@ if(NBODY_BUILD_TESTS)
     FetchContent_Declare(
         rapidcheck
         GIT_REPOSITORY https://github.com/emil-e/rapidcheck.git
-        GIT_TAG b96a4e626ef4c7348dcd16c500353c2f997a9f3f
+        GIT_TAG v1.1.0
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest rapidcheck)
@@ -81,7 +82,6 @@ endif()
 
 set(CPP_SOURCES
     src/core/particle_system.cpp
-    src/core/force_calculator.cpp
     src/core/barnes_hut_tree.cpp
     src/core/spatial_hash_grid.cpp
     src/render/renderer.cpp

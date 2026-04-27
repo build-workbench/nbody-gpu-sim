@@ -8,7 +8,10 @@ namespace nbody {
 void checkGLError(const char* operation) {
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
-    throw OpenGLException(operation, err);
+    // Clear the entire error queue
+    GLenum first_error = err;
+    while (glGetError() != GL_NO_ERROR) {}
+    throw OpenGLException(operation, first_error);
   }
 }
 

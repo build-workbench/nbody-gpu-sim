@@ -11,7 +11,7 @@ Maintain and stabilize a CUDA/OpenGL N-body simulation project that is now in a 
 | `openspec/specs/` | Active requirements and repository rules |
 | `openspec/changes/` | Active proposals, designs, delta specs, and task lists |
 | `openspec/changes/archive/` | Completed changes |
-| `specs-legacy/` | Historical-only material; never use as the active source of truth |
+| `specs-archived/` | Historical-only material; never use as the active source of truth |
 | `docs/` | Repository-local reader and contributor documentation |
 | `site/` | GitHub Pages showcase surface |
 | `.github/` | CI, Pages, issue/PR templates, and Copilot instructions |
@@ -37,6 +37,7 @@ Maintain and stabilize a CUDA/OpenGL N-body simulation project that is now in a 
 ## Project-Specific Rules
 
 - Treat `openspec/` as the only active specification system.
+- Historical specs in `specs-archived/` are for reference only.
 - During the current cleanup effort, treat existing unstaged repository edits as the working baseline unless the user explicitly says otherwise.
 - Prefer deletion, consolidation, or redirection over keeping duplicate docs and site mirrors.
 - Do not add generic engineering or AI boilerplate; every file must be specific to this project.

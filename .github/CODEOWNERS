@@ -19,7 +19,7 @@
 /CMakeLists.txt @LessUp
 
 # Documentation
-/docs/ @Lessup
+/docs/ @LessUp
 /README.md @LessUp
 /README.zh-CN.md @LessUp
 /CHANGELOG.md @LessUp

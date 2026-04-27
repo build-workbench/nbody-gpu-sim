@@ -141,10 +141,11 @@ __global__ void barnesHutForceKernel(const OctreeNode* nodes, const float* pos_x
   float ax = 0.0f, ay = 0.0f, az = 0.0f;
 
   // Stack for tree traversal
-  // Stack size of 128 supports trees up to depth ~43 (log8(128*8) ≈ 43)
-  // For typical particle distributions, this is sufficient.
-  // If stack overflow occurs, some nodes will be skipped (graceful degradation).
-  constexpr int STACK_SIZE = 128;
+  // Stack size of 256 supports trees up to depth ~85 (log8(256*8) ≈ 85)
+  // Increased from 128 to handle highly non-uniform particle distributions.
+  // For extremely deep trees, if stack overflow occurs, some nodes will be
+  // skipped (graceful degradation) - see the overflow check below.
+  constexpr int STACK_SIZE = 256;
   int stack[STACK_SIZE];
   int stack_ptr = 0;
   stack[stack_ptr++] = 0;  // Start with root
