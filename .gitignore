@@ -68,3 +68,6 @@ __pycache__/
 .Python
 venv/
 .venv/
+
+# AI tools
+.omc/

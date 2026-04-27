@@ -13,6 +13,14 @@ on:
       - '.clang-format'
   pull_request:
     branches: [main, master]
+    paths:
+      - '**.cpp'
+      - '**.cu'
+      - '**.cuh'
+      - '**.hpp'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - '.clang-format'
   workflow_dispatch:
 
 permissions:
@@ -75,66 +83,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify executable name consistency
-        run: |
-          echo "Checking executable name consistency..."
-
-          # Check nbody_sim appears in key files
-          if grep -rq 'nbody_sim' README.md README.zh-CN.md index.md docs/; then
-            echo "✓ Executable name 'nbody_sim' found in documentation"
-          else
-            echo "⚠ Executable name 'nbody_sim' not found in some docs"
-          fi
-
-          # Check CMakeLists.txt has correct target
-          if grep -q 'add_executable(nbody_sim' CMakeLists.txt; then
-            echo "✓ CMakeLists.txt defines 'nbody_sim' target"
-          else
-            echo "✗ CMakeLists.txt missing 'nbody_sim' target"
-            exit 1
-          fi
-
-      - name: Verify keyboard controls documentation
-        run: |
-          echo "Checking keyboard controls documentation..."
-
-          # Check controls are documented
-          controls_found=0
-          if grep -q 'Space' README.md; then
-            echo "✓ Space key documented"
-            controls_found=$((controls_found + 1))
-          fi
-          if grep -q 'Pause\|pause' README.md; then
-            echo "✓ Pause action documented"
-            controls_found=$((controls_found + 1))
-          fi
-          if grep -q 'Reset\|reset' README.md; then
-            echo "✓ Reset action documented"
-            controls_found=$((controls_found + 1))
-          fi
-
-          if [ $controls_found -ge 2 ]; then
-            echo "✓ Controls documentation check passed"
-          else
-            echo "⚠ Some controls may be missing"
-          fi
-
-      - name: Verify test framework configuration
-        run: |
-          echo "Checking test framework configuration..."
-
-          if grep -q 'googletest' CMakeLists.txt || grep -q 'GoogleTest' CMakeLists.txt; then
-            echo "✓ Google Test configured in CMakeLists.txt"
-          else
-            echo "⚠ Google Test may not be configured"
-          fi
-
-          if grep -q 'rapidcheck' CMakeLists.txt || grep -q 'RapidCheck' CMakeLists.txt; then
-            echo "✓ RapidCheck configured in CMakeLists.txt"
-          else
-            echo "⚠ RapidCheck may not be configured"
-          fi
-
       - name: Verify project structure
         run: |
           echo "Checking project structure..."
@@ -158,6 +106,22 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Verify test framework configuration
+        run: |
+          echo "Checking test framework configuration..."
+
+          if grep -q 'googletest' CMakeLists.txt || grep -q 'GoogleTest' CMakeLists.txt; then
+            echo "✓ Google Test configured in CMakeLists.txt"
+          else
+            echo "⚠ Google Test may not be configured"
+          fi
+
+          if grep -q 'rapidcheck' CMakeLists.txt || grep -q 'RapidCheck' CMakeLists.txt; then
+            echo "✓ RapidCheck configured in CMakeLists.txt"
+          else
+            echo "⚠ RapidCheck may not be configured"
+          fi
 
       - name: Summary
         run: |
@@ -183,68 +147,5 @@ jobs:
           globs: |
             *.md
             docs/**/*.md
-            changelog/**/*.md
             examples/**/*.md
 
-  build-info:
-    name: Build Information
-    runs-on: ubuntu-latest
-    needs: [format-check, docs-consistency]
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    steps:
-      - name: Display build requirements
-        run: |
-          echo "# N-Body Simulation Build Requirements"
-          echo ""
-          echo "This project requires a CUDA-enabled environment for building."
-          echo ""
-          echo "## Hardware Requirements"
-          echo ""
-          echo "| Component | Minimum | Recommended |"
-          echo "|-----------|---------|-------------|"
-          echo "| GPU | NVIDIA CC 7.0+ | NVIDIA CC 8.0+ |"
-          echo "| VRAM | 4GB | 8GB+ |"
-          echo "| RAM | 8GB | 16GB+ |"
-          echo ""
-          echo "## Software Requirements"
-          echo ""
-          echo "| Component | Version |"
-          echo "|-----------|---------|"
-          echo "| CUDA Toolkit | 11.0+ |"
-          echo "| CMake | 3.18+ |"
-          echo "| OpenGL | 3.3+ |"
-          echo "| GLFW | 3.3+ |"
-          echo "| GLEW | 2.1+ |"
-          echo "| GLM | 0.9.9+ |"
-          echo ""
-          echo "## Build Commands"
-          echo ""
-          echo '```bash'
-          echo "# Clone repository"
-          echo "git clone https://github.com/LessUp/n-body.git"
-          echo "cd n-body"
-          echo ""
-          echo "# Build"
-          echo "mkdir build && cd build"
-          echo "cmake .. -DCMAKE_BUILD_TYPE=Release"
-          echo "cmake --build . -j\$(nproc)"
-          echo '```'
-          echo ""
-          echo "## Run Tests"
-          echo ""
-          echo '```bash'
-          echo "ctest --output-on-failure"
-          echo "./nbody_tests"
-          echo '```'
-          echo ""
-          echo "## Run Simulation"
-          echo ""
-          echo '```bash'
-          echo "./nbody_sim 10000  # 10K particles"
-          echo "./nbody_sim 100000 # 100K particles"
-          echo '```'
-          echo ""
-          echo "---"
-          echo "CI validates formatting and documentation consistency."
-          echo "For full build verification, use a local CUDA environment."

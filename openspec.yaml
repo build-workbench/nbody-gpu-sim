@@ -2,7 +2,7 @@
 
 project:
   name: n-body-simulation
-  version: 2.0.0
+  version: 2.1.0
   description: High-performance GPU-accelerated N-body particle simulation
 
 structure:
@@ -54,3 +54,7 @@ archived_changes:
     description: Foundational system architecture
     archived_date: 2026-03-13
     path: openspec/changes/archive/0001-core-architecture
+  - name: 2026-04-23-project-closeout-stabilization
+    description: Project closeout and stabilization
+    archived_date: 2026-04-23
+    path: openspec/changes/archive/2026-04-23-project-closeout-stabilization

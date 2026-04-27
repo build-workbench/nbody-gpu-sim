@@ -4,7 +4,7 @@
 
 - Treat `openspec/specs/` as the only active specification source.
 - Use or update an OpenSpec change before implementing behavior, workflow, documentation-policy, automation, or structure changes.
-- Ignore `specs-legacy/` for active development.
+- Ignore `specs-archived/` for active development.
 - Prefer deleting or consolidating duplicate docs instead of keeping mirrored content.
 
 ## Current Project Priorities

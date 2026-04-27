@@ -11,7 +11,7 @@
 | `openspec/specs/` | 当前活跃需求与仓库规则 |
 | `openspec/changes/` | 活跃提案、设计、变更规格与任务清单 |
 | `openspec/changes/archive/` | 已完成变更 |
-| `specs-legacy/` | 仅供历史参考，绝不能作为当前事实来源 |
+| `specs-archived/` | 仅供历史参考，绝不能作为当前事实来源 |
 | `docs/` | 仓库内读者与贡献者文档 |
 | `site/` | GitHub Pages 展示表面 |
 | `.github/` | CI、Pages、Issue/PR 模板与 Copilot 指令 |
@@ -36,7 +36,7 @@
 
 ## 项目特定规则
 
-- 将 `openspec/` 视为唯一活跃规格系统。
+- 将 `openspec/` 视为唯一活跃规格系统。历史规格在 `specs-archived/` 中仅供参考。
 - 在当前清理阶段，把仓库里现有未提交改动视为工作基线，除非用户明确要求其他处理方式。
 - 遇到重复文档或重复站点内容时，优先删除、合并或重定向，而不是继续并存。
 - 不要添加通用化、无项目针对性的工程文档或 AI 提示模板。

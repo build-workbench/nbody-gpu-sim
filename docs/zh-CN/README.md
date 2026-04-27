@@ -37,15 +37,6 @@ N-Body 粒子模拟系统的中文文档。
 | 算法 | 3 种（直接 N²、Barnes-Hut、Spatial Hash） |
 | 积分器 | Velocity Verlet（辛积分器） |
 
-## 🔗 快速链接
-
-| 文档 | 说明 |
-|------|------|
-| [主 README](../../README.zh-CN.md) | 项目概览和快速开始 |
-| [更新日志](../../CHANGELOG.md) | 版本历史和变更记录 |
-| [示例代码](../../examples/) | 代码示例 |
-| [贡献指南](../../CONTRIBUTING.md) | 参与贡献 |
-
 ## 🔗 外部资源
 
 - [主 README](../../README.md) | [中文版 README](../../README.zh-CN.md)
