@@ -24,6 +24,30 @@ N-Body 粒子仿真系统的优化策略和性能调优。
 
 ## 基准测试
 
+### 支持的 Benchmark 工作流
+
+仓库现在提供了专用的 `nbody_benchmarks` 可执行程序，以及用于非交互式 headless 运行的 `./scripts/benchmark.sh`。
+
+```bash
+./scripts/build.sh
+./scripts/benchmark.sh
+./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
+```
+
+启用 `-DNBODY_ENABLE_PROFILING=ON` 后，benchmark 输出还会包含命名阶段 timing，例如 `serialization.save`、`serialization.load`、`simulation.update` 以及在对应能力编译进来时的力计算阶段。
+
+### 结构化输出
+
+Benchmark 结果会输出机器可读 JSON，包含：
+
+- benchmark 名称
+- force method
+- particle count
+- iteration 次数
+- 数值指标
+- 数值调优参数
+- 可选的阶段 timing 样本
+
 ### 性能目标
 
 | 粒子数 | 目标 FPS | 推荐算法 |

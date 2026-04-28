@@ -151,6 +151,12 @@ if(NBODY_ENABLE_RENDERING)
     )
 endif()
 
+if(NBODY_ENABLE_RENDERING AND NBODY_ENABLE_UI)
+    list(APPEND CPP_SOURCES
+        src/render/ui_panel.cpp
+    )
+endif()
+
 if(NBODY_ENABLE_RENDERING AND NBODY_ENABLE_CUDA)
     list(APPEND CPP_SOURCES
         src/render/cuda_gl_interop.cpp

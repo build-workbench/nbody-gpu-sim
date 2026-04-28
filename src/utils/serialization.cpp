@@ -1,5 +1,6 @@
 #include "nbody/serialization.hpp"
 #include "nbody/error_handling.hpp"
+#include "nbody/performance_observability.hpp"
 #include <cstring>
 #include <fstream>
 
@@ -22,6 +23,7 @@ SimulationState Serializer::load(const std::string& filename) {
 }
 
 void Serializer::save(std::ostream& out, const SimulationState& state) {
+  NBODY_PROFILE_SCOPE("serialization.save");
   writeHeader(out, state);
 
   // Write particle data
@@ -35,6 +37,7 @@ void Serializer::save(std::ostream& out, const SimulationState& state) {
 }
 
 SimulationState Serializer::load(std::istream& in) {
+  NBODY_PROFILE_SCOPE("serialization.load");
   FileHeader header = readHeader(in);
 
   // Validate particle count to prevent memory exhaustion

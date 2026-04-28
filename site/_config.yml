@@ -28,6 +28,10 @@ lang: "en"
 encoding: "utf-8"
 timezone: "UTC"
 
+# Multi-language Settings
+languages: ["en", "zh-CN"]
+default_lang: "en"
+
 # Build Settings
 # --------------
 markdown: kramdown
@@ -129,6 +133,40 @@ navigation:
       url: "/docs/performance/"
       icon: "zap"
 
+# Chinese Navigation (中文导航)
+navigation_zh:
+  main:
+    - title: "首页"
+      url: "/zh-CN/"
+      icon: "home"
+    - title: "文档"
+      url: "/zh-CN/docs/"
+      icon: "book-open"
+    - title: "更新日志"
+      url: "/zh-CN/changelog/"
+      icon: "history"
+    - title: "GitHub"
+      url: "https://github.com/LessUp/n-body"
+      icon: "github"
+      external: true
+
+  docs:
+    - title: "快速入门"
+      url: "/zh-CN/docs/getting-started/"
+      icon: "rocket"
+    - title: "架构概览"
+      url: "/zh-CN/docs/architecture/"
+      icon: "layers"
+    - title: "算法详解"
+      url: "/zh-CN/docs/algorithms/"
+      icon: "cpu"
+    - title: "API 参考"
+      url: "/zh-CN/docs/api/"
+      icon: "code"
+    - title: "性能指南"
+      url: "/zh-CN/docs/performance/"
+      icon: "zap"
+
 # Features for Homepage
 features:
   - title: "GPU Accelerated"
@@ -150,6 +188,27 @@ features:
     description: "Linux, Windows, macOS with NVIDIA GPU"
     icon: "monitor"
 
+# Features for Homepage (Chinese)
+features_zh:
+  - title: "GPU 加速"
+    description: "CUDA 并行处理，每个粒子一个线程"
+    icon: "zap"
+  - title: "三种算法"
+    description: "直接 N²、Barnes-Hut O(N log N)、空间哈希 O(N)"
+    icon: "git-branch"
+  - title: "零拷贝渲染"
+    description: "CUDA-OpenGL 互操作，消除 CPU↔GPU 数据传输"
+    icon: "refresh-cw"
+  - title: "能量守恒"
+    description: "Velocity Verlet 辛积分器"
+    icon: "activity"
+  - title: "实时 60+ FPS"
+    description: "流畅可视化，支持高达 100 万粒子"
+    icon: "eye"
+  - title: "跨平台"
+    description: "支持 Linux、Windows、macOS（需 NVIDIA GPU）"
+    icon: "monitor"
+
 # Algorithm Cards
 algorithms:
   - name: "Direct N²"
@@ -166,6 +225,24 @@ algorithms:
     complexity: "O(N)"
     description: "Grid-based short-range forces"
     best_for: "Molecular dynamics"
+    color: "purple"
+
+# Algorithm Cards (Chinese)
+algorithms_zh:
+  - name: "直接 N²"
+    complexity: "O(N²)"
+    description: "精确的成对力计算"
+    best_for: "≤1万 粒子"
+    color: "blue"
+  - name: "Barnes-Hut"
+    complexity: "O(N log N)"
+    description: "层次八叉树近似"
+    best_for: "大型引力系统"
+    color: "green"
+  - name: "空间哈希"
+    complexity: "O(N)"
+    description: "基于网格的短程力"
+    best_for: "分子动力学"
     color: "purple"
 
 # Performance Data (for charts)

@@ -1,5 +1,7 @@
 #include "nbody/particle_system.hpp"
+#include "nbody/cuda_gl_interop.hpp"
 #include "nbody/error_handling.hpp"
+#include "nbody/performance_observability.hpp"
 #include "nbody/serialization.hpp"
 #include <cmath>
 #include <cstring>
@@ -114,6 +116,7 @@ void ParticleSystem::update(float dt) {
   if (!is_initialized_ || is_paused_)
     return;
 
+  NBODY_PROFILE_SCOPE("simulation.update");
   integrator_->integrate(&d_particles_, force_calculator_.get(), dt);
   simulation_time_ += dt;
 
@@ -315,18 +318,27 @@ float ParticleSystem::computeTotalEnergy() const {
 }
 
 void ParticleSystem::initializeInterop() {
+#if defined(NBODY_WITH_RENDERING) && NBODY_WITH_RENDERING && defined(NBODY_WITH_CUDA) && \
+    NBODY_WITH_CUDA
   if (!interop_) {
     interop_ = std::make_unique<CudaGLInterop>();
   }
   interop_->initialize(particle_count_);
   updateInteropBuffer();
+#else
+  throw std::runtime_error("CUDA-OpenGL interop is unavailable in this build");
+#endif
 }
 
 void ParticleSystem::updateInteropBuffer() {
+#if defined(NBODY_WITH_RENDERING) && NBODY_WITH_RENDERING && defined(NBODY_WITH_CUDA) && \
+    NBODY_WITH_CUDA
   if (interop_ && is_initialized_) {
+    NBODY_PROFILE_SCOPE("interop.update");
     interop_->updatePositions(&d_particles_);
     interop_->updateVelocities(&d_particles_);
   }
+#endif
 }
 
 }  // namespace nbody

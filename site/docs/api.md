@@ -1,4 +1,6 @@
 ---
+layout: docs
+lang: en
 title: API Reference
 description: Complete API documentation for N-Body Particle Simulation.
 ---
@@ -8,6 +10,8 @@ description: Complete API documentation for N-Body Particle Simulation.
 Complete API documentation for N-Body Particle Simulation.
 
 ---
+layout: docs
+lang: en
 
 ## Quick Example
 
@@ -36,6 +40,8 @@ int main() {
 ```
 
 ---
+layout: docs
+lang: en
 
 ## SimulationConfig
 
@@ -95,6 +101,8 @@ enum class InitDistribution {
 ```
 
 ---
+layout: docs
+lang: en
 
 ## ParticleSystem
 
@@ -146,6 +154,8 @@ bool loadState(const std::string& filename);
 Save/load simulation state to/from file.
 
 ---
+layout: docs
+lang: en
 
 ## ForceCalculator
 
@@ -168,6 +178,8 @@ public:
 ```
 
 ---
+layout: docs
+lang: en
 
 ## Error Handling
 

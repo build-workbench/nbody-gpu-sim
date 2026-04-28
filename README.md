@@ -42,6 +42,7 @@ The goal is not just to render particles quickly, but to keep the simulation arc
 - CUDA Toolkit 11+
 - CMake 3.18+
 - OpenGL, GLFW, GLEW, GLM
+- For a headless core-only validation path, disable CUDA/rendering; headless observability tests and benchmarks still work.
 
 ### Build
 
@@ -49,12 +50,29 @@ The goal is not just to render particles quickly, but to keep the simulation arc
 ./scripts/build.sh
 ```
 
+When CUDA is unavailable, the script now falls back to a headless core-only build and still produces the core library, headless observability tests, and the benchmark executable. Rendered app surfaces and examples remain disabled.
+
 Manual path:
 
 ```bash
 mkdir -p build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j"$(nproc)"
+```
+
+Manual headless core-only path:
+
+```bash
+mkdir -p build/headless
+cd build/headless
+cmake ../.. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DNBODY_ENABLE_RENDERING=OFF \
+  -DNBODY_ENABLE_CUDA=OFF \
+  -DNBODY_BUILD_TESTS=ON \
+  -DNBODY_BUILD_BENCHMARKS=ON \
+  -DNBODY_BUILD_EXAMPLES=OFF
 cmake --build . -j"$(nproc)"
 ```
 
@@ -70,6 +88,17 @@ cmake --build . -j"$(nproc)"
 ```bash
 ./scripts/test.sh
 ```
+
+`./scripts/test.sh` only applies to CUDA-enabled builds that actually produced `nbody_tests`. Headless core-only builds now explain why the suite is unavailable instead of pointing at a missing binary.
+
+### Benchmark
+
+```bash
+./scripts/benchmark.sh
+./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
+```
+
+Set `NBODY_BENCHMARK_PARTICLES`, `NBODY_BENCHMARK_ITERATIONS`, or enable profiling with `-DNBODY_ENABLE_PROFILING=ON` to tune benchmark runs and phase timing output.
 
 ## Project Layout
 

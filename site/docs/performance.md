@@ -1,4 +1,6 @@
 ---
+layout: docs
+lang: en
 title: Performance
 description: Optimization strategies and profiling for N-Body Simulation.
 ---
@@ -8,6 +10,8 @@ description: Optimization strategies and profiling for N-Body Simulation.
 Optimization strategies and profiling for N-Body Simulation.
 
 ---
+layout: docs
+lang: en
 
 ## Performance Metrics
 
@@ -30,6 +34,8 @@ Optimization strategies and profiling for N-Body Simulation.
 | **1M particles total** | **~52-84 MB** |
 
 ---
+layout: docs
+lang: en
 
 ## Optimization Strategies
 
@@ -88,6 +94,8 @@ cmake .. -DCMAKE_CUDA_ARCHITECTURES=61
 ```
 
 ---
+layout: docs
+lang: en
 
 ## Profiling
 
@@ -113,6 +121,8 @@ config.enable_profiling = true;
 ```
 
 ---
+layout: docs
+lang: en
 
 ## Best Practices
 

@@ -2,6 +2,7 @@
 
 #include "nbody/simulation_state.hpp"
 #include "nbody/types.hpp"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <vector>

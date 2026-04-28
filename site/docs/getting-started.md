@@ -1,6 +1,8 @@
 ---
 title: Getting Started
 description: Complete guide for setting up, building, and running the N-Body Particle Simulation System.
+layout: docs
+lang: en
 ---
 
 # Getting Started

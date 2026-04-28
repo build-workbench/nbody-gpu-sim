@@ -1,0 +1,82 @@
+<!-- Performance Benchmarks Section - Chinese Version -->
+<section class="section benchmarks-section" id="benchmarks">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">性能基准</h2>
+      <p class="section-description">在 {{ site.performance.hardware }} 上的实时 FPS</p>
+    </div>
+
+    <div class="benchmarks-container">
+      <div class="benchmark-table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>粒子数</th>
+              <th>直接 N²</th>
+              <th>Barnes-Hut</th>
+              <th>空间哈希</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in site.performance.data %}
+            <tr>
+              <td class="particle-count">{{ row.particles }}</td>
+              <td class="fps-cell {% if row.direct >= 60 %}fps-good{% elsif row.direct >= 25 %}fps-ok{% else %}fps-bad{% endif %}">
+                {{ row.direct }} FPS
+              </td>
+              <td class="fps-cell {% if row.barnes_hut >= 60 %}fps-good{% elsif row.barnes_hut >= 25 %}fps-ok{% else %}fps-bad{% endif %}">
+                {{ row.barnes_hut }} FPS
+              </td>
+              <td class="fps-cell {% if row.spatial_hash >= 60 %}fps-good{% elsif row.spatial_hash >= 25 %}fps-ok{% else %}fps-bad{% endif %}">
+                {{ row.spatial_hash }} FPS
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Visual Chart -->
+      <div class="benchmark-chart">
+        <h4>FPS 对比（越高越好）</h4>
+        <div class="chart-container">
+          {% for row in site.performance.data %}
+          <div class="chart-row">
+            <span class="chart-label">{{ row.particles }}</span>
+            <div class="chart-bars">
+              <div class="bar-group">
+                <div class="bar bar-direct" style="--value: {{ row.direct }}; --max: 120;"></div>
+                <div class="bar bar-bh" style="--value: {{ row.barnes_hut }}; --max: 120;"></div>
+                <div class="bar bar-sh" style="--value: {{ row.spatial_hash }}; --max: 120;"></div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <span class="legend-color direct"></span>
+            <span>直接 N²</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color bh"></span>
+            <span>Barnes-Hut</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color sh"></span>
+            <span>空间哈希</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="benchmark-note">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <p>内存占用: 每粒子约 52 字节 + 算法开销。大规模模拟推荐: Barnes-Hut 适用于引力系统，空间哈希适用于短程力。</p>
+    </div>
+  </div>
+</section>

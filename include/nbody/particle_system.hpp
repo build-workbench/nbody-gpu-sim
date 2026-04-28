@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "nbody/cuda_gl_interop.hpp"
 #include "nbody/force_calculator.hpp"
 #include "nbody/integrator.hpp"
 #include "nbody/particle_data.hpp"

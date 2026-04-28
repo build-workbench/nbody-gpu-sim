@@ -1,6 +1,7 @@
 #include "nbody/barnes_hut_tree.hpp"
 #include "nbody/error_handling.hpp"
 #include "nbody/force_calculator.hpp"
+#include "nbody/performance_observability.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cuda_runtime.h>
@@ -279,6 +280,7 @@ void BarnesHutTree::sortParticlesByMorton() {
 }
 
 void BarnesHutTree::build(const ParticleData* d_particles) {
+  NBODY_PROFILE_SCOPE("barnes_hut.build");
   computeBoundingBox(d_particles);
   computeMortonCodes(d_particles);
   sortParticlesByMorton();
@@ -287,6 +289,7 @@ void BarnesHutTree::build(const ParticleData* d_particles) {
 }
 
 void BarnesHutTree::buildTreeGPU(const ParticleData* d_particles) {
+  NBODY_PROFILE_SCOPE("barnes_hut.tree_build_host");
   // =========================================================================
   // PERFORMANCE NOTE: CPU Tree Building
   // =========================================================================

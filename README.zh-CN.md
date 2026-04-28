@@ -42,6 +42,7 @@
 - CUDA Toolkit 11+
 - CMake 3.18+
 - OpenGL、GLFW、GLEW、GLM
+- 如果只需要验证 headless core-only 构建路径，可以关闭 CUDA / rendering；headless 可观测性测试和 benchmark 仍然可用。
 
 ### 构建
 
@@ -49,12 +50,29 @@
 ./scripts/build.sh
 ```
 
+如果本机没有 CUDA，脚本现在会自动退化到 headless core-only 构建，同时生成核心库、headless 可观测性测试和 benchmark 可执行程序；渲染程序与示例仍会被关闭。
+
 手动构建路径：
 
 ```bash
 mkdir -p build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j"$(nproc)"
+```
+
+手动 headless core-only 路径：
+
+```bash
+mkdir -p build/headless
+cd build/headless
+cmake ../.. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DNBODY_ENABLE_RENDERING=OFF \
+  -DNBODY_ENABLE_CUDA=OFF \
+  -DNBODY_BUILD_TESTS=ON \
+  -DNBODY_BUILD_BENCHMARKS=ON \
+  -DNBODY_BUILD_EXAMPLES=OFF
 cmake --build . -j"$(nproc)"
 ```
 
@@ -70,6 +88,17 @@ cmake --build . -j"$(nproc)"
 ```bash
 ./scripts/test.sh
 ```
+
+`./scripts/test.sh` 现在会通过 `ctest` 运行已发现的测试。在 headless core-only 构建里，它会执行可用的 observability 测试；在 CUDA 构建里，则会同时覆盖完整仿真测试。
+
+### Benchmark
+
+```bash
+./scripts/benchmark.sh
+./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
+```
+
+可通过 `NBODY_BENCHMARK_PARTICLES`、`NBODY_BENCHMARK_ITERATIONS` 环境变量调整 benchmark 规模；如需阶段级 timing，可在配置时启用 `-DNBODY_ENABLE_PROFILING=ON`。
 
 ## 项目结构
 

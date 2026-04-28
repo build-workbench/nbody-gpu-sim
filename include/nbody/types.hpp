@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cmath>
 
 #if defined(__CUDACC__)
 #include <cuda_runtime.h>

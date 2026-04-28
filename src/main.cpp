@@ -1,6 +1,13 @@
+#include "nbody/app_cli.hpp"
 #include "nbody/error_handling.hpp"
 #include "nbody/particle_system.hpp"
+#include "nbody/performance_observability.hpp"
 #include "nbody/renderer.hpp"
+
+#if NBODY_WITH_UI
+#include "nbody/ui_panel.hpp"
+#endif
+
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <iomanip>
@@ -34,16 +41,21 @@ public:
 
   int run(int argc, char* argv[]) {
     try {
-      // Parse command line arguments
-      particle_count_ = 10000;
-      if (argc > 1) {
-        particle_count_ = std::stoul(argv[1]);
-        validateParticleCountRange(particle_count_);
+      options_ = parseAppCliOptions(argc, const_cast<const char* const*>(argv));
+      if (options_.show_help) {
+        std::cout << appCliUsage();
+        return 0;
+      }
+
+      particle_count_ = options_.particle_count;
+
+      if (options_.benchmark_mode) {
+        return runBenchmarkMode();
       }
 
       std::cout << "N-Body Particle Simulation\n";
       std::cout << "Particle count: " << particle_count_ << "\n";
-      printUsage();
+      printControls();
 
       initialize();
       mainLoop();
@@ -70,11 +82,16 @@ private:
   Renderer renderer_;
   size_t particle_count_ = 10000;
   bool paused_ = false;
+  AppCliOptions options_;
   float mouse_sensitivity_ = DEFAULT_MOUSE_SENSITIVITY;
   float zoom_sensitivity_ = DEFAULT_ZOOM_SENSITIVITY;
   double last_mouse_x_ = 0;
   double last_mouse_y_ = 0;
   bool mouse_pressed_ = false;
+
+#if NBODY_WITH_UI
+  UIPanel ui_panel_;
+#endif
 
   void initialize() {
     // Initialize GLFW
@@ -112,16 +129,23 @@ private:
 
     // Initialize particle system
     SimulationConfig config;
-    config.particle_count = particle_count_;
+    config.particle_count = options_.particle_count;
     config.init_distribution = InitDistribution::SPHERICAL;
-    config.force_method = ForceMethod::DIRECT_N2;
-    config.dt = 0.001f;
-    config.G = 1.0f;
-    config.softening = 0.1f;
+    config.force_method = options_.force_method;
+    config.dt = options_.dt;
+    config.G = options_.G;
+    config.softening = options_.softening;
+    config.barnes_hut_theta = options_.barnes_hut_theta;
+    config.spatial_hash_cell_size = options_.spatial_hash_cell_size;
+    config.spatial_hash_cutoff = options_.spatial_hash_cutoff;
 
     particle_system_.initialize(config);
     particle_system_.initializeInterop();
     paused_ = false;
+
+#if NBODY_WITH_UI
+    ui_panel_.initialize();
+#endif
   }
 
   void mainLoop() {
@@ -148,6 +172,10 @@ private:
         glfwSetWindowTitle(window_, title.str().c_str());
       }
 
+#if NBODY_WITH_UI
+      ui_panel_.newFrame();
+#endif
+
       // Update simulation
       if (!paused_) {
         particle_system_.update(particle_system_.getTimeStep());
@@ -158,12 +186,40 @@ private:
                        particle_system_.getParticleCount(),
                        particle_system_.getInterop()->getVelocityVBO());
 
+#if NBODY_WITH_UI
+      // Update UI state
+      ui_panel_.setFps(fps);
+      ui_panel_.setFrameTime(delta_time * 1000.0f);
+      ui_panel_.setParticleCount(particle_system_.getParticleCount());
+      ui_panel_.setSimulationTime(particle_system_.getSimulationTime());
+      ui_panel_.setForceMethod(particle_system_.getForceMethod());
+      ui_panel_.setPaused(paused_);
+
+      // Render UI panel
+      ui_panel_.render();
+      ui_panel_.endFrame();
+
+      // Handle UI callbacks
+      if (ui_panel_.shouldReset()) {
+        particle_system_.reset();
+        ui_panel_.clearResetFlag();
+      }
+      if (ui_panel_.methodChanged()) {
+        particle_system_.setForceMethod(ui_panel_.getSelectedMethod());
+        ui_panel_.clearMethodChangedFlag();
+      }
+      paused_ = ui_panel_.isPaused();
+#endif
+
       glfwSwapBuffers(window_);
       glfwPollEvents();
     }
   }
 
   void cleanup() {
+#if NBODY_WITH_UI
+    ui_panel_.cleanup();
+#endif
     renderer_.cleanup();
     glfwDestroyWindow(window_);
     glfwTerminate();
@@ -235,6 +291,11 @@ private:
     case GLFW_KEY_C:
       renderer_.getCamera().reset();
       break;
+#if NBODY_WITH_UI
+    case GLFW_KEY_F1:
+      ui_panel_.toggleVisibility();
+      break;
+#endif
     }
   }
 
@@ -266,7 +327,56 @@ private:
 
   void onResize(int width, int height) { renderer_.onResize(width, height); }
 
-  static void printUsage() {
+  int runBenchmarkMode() {
+    SimulationConfig config;
+    config.particle_count = options_.particle_count;
+    config.init_distribution = InitDistribution::SPHERICAL;
+    config.force_method = options_.force_method;
+    config.dt = options_.dt;
+    config.G = options_.G;
+    config.softening = options_.softening;
+    config.barnes_hut_theta = options_.barnes_hut_theta;
+    config.spatial_hash_cell_size = options_.spatial_hash_cell_size;
+    config.spatial_hash_cutoff = options_.spatial_hash_cutoff;
+
+    particle_system_.initialize(config);
+    consumeGlobalPhaseSnapshot();
+
+    const auto start = std::chrono::steady_clock::now();
+    for (size_t step = 0; step < options_.benchmark_steps; ++step) {
+      particle_system_.update(particle_system_.getTimeStep());
+    }
+    const auto end = std::chrono::steady_clock::now();
+
+    BenchmarkRunRecord record;
+    record.benchmark_name = "application.benchmark_mode";
+    record.force_method = config.force_method;
+    record.particle_count = config.particle_count;
+    record.iterations = options_.benchmark_steps;
+    record.metrics["wall_time_ms"] = std::chrono::duration_cast<Milliseconds>(end - start).count() /
+                                     static_cast<double>(options_.benchmark_steps);
+    record.parameters["dt"] = config.dt;
+    record.parameters["gravity"] = config.G;
+    record.parameters["softening"] = config.softening;
+    record.parameters["particle_count"] = static_cast<double>(config.particle_count);
+    if (config.force_method == ForceMethod::BARNES_HUT) {
+      record.parameters["theta"] = config.barnes_hut_theta;
+    } else if (config.force_method == ForceMethod::SPATIAL_HASH) {
+      record.parameters["cell_size"] = config.spatial_hash_cell_size;
+      record.parameters["cutoff_radius"] = config.spatial_hash_cutoff;
+    }
+    record.phase_timings = consumeGlobalPhaseSnapshot();
+
+    const std::vector<BenchmarkRunRecord> records{record};
+    const std::string report = serializeBenchmarkRunRecords(records);
+    std::cout << report << std::endl;
+    if (!options_.benchmark_output_path.empty()) {
+      writeBenchmarkRunRecords(options_.benchmark_output_path, records);
+    }
+    return 0;
+  }
+
+  static void printControls() {
     std::cout << "\nN-Body Simulation Controls:\n"
               << "  Space  - Pause/Resume\n"
               << "  R      - Reset simulation\n"
@@ -276,7 +386,12 @@ private:
               << "  C      - Reset camera\n"
               << "  Mouse  - Rotate view\n"
               << "  Scroll - Zoom\n"
-              << "  Esc    - Quit\n\n";
+              << "  Esc    - Quit\n"
+#if NBODY_WITH_UI
+              << "  F1     - Toggle diagnostics panel\n"
+#endif
+              << "\n"
+              << appCliUsage() << "\n";
   }
 };
 

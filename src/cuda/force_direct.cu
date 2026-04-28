@@ -1,5 +1,6 @@
 #include "nbody/error_handling.hpp"
 #include "nbody/force_calculator.hpp"
+#include "nbody/performance_observability.hpp"
 #include "nbody/types.hpp"
 #include <cuda_runtime.h>
 
@@ -100,6 +101,7 @@ void launchDirectForceKernel(ParticleData* d_particles, float G, float eps2, int
 DirectForceCalculator::DirectForceCalculator(int block_size) : block_size_(block_size) {}
 
 void DirectForceCalculator::computeForces(ParticleData* d_particles) {
+  NBODY_PROFILE_SCOPE("force.direct_n2");
   launchDirectForceKernel(d_particles, G_, softening_eps2_, block_size_);
 }
 

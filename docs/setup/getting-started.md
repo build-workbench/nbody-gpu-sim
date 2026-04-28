@@ -45,6 +45,8 @@ Complete guide for setting up, building, and running the N-Body Particle Simulat
 | **GLEW** | 2.1+ | `sudo apt install libglew-dev` |
 | **GLM** | 0.9.9+ | `sudo apt install libglm-dev` |
 
+For a **headless core-only** validation path, you can skip CUDA/OpenGL dependencies and configure the project with rendering and examples disabled while still keeping the headless observability tests and benchmarks available.
+
 ### Verify CUDA Installation
 
 ```bash
@@ -114,6 +116,26 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j$(nproc)
 ```
 
+### Headless Core-Only Build
+
+Use this path when you want to validate the non-visual core surfaces on a machine without CUDA or OpenGL development packages:
+
+```bash
+mkdir -p build/headless && cd build/headless
+
+cmake ../.. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DNBODY_ENABLE_RENDERING=OFF \
+    -DNBODY_ENABLE_CUDA=OFF \
+    -DNBODY_BUILD_TESTS=ON \
+    -DNBODY_BUILD_BENCHMARKS=ON \
+    -DNBODY_BUILD_EXAMPLES=OFF
+
+cmake --build . -j$(nproc)
+```
+
+This configuration currently produces the core static library (`libnbody_lib.a`), the `nbody_observability_tests` target, and the `nbody_benchmarks` executable. It intentionally skips the render executable, examples, and CUDA-backed simulation tests.
+
 ### Windows Build
 
 ```cmd
@@ -128,7 +150,10 @@ cmake --build . --config Release
 | Option | Default | Description |
 |--------|---------|-------------|
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug` or `Release` |
+| `NBODY_ENABLE_RENDERING` | `ON` | Build OpenGL/GLFW visualization surfaces |
 | `NBODY_BUILD_TESTS` | `ON` | Build test suite |
+| `NBODY_BUILD_BENCHMARKS` | `ON` | Build the `nbody_benchmarks` executable |
+| `NBODY_ENABLE_PROFILING` | `OFF` | Enable named phase timings in benchmark output |
 | `CMAKE_CUDA_ARCHITECTURES` | `native` | GPU architecture (e.g., `86` for RTX 30xx) |
 
 Example with custom options:
@@ -195,16 +220,19 @@ N-Body Simulation | 100000 particles | 60.0 FPS | Time: 12.34
 ## 🧪 Running Tests
 
 ```bash
-cd build
-
-# Run all tests
-./nbody_tests
-
-# Run specific test suite
-./nbody_tests --gtest_filter=ForceCalculation.*
-./nbody_tests --gtest_filter=BarnesHut.*
-./nbody_tests --gtest_filter=Integrator.*
+./scripts/test.sh
 ```
+
+`./scripts/test.sh` uses `ctest`, so headless builds run the observability tests while CUDA-enabled builds also include the full simulation suites discovered from `nbody_tests`.
+
+## 📊 Running Benchmarks
+
+```bash
+./scripts/benchmark.sh
+./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
+```
+
+The benchmark executable emits structured JSON. If you configure with `-DNBODY_ENABLE_PROFILING=ON`, the output also includes named phase timings for the instrumented benchmark stages.
 
 Test suites:
 - `ForceCalculation.*` - Force computation correctness

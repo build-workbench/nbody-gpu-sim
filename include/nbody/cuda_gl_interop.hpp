@@ -1,6 +1,10 @@
 #pragma once
 
 #include "nbody/types.hpp"
+
+#if defined(NBODY_WITH_RENDERING) && NBODY_WITH_RENDERING && defined(NBODY_WITH_CUDA) && \
+    NBODY_WITH_CUDA
+
 #include <GL/glew.h>
 #include <cuda_gl_interop.h>
 
@@ -67,3 +71,48 @@ void launchCopyPositionsToVBOKernel(float* d_vbo, const ParticleData* d_particle
 void launchCopyVelocitiesToVBOKernel(float* d_vbo, const ParticleData* d_particles, int block_size);
 
 }  // namespace nbody
+
+#else
+
+namespace nbody {
+
+using GLuint = unsigned int;
+
+class CudaGLInterop {
+public:
+  CudaGLInterop() = default;
+  ~CudaGLInterop() = default;
+
+  void initialize(size_t particle_count) { particle_count_ = particle_count; }
+  void cleanup() { particle_count_ = 0; }
+
+  float* mapPositionBuffer() { return nullptr; }
+  float* mapVelocityBuffer() { return nullptr; }
+
+  void unmapPositionBuffer() {}
+  void unmapVelocityBuffer() {}
+  void unmapAllBuffers() {}
+
+  bool isMapped() const { return false; }
+  bool isVelocityMapped() const { return false; }
+
+  GLuint getPositionVBO() const { return 0; }
+  GLuint getVelocityVBO() const { return 0; }
+
+  size_t getParticleCount() const { return particle_count_; }
+
+  void updatePositions(const ParticleData*) {}
+  void updateVelocities(const ParticleData*) {}
+
+  bool verifyDataIntegrity(const float*, size_t) { return false; }
+
+private:
+  size_t particle_count_ = 0;
+};
+
+inline void launchCopyPositionsToVBOKernel(float*, const ParticleData*, int) {}
+inline void launchCopyVelocitiesToVBOKernel(float*, const ParticleData*, int) {}
+
+}  // namespace nbody
+
+#endif

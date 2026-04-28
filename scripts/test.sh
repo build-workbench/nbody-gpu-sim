@@ -13,9 +13,27 @@ if [ ! -d "$BUILD_DIR" ]; then
     exit 1
 fi
 
-TESTS_BIN="${BUILD_DIR}/nbody_tests"
+CACHE_FILE="${BUILD_DIR}/CMakeCache.txt"
+CTEST_FILE="${BUILD_DIR}/CTestTestfile.cmake"
 
-if [ ! -f "$TESTS_BIN" ]; then
+if [ ! -f "$CTEST_FILE" ]; then
+    if [ -f "$CACHE_FILE" ]; then
+        TESTS_ENABLED="$(grep '^NBODY_BUILD_TESTS:BOOL=' "$CACHE_FILE" | cut -d= -f2 || true)"
+        CUDA_ENABLED="$(grep '^NBODY_ENABLE_CUDA:BOOL=' "$CACHE_FILE" | cut -d= -f2 || true)"
+
+        if [ "${TESTS_ENABLED:-ON}" != "ON" ]; then
+            echo "❌ Tests were not built in the current configuration."
+            echo "   Reconfigure with NBODY_BUILD_TESTS=ON to run the test suite."
+            exit 1
+        fi
+
+        if [ "${CUDA_ENABLED:-ON}" != "ON" ]; then
+            echo "❌ No discovered tests are available in the current build directory."
+            echo "ℹ️  Rebuild with ./scripts/build.sh so the headless observability tests are generated."
+            exit 1
+        fi
+    fi
+
     echo "❌ Tests not built. Run ./scripts/build.sh first."
     exit 1
 fi
@@ -24,9 +42,9 @@ echo "🧪 Running tests..."
 cd "$BUILD_DIR"
 
 if [ "${1:-}" = "--verbose" ]; then
-    ./nbody_tests --gtest_color=yes
+    ctest --output-on-failure -V
 else
-    ./nbody_tests --gtest_color=yes --gtest_brief=1
+    ctest --output-on-failure
 fi
 
 echo "✅ Tests complete!"

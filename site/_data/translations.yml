@@ -1,0 +1,198 @@
+# Translation data for N-Body Simulation site
+# =============================================
+
+en:
+  # Language name
+  lang_name: "English"
+  lang_code: "en"
+
+  # Navigation
+  nav:
+    home: "Home"
+    docs: "Docs"
+    changelog: "Changelog"
+    github: "GitHub"
+
+  # Hero section
+  hero:
+    title: "N-Body Simulation"
+    subtitle: "Million-Particle GPU Physics Engine"
+    description: "High-performance N-body particle simulation with Direct N², Barnes-Hut, and Spatial Hash algorithms. Real-time CUDA-OpenGL interop rendering for up to 1 million particles."
+    get_started: "Get Started"
+    view_github: "View on GitHub"
+    learn_more: "Learn More"
+
+  # Features section
+  features:
+    title: "Features"
+    subtitle: "Built for Performance"
+    gpu_accelerated:
+      title: "GPU Accelerated"
+      description: "CUDA parallel processing with one thread per particle"
+    three_algorithms:
+      title: "Three Algorithms"
+      description: "Direct N², Barnes-Hut O(N log N), Spatial Hash O(N)"
+    zero_copy:
+      title: "Zero-Copy Rendering"
+      description: "CUDA-OpenGL interop eliminates CPU↔GPU data transfer"
+    energy_conserving:
+      title: "Energy Conserving"
+      description: "Velocity Verlet symplectic integration"
+    realtime:
+      title: "Real-time 60+ FPS"
+      description: "Smooth visualization for up to 1 million particles"
+    cross_platform:
+      title: "Cross-Platform"
+      description: "Linux, Windows, macOS with NVIDIA GPU"
+
+  # Algorithms section
+  algorithms:
+    title: "Algorithms"
+    subtitle: "Choose the right algorithm for your use case"
+    complexity: "Complexity"
+    best_for: "Best for"
+    direct_n2:
+      name: "Direct N²"
+      description: "Exact pairwise force calculation"
+      best_for: "≤10K particles"
+    barnes_hut:
+      name: "Barnes-Hut"
+      description: "Hierarchical octree approximation"
+      best_for: "Large gravitational systems"
+    spatial_hash:
+      name: "Spatial Hash"
+      description: "Grid-based short-range forces"
+      best_for: "Molecular dynamics"
+
+  # Performance section
+  performance:
+    title: "Performance"
+    subtitle: "Benchmarked on NVIDIA RTX 3080"
+    particles: "Particles"
+    fps: "FPS"
+
+  # Documentation
+  docs:
+    title: "Documentation"
+    subtitle: "Everything you need to know"
+    getting_started: "Getting Started"
+    architecture: "Architecture"
+    algorithms: "Algorithms"
+    api: "API Reference"
+    performance: "Performance"
+
+  # Footer
+  footer:
+    built_with: "Built with"
+    documentation: "Documentation"
+    community: "Community"
+    license: "License"
+    all_rights_reserved: "All rights reserved"
+
+  # Common
+  common:
+    read_more: "Read More"
+    view_all: "View All"
+    back: "Back"
+    next: "Next"
+    previous: "Previous"
+    search: "Search"
+    on_this_page: "On this page"
+
+zh-CN:
+  # 语言名称
+  lang_name: "简体中文"
+  lang_code: "zh-CN"
+
+  # 导航
+  nav:
+    home: "首页"
+    docs: "文档"
+    changelog: "更新日志"
+    github: "GitHub"
+
+  # Hero 区域
+  hero:
+    title: "N-Body 粒子模拟"
+    subtitle: "百万粒子 GPU 物理引擎"
+    description: "高性能 N-body 粒子模拟，支持直接 N²、Barnes-Hut 和空间哈希三种算法。实时 CUDA-OpenGL 互操作渲染，支持高达 100 万粒子。"
+    get_started: "快速开始"
+    view_github: "查看 GitHub"
+    learn_more: "了解更多"
+
+  # 功能特性
+  features:
+    title: "功能特性"
+    subtitle: "为性能而生"
+    gpu_accelerated:
+      title: "GPU 加速"
+      description: "CUDA 并行处理，每个粒子一个线程"
+    three_algorithms:
+      title: "三种算法"
+      description: "直接 N²、Barnes-Hut O(N log N)、空间哈希 O(N)"
+    zero_copy:
+      title: "零拷贝渲染"
+      description: "CUDA-OpenGL 互操作，消除 CPU↔GPU 数据传输"
+    energy_conserving:
+      title: "能量守恒"
+      description: "Velocity Verlet 辛积分器"
+    realtime:
+      title: "实时 60+ FPS"
+      description: "流畅可视化，支持高达 100 万粒子"
+    cross_platform:
+      title: "跨平台"
+      description: "支持 Linux、Windows、macOS（需 NVIDIA GPU）"
+
+  # 算法部分
+  algorithms:
+    title: "算法"
+    subtitle: "根据您的使用场景选择合适的算法"
+    complexity: "复杂度"
+    best_for: "适用场景"
+    direct_n2:
+      name: "直接 N²"
+      description: "精确的成对力计算"
+      best_for: "≤1万 粒子"
+    barnes_hut:
+      name: "Barnes-Hut"
+      description: "层次八叉树近似"
+      best_for: "大型引力系统"
+    spatial_hash:
+      name: "空间哈希"
+      description: "基于网格的短程力"
+      best_for: "分子动力学"
+
+  # 性能部分
+  performance:
+    title: "性能"
+    subtitle: "在 NVIDIA RTX 3080 上测试"
+    particles: "粒子数"
+    fps: "帧率"
+
+  # 文档
+  docs:
+    title: "文档"
+    subtitle: "您需要了解的一切"
+    getting_started: "快速入门"
+    architecture: "架构概览"
+    algorithms: "算法详解"
+    api: "API 参考"
+    performance: "性能指南"
+
+  # 页脚
+  footer:
+    built_with: "构建于"
+    documentation: "文档"
+    community: "社区"
+    license: "许可证"
+    all_rights_reserved: "保留所有权利"
+
+  # 通用文本
+  common:
+    read_more: "阅读更多"
+    view_all: "查看全部"
+    back: "返回"
+    next: "下一页"
+    previous: "上一页"
+    search: "搜索"
+    on_this_page: "本页内容"

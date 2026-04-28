@@ -1,5 +1,7 @@
 ---
 title: Documentation
+layout: docs
+lang: en
 ---
 
 # Documentation

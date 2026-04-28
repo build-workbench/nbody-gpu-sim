@@ -1,4 +1,6 @@
 ---
+layout: docs
+lang: en
 title: Architecture
 description: System architecture, component interactions, and design patterns of the N-Body Particle Simulation System.
 ---
@@ -8,6 +10,8 @@ description: System architecture, component interactions, and design patterns of
 This document describes the system architecture, component interactions, and design patterns of the N-Body Particle Simulation System.
 
 ---
+layout: docs
+lang: en
 
 ## High-Level Architecture
 
@@ -39,6 +43,8 @@ This document describes the system architecture, component interactions, and des
 ```
 
 ---
+layout: docs
+lang: en
 
 ## Core Components
 
@@ -120,6 +126,8 @@ public:
 ```
 
 ---
+layout: docs
+lang: en
 
 ## Design Patterns
 
@@ -147,6 +155,8 @@ Used for `CudaGLInterop` to separate CUDA/OpenGL implementation from application
 `ParticleSystem` provides a simplified interface to the complex subsystem.
 
 ---
+layout: docs
+lang: en
 
 ## Memory Layout
 
@@ -182,6 +192,8 @@ struct ParticleData {
 | **Total** | **~52 bytes** |
 
 ---
+layout: docs
+lang: en
 
 ## CUDA-OpenGL Interop
 
@@ -228,6 +240,8 @@ glDrawArrays(GL_POINTS, 0, particle_count);
 ```
 
 ---
+layout: docs
+lang: en
 
 ## Build System
 

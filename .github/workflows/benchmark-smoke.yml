@@ -1,0 +1,62 @@
+name: Benchmark Smoke
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'benchmarks/**'
+      - 'include/nbody/performance_observability.hpp'
+      - 'src/utils/performance_observability.cpp'
+      - 'include/nbody/serialization.hpp'
+      - 'src/utils/serialization.cpp'
+      - 'scripts/benchmark.sh'
+      - 'CMakeLists.txt'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'benchmarks/**'
+      - 'include/nbody/performance_observability.hpp'
+      - 'src/utils/performance_observability.cpp'
+      - 'include/nbody/serialization.hpp'
+      - 'src/utils/serialization.cpp'
+      - 'scripts/benchmark.sh'
+      - 'CMakeLists.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  serialization-smoke:
+    name: Serialization Benchmark Smoke
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      NBODY_BENCHMARK_PARTICLES: 256
+      NBODY_BENCHMARK_ITERATIONS: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure headless benchmark build
+        run: |
+          cmake -S . -B build/benchmark-smoke \
+            -DNBODY_ENABLE_RENDERING=OFF \
+            -DNBODY_ENABLE_CUDA=OFF \
+            -DNBODY_BUILD_TESTS=ON \
+            -DNBODY_BUILD_EXAMPLES=OFF \
+            -DNBODY_BUILD_BENCHMARKS=ON \
+            -DNBODY_ENABLE_PROFILING=ON \
+            -G "Unix Makefiles"
+
+      - name: Build benchmark target
+        run: cmake --build build/benchmark-smoke --target nbody_benchmarks -j"$(nproc)"
+
+      - name: Run benchmark smoke
+        run: |
+          mkdir -p build
+          cp build/benchmark-smoke/nbody_benchmarks build/nbody_benchmarks
+          ./scripts/benchmark.sh serialization.round_trip build/benchmark-smoke/results.json
+
+      - name: Show benchmark result
+        run: cat build/benchmark-smoke/results.json

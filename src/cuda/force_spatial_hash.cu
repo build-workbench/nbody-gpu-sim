@@ -1,5 +1,6 @@
 #include "nbody/error_handling.hpp"
 #include "nbody/force_calculator.hpp"
+#include "nbody/performance_observability.hpp"
 #include "nbody/spatial_hash_grid.hpp"
 #include <cuda_runtime.h>
 #include <thrust/device_ptr.h>
@@ -367,6 +368,7 @@ SpatialHashCalculator::SpatialHashCalculator(float cell_size, float cutoff_radiu
 SpatialHashCalculator::~SpatialHashCalculator() = default;
 
 void SpatialHashCalculator::computeForces(ParticleData* d_particles) {
+  NBODY_PROFILE_SCOPE("force.spatial_hash");
   if (!grid_) {
     grid_ = std::make_unique<SpatialHashGrid>(d_particles->count, cell_size_);
   }

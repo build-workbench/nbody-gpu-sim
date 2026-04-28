@@ -24,6 +24,30 @@ Optimization strategies and performance tuning for the N-Body Particle Simulatio
 
 ## Benchmarks
 
+### Supported Benchmark Workflow
+
+The repository now includes a dedicated `nbody_benchmarks` executable plus `./scripts/benchmark.sh` for non-interactive, headless benchmark runs.
+
+```bash
+./scripts/build.sh
+./scripts/benchmark.sh
+./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
+```
+
+With `-DNBODY_ENABLE_PROFILING=ON`, benchmark output also includes named phase timings such as `serialization.save`, `serialization.load`, `simulation.update`, or force-specific phases when those surfaces are compiled in.
+
+### Structured Output
+
+Benchmark runs emit machine-readable JSON with:
+
+- benchmark name
+- force method
+- particle count
+- iteration count
+- numeric metrics
+- numeric tuning parameters
+- optional phase timing samples
+
 ### Performance Targets
 
 | Particles | Target FPS | Algorithm |

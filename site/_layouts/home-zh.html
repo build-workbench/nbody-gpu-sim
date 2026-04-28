@@ -1,0 +1,230 @@
+---
+layout: default
+---
+
+<!-- Hero Section -->
+{% include hero-zh.html %}
+
+<!-- Algorithm Cards -->
+{% include algorithms-zh.html %}
+
+<!-- Performance Section -->
+{% include benchmarks-zh.html %}
+
+<!-- Features Grid -->
+{% include features-zh.html %}
+
+<!-- Architecture Overview -->
+<section class="section architecture-section" id="architecture">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">系统架构</h2>
+      <p class="section-description">模拟系统组件的高层概览</p>
+    </div>
+
+    <div class="architecture-diagram">
+      <svg viewBox="0 0 800 400" class="architecture-svg">
+        <!-- Background -->
+        <defs>
+          <linearGradient id="cpuGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.2" />
+            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.05" />
+          </linearGradient>
+          <linearGradient id="gpuGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#10b981;stop-opacity:0.2" />
+            <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.05" />
+          </linearGradient>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="var(--color-border)" />
+          </marker>
+        </defs>
+
+        <!-- CPU Layer -->
+        <rect x="50" y="20" width="700" height="150" rx="8" fill="url(#cpuGradient)" stroke="#3b82f6" stroke-width="2"/>
+        <text x="400" y="45" text-anchor="middle" fill="#3b82f6" font-size="14" font-weight="600">CPU (主机端)</text>
+
+        <!-- CPU Components -->
+        <rect x="80" y="60" width="180" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1"/>
+        <text x="170" y="90" text-anchor="middle" fill="var(--color-text)" font-size="12" font-weight="500">SimulationConfig</text>
+        <text x="170" y="110" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">配置管理</text>
+
+        <rect x="300" y="60" width="180" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1"/>
+        <text x="390" y="90" text-anchor="middle" fill="var(--color-text)" font-size="12" font-weight="500">ParticleSystem</text>
+        <text x="390" y="110" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">协调器</text>
+
+        <rect x="520" y="60" width="180" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1"/>
+        <text x="610" y="90" text-anchor="middle" fill="var(--color-text)" font-size="12" font-weight="500">Render Loop</text>
+        <text x="610" y="110" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">可视化</text>
+
+        <!-- Arrow Down -->
+        <line x1="400" y1="170" x2="400" y2="200" stroke="var(--color-border)" stroke-width="2" marker-end="url(#arrowhead)"/>
+        <text x="450" y="185" fill="var(--color-text-muted)" font-size="10">CUDA-GL 互操作</text>
+
+        <!-- GPU Layer -->
+        <rect x="50" y="210" width="700" height="170" rx="8" fill="url(#gpuGradient)" stroke="#10b981" stroke-width="2"/>
+        <text x="400" y="235" text-anchor="middle" fill="#10b981" font-size="14" font-weight="600">GPU (设备端)</text>
+
+        <!-- GPU Components -->
+        <rect x="80" y="260" width="200" height="90" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1"/>
+        <text x="180" y="290" text-anchor="middle" fill="var(--color-text)" font-size="12" font-weight="600">力计算内核</text>
+        <text x="180" y="310" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">N² / Barnes-Hut / 空间哈希</text>
+        <text x="180" y="330" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">(策略模式)</text>
+
+        <rect x="300" y="260" width="180" height="90" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1"/>
+        <text x="390" y="290" text-anchor="middle" fill="var(--color-text)" font-size="12" font-weight="600">积分器</text>
+        <text x="390" y="310" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">Velocity Verlet</text>
+        <text x="390" y="330" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">(辛积分器)</text>
+
+        <rect x="520" y="260" width="180" height="90" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1"/>
+        <text x="610" y="290" text-anchor="middle" fill="var(--color-text)" font-size="12" font-weight="600">OpenGL</text>
+        <text x="610" y="310" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">点精灵渲染</text>
+        <text x="610" y="330" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">(零拷贝)</text>
+
+        <!-- Data Flow Arrows -->
+        <line x1="280" y1="305" x2="300" y2="305" stroke="var(--color-border)" stroke-width="2" marker-end="url(#arrowhead)"/>
+        <line x1="480" y1="305" x2="520" y2="305" stroke="var(--color-border)" stroke-width="2" marker-end="url(#arrowhead)"/>
+      </svg>
+    </div>
+
+    <div class="architecture-details">
+      <div class="detail-card">
+        <h4>设计模式</h4>
+        <ul>
+          <li><strong>策略模式</strong> — 运行时算法切换</li>
+          <li><strong>桥接模式</strong> — CUDA-OpenGL 互操作抽象</li>
+          <li><strong>外观模式</strong> — 简洁的 ParticleSystem API</li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <h4>内存布局</h4>
+        <ul>
+          <li><strong>结构数组 (SoA)</strong> — GPU 合并访问</li>
+          <li><strong>共享 VBO</strong> — 零拷贝渲染</li>
+          <li><strong>共享内存</strong> — 内核缓存</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-container">
+      <a href="{{ '/zh-CN/docs/architecture/' | relative_url }}" class="btn btn-primary">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+        阅读架构文档
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Start Code -->
+<section class="section code-section" id="quickstart">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">快速开始</h2>
+      <p class="section-description">几分钟内开始 N-Body 模拟</p>
+    </div>
+
+    <div class="code-example">
+      <div class="code-header">
+        <span class="code-filename">example.cpp</span>
+        <button class="copy-btn" data-clipboard-target="#quickstart-code">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          复制
+        </button>
+      </div>
+      <pre class="highlight" id="quickstart-code"><code class="language-cpp">#include "nbody/particle_system.hpp"
+
+using namespace nbody;
+
+int main() {
+    // 配置模拟
+    SimulationConfig config;
+    config.particle_count = 100'000;
+    config.force_method = ForceMethod::BARNES_HUT;
+    config.dt = 0.001f;
+    config.init_distribution = InitDistribution::SPHERICAL;
+
+    // 初始化并运行
+    ParticleSystem system;
+    system.initialize(config);
+
+    for (int step = 0; step < 10'000; ++step) {
+        system.update(system.getTimeStep());
+
+        // 保存检查点
+        if (step % 1000 == 0) {
+            system.saveState("checkpoint_" + std::to_string(step) + ".nbody");
+        }
+    }
+
+    return 0;
+}</code></pre>
+    </div>
+
+    <div class="cta-container">
+      <a href="{{ '/zh-CN/docs/getting-started/' | relative_url }}" class="btn btn-primary">完整安装指南</a>
+      <a href="https://github.com/LessUp/n-body/tree/main/examples" class="btn btn-secondary" target="_blank" rel="noopener">
+        查看示例
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- GitHub Stats Section -->
+<section class="section stats-section" id="community">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">开源项目</h2>
+      <p class="section-description">加入 GitHub 社区</p>
+    </div>
+
+    <div class="github-stats">
+      <a href="https://github.com/LessUp/n-body" class="stat-card" target="_blank" rel="noopener">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        <span class="stat-label">GitHub 仓库</span>
+        <span class="stat-value">LessUp/n-body</span>
+      </a>
+
+      <a href="https://github.com/LessUp/n-body/blob/main/LICENSE" class="stat-card" target="_blank" rel="noopener">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span class="stat-label">许可证</span>
+        <span class="stat-value">MIT</span>
+      </a>
+
+      <a href="https://github.com/LessUp/n-body/releases" class="stat-card" target="_blank" rel="noopener">
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span class="stat-label">最新版本</span>
+        <span class="stat-value">v{{ site.version }}</span>
+      </a>
+    </div>
+
+    <div class="contribute-cta">
+      <p>发现 Bug 或有功能建议？</p>
+      <a href="https://github.com/LessUp/n-body/issues" class="btn btn-secondary" target="_blank" rel="noopener">
+        提交 Issue
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>

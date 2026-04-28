@@ -1,5 +1,6 @@
 #include "nbody/error_handling.hpp"
 #include "nbody/integrator.hpp"
+#include "nbody/performance_observability.hpp"
 #include <cub/cub.cuh>
 #include <cuda_runtime.h>
 #include <vector>
@@ -221,6 +222,7 @@ void Integrator::ensureScratchBuffer(size_t particle_count) {
 }
 
 void Integrator::integrate(ParticleData* d_particles, ForceCalculator* force_calc, float dt) {
+  NBODY_PROFILE_SCOPE("integrator.velocity_verlet");
   // Velocity Verlet integration:
   // 1. Store old accelerations
   storeOldAccelerations(d_particles);

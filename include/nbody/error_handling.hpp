@@ -1,9 +1,27 @@
 #pragma once
 
-#include <cuda_runtime.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+#if defined(NBODY_WITH_CUDA) && NBODY_WITH_CUDA
+#include <cuda_runtime.h>
+#else
+using cudaError_t = int;
+constexpr cudaError_t cudaSuccess = 0;
+
+inline const char* cudaGetErrorString(cudaError_t) {
+  return "CUDA support is disabled in this build";
+}
+
+inline cudaError_t cudaGetLastError() {
+  return cudaSuccess;
+}
+
+inline cudaError_t cudaDeviceSynchronize() {
+  return cudaSuccess;
+}
+#endif
 
 namespace nbody {
 

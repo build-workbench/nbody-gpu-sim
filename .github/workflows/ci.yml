@@ -10,6 +10,8 @@ on:
       - '**.hpp'
       - 'CMakeLists.txt'
       - 'cmake/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
       - '.clang-format'
   pull_request:
     branches: [main, master]
@@ -20,6 +22,8 @@ on:
       - '**.hpp'
       - 'CMakeLists.txt'
       - 'cmake/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
       - '.clang-format'
   workflow_dispatch:
 
@@ -31,6 +35,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  headless-core-build:
+    name: Headless Core Build
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure headless core build
+        run: |
+          cmake -S . -B build/headless \
+            -DNBODY_ENABLE_RENDERING=OFF \
+            -DNBODY_ENABLE_CUDA=OFF \
+            -DNBODY_BUILD_TESTS=OFF \
+            -DNBODY_BUILD_EXAMPLES=OFF \
+            -G "Unix Makefiles"
+
+      - name: Build headless core library
+        run: cmake --build build/headless -j"$(nproc)"
+
   format-check:
     name: Format Check
     runs-on: ubuntu-latest
@@ -148,4 +173,3 @@ jobs:
             *.md
             docs/**/*.md
             examples/**/*.md
-

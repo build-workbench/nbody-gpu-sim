@@ -1,0 +1,46 @@
+<!-- Features Section - Chinese Version -->
+<section class="section features-section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">核心特性</h2>
+      <p class="section-description">高性能粒子模拟所需的一切</p>
+    </div>
+
+    <div class="features-grid">
+      {% for feature in site.features_zh %}
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            {% case feature.icon %}
+            {% when 'zap' %}
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            {% when 'git-branch' %}
+            <line x1="6" y1="3" x2="6" y2="15"></line>
+            <circle cx="18" cy="6" r="3"></circle>
+            <circle cx="6" cy="18" r="3"></circle>
+            <path d="M18 9a9 9 0 0 1-9 9"></path>
+            {% when 'refresh-cw' %}
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            {% when 'activity' %}
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            {% when 'eye' %}
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+            {% when 'monitor' %}
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+            {% else %}
+            <circle cx="12" cy="12" r="10"></circle>
+            {% endcase %}
+          </svg>
+        </div>
+        <h3 class="feature-title">{{ feature.title }}</h3>
+        <p class="feature-description">{{ feature.description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

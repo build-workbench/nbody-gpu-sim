@@ -1,11 +1,15 @@
 #include "nbody/error_handling.hpp"
 #include "nbody/types.hpp"
-#include <GL/glew.h>
 #include <cmath>
+
+#if defined(NBODY_WITH_RENDERING) && NBODY_WITH_RENDERING
+#include <GL/glew.h>
+#endif
 
 namespace nbody {
 
 void checkGLError(const char* operation) {
+#if defined(NBODY_WITH_RENDERING) && NBODY_WITH_RENDERING
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) {
     // Clear the entire error queue
@@ -13,9 +17,13 @@ void checkGLError(const char* operation) {
     while (glGetError() != GL_NO_ERROR) {}
     throw OpenGLException(operation, first_error);
   }
+#else
+  (void)operation;
+#endif
 }
 
 void validateResourceRequirements(size_t particle_count) {
+#if defined(NBODY_WITH_CUDA) && NBODY_WITH_CUDA
   cudaDeviceProp prop;
   CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
 
@@ -30,6 +38,9 @@ void validateResourceRequirements(size_t particle_count) {
     throw ResourceException("Insufficient GPU memory", required_memory,
                             static_cast<size_t>(prop.totalGlobalMem * 0.8));
   }
+#else
+  (void)particle_count;
+#endif
 }
 
 void validateSimulationConfig(const SimulationConfig& config) {

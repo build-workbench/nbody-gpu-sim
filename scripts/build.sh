@@ -18,7 +18,7 @@ if command -v nvcc &> /dev/null; then
     echo "✓ CUDA detected"
 else
     CUDA_ENABLED=OFF
-    echo "⚠ CUDA not found; building CPU-only mode"
+    echo "⚠ CUDA not found; building headless core-only configuration"
 fi
 
 # Create build directory
@@ -43,8 +43,27 @@ if [ -f "${BUILD_DIR}/compile_commands.json" ]; then
 fi
 
 echo "✅ Build complete!"
-echo "📁 Executable: ${BUILD_DIR}/nbody_sim"
-echo ""
-echo "📌 Tip: To force disable CUDA, use:"
-echo "   cmake .. -DNBODY_ENABLE_CUDA=OFF"
+if [ -f "${BUILD_DIR}/nbody_sim" ]; then
+  echo "📁 Executable: ${BUILD_DIR}/nbody_sim"
+else
+  echo "📦 Core library: ${BUILD_DIR}/libnbody_lib.a"
+  echo "ℹ️  Renderer and examples may be disabled in headless core-only builds."
+fi
 
+if [ -f "${BUILD_DIR}/nbody_observability_tests" ]; then
+  echo "🧪 Headless tests: ${BUILD_DIR}/nbody_observability_tests"
+fi
+
+if [ -f "${BUILD_DIR}/nbody_tests" ]; then
+  echo "🧪 CUDA tests: ${BUILD_DIR}/nbody_tests"
+fi
+
+if [ -f "${BUILD_DIR}/nbody_benchmarks" ]; then
+  echo "📊 Benchmarks: ${BUILD_DIR}/nbody_benchmarks"
+fi
+
+echo ""
+echo "📌 Tips:"
+echo "   To force disable CUDA: cmake .. -DNBODY_ENABLE_CUDA=OFF"
+echo "   To force disable rendering: cmake .. -DNBODY_ENABLE_RENDERING=OFF"
+echo "   To enable profiling hooks: cmake .. -DNBODY_ENABLE_PROFILING=ON"

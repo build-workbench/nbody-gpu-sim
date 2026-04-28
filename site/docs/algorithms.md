@@ -1,4 +1,6 @@
 ---
+layout: docs
+lang: en
 title: Algorithms
 description: Force calculation algorithms explained.
 ---
@@ -8,6 +10,8 @@ description: Force calculation algorithms explained.
 Three algorithms are provided for computing N-body forces, each with different time/space complexity trade-offs.
 
 ---
+layout: docs
+lang: en
 
 ## Algorithm Comparison
 
@@ -18,6 +22,8 @@ Three algorithms are provided for computing N-body forces, each with different t
 | **Spatial Hash** | O(N) | O(N) | Short-range forces |
 
 ---
+layout: docs
+lang: en
 
 ## Direct N² Algorithm
 
@@ -46,6 +52,8 @@ for each particle i:
 - Benchmarking other methods
 
 ---
+layout: docs
+lang: en
 
 ## Barnes-Hut Algorithm
 
@@ -91,6 +99,8 @@ If a group of particles is sufficiently far away (θ < s/d), treat them as a sin
 - Long-range forces
 
 ---
+layout: docs
+lang: en
 
 ## Spatial Hash Algorithm
 
@@ -123,6 +133,8 @@ Partitions 3D space into uniform grid cells, only computing forces between parti
 - Very large particle counts (> 100K)
 
 ---
+layout: docs
+lang: en
 
 ## Algorithm Selection Guide
 

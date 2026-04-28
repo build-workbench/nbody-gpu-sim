@@ -45,6 +45,8 @@ N-Body 粒子仿真系统的完整安装、构建和运行指南。
 | **GLEW** | 2.1+ | `sudo apt install libglew-dev` |
 | **GLM** | 0.9.9+ | `sudo apt install libglm-dev` |
 
+如果只需要验证 **headless core-only** 构建路径，可以跳过 CUDA / OpenGL 依赖，并在配置阶段关闭 rendering 和 examples，同时保留 headless 可观测性测试与 benchmark。
+
 ### 验证 CUDA 安装
 
 ```bash
@@ -114,6 +116,26 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j$(nproc)
 ```
 
+### Headless Core-Only 构建
+
+当机器上没有 CUDA 或 OpenGL 开发包，但仍需要验证仓库的非可视化核心构建路径时，可以使用下面的配置：
+
+```bash
+mkdir -p build/headless && cd build/headless
+
+cmake ../.. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DNBODY_ENABLE_RENDERING=OFF \
+    -DNBODY_ENABLE_CUDA=OFF \
+    -DNBODY_BUILD_TESTS=ON \
+    -DNBODY_BUILD_BENCHMARKS=ON \
+    -DNBODY_BUILD_EXAMPLES=OFF
+
+cmake --build . -j$(nproc)
+```
+
+该配置当前会生成核心静态库 `libnbody_lib.a`、`nbody_observability_tests` 测试目标以及 `nbody_benchmarks` 可执行程序，并有意跳过渲染程序、示例和依赖 CUDA 的完整仿真测试。
+
 ### Windows 构建
 
 ```cmd
@@ -128,7 +150,10 @@ cmake --build . --config Release
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug` 或 `Release` |
+| `NBODY_ENABLE_RENDERING` | `ON` | 是否构建 OpenGL/GLFW 可视化面 |
 | `NBODY_BUILD_TESTS` | `ON` | 构建测试套件 |
+| `NBODY_BUILD_BENCHMARKS` | `ON` | 构建 `nbody_benchmarks` 可执行程序 |
+| `NBODY_ENABLE_PROFILING` | `OFF` | 在 benchmark 输出中启用命名阶段 timing |
 | `CMAKE_CUDA_ARCHITECTURES` | `native` | GPU 架构（如 RTX 30xx 用 `86`） |
 
 自定义选项示例：
@@ -195,16 +220,19 @@ N-Body Simulation | 100000 particles | 60.0 FPS | Time: 12.34
 ## 运行测试
 
 ```bash
-cd build
-
-# 运行全部测试
-./nbody_tests
-
-# 运行特定测试套件
-./nbody_tests --gtest_filter=ForceCalculation.*
-./nbody_tests --gtest_filter=BarnesHut.*
-./nbody_tests --gtest_filter=Integrator.*
+./scripts/test.sh
 ```
+
+`./scripts/test.sh` 通过 `ctest` 运行已发现的测试，因此 headless 构建会执行 observability 测试，而 CUDA 构建还会覆盖完整仿真测试集。
+
+## 📊 运行 Benchmark
+
+```bash
+./scripts/benchmark.sh
+./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
+```
+
+Benchmark 可执行程序会输出结构化 JSON。若在配置时启用 `-DNBODY_ENABLE_PROFILING=ON`，结果中还会包含已接入阶段的命名 timing 数据。
 
 测试套件：
 - `ForceCalculation.*` - 力计算正确性
