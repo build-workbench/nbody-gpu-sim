@@ -171,7 +171,46 @@ BenchmarkRunRecord runDirectBenchmark(const BenchmarkOptions& options) {
 }
 
 BenchmarkRunRecord runBarnesHutBenchmark(const BenchmarkOptions& options) {
-  return runForceBenchmark(options, ForceMethod::BARNES_HUT, "force.barnes_hut");
+  SimulationConfig config;
+  config.particle_count = options.particle_count;
+  config.force_method = ForceMethod::BARNES_HUT;
+  config.init_distribution = InitDistribution::SPHERICAL;
+
+  ParticleSystem system;
+  system.initialize(config);
+
+  BenchmarkRunRecord record;
+  record.benchmark_name = "force.barnes_hut";
+  record.force_method = ForceMethod::BARNES_HUT;
+  record.particle_count = options.particle_count;
+  record.iterations = options.iterations;
+  record.parameters["particle_count"] = static_cast<double>(options.particle_count);
+  record.parameters["theta"] = config.barnes_hut_theta;
+
+  auto calculator = createForceCalculator(ForceMethod::BARNES_HUT, config);
+  consumeGlobalPhaseSnapshot();
+
+  double total_ms = 0.0;
+  for (size_t iteration = 0; iteration < options.iterations; ++iteration) {
+    const auto start = std::chrono::steady_clock::now();
+    calculator->computeForces(system.getDeviceData());
+    const auto end = std::chrono::steady_clock::now();
+    total_ms += std::chrono::duration_cast<Milliseconds>(end - start).count();
+  }
+
+  record.metrics["wall_time_ms"] = total_ms / static_cast<double>(options.iterations);
+
+  // Capture phase timings for Barnes-Hut breakdown
+  record.phase_timings = consumeGlobalPhaseSnapshot();
+
+  // Add phase-specific metrics from timings
+  for (const auto& phase : record.phase_timings) {
+    if (phase.samples > 0) {
+      record.metrics[phase.name + "_ms"] = phase.total_duration.count() / phase.samples;
+    }
+  }
+
+  return record;
 }
 
 BenchmarkRunRecord runSpatialHashBenchmark(const BenchmarkOptions& options) {
@@ -186,12 +225,12 @@ std::vector<BenchmarkDefinition> makeBenchmarks() {
   };
 
 #if defined(NBODY_WITH_CUDA) && NBODY_WITH_CUDA
-  benchmarks.push_back({"force.direct_n2", "Direct N^2 force calculation", true,
-                        runDirectBenchmark});
-  benchmarks.push_back({"force.barnes_hut", "Barnes-Hut force calculation", true,
-                        runBarnesHutBenchmark});
-  benchmarks.push_back({"force.spatial_hash", "Spatial hash force calculation", true,
-                        runSpatialHashBenchmark});
+  benchmarks.push_back(
+      {"force.direct_n2", "Direct N^2 force calculation", true, runDirectBenchmark});
+  benchmarks.push_back(
+      {"force.barnes_hut", "Barnes-Hut force calculation", true, runBarnesHutBenchmark});
+  benchmarks.push_back(
+      {"force.spatial_hash", "Spatial hash force calculation", true, runSpatialHashBenchmark});
   benchmarks.push_back({"integration.velocity_verlet", "Velocity Verlet integration step", true,
                         runIntegrationBenchmark});
 #endif

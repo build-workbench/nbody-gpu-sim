@@ -23,7 +23,7 @@
 
 ## 4. GPU-native Barnes-Hut upgrade
 
-- [ ] 4.1 Add benchmark and correctness baselines for the current Barnes-Hut path before replacing internals
+- [x] 4.1 Add benchmark and correctness baselines for the current Barnes-Hut path before replacing internals
 - [ ] 4.2 Move Barnes-Hut tree construction to a GPU-resident steady-state path
 - [ ] 4.3 Move center-of-mass preparation into the GPU-resident Barnes-Hut pipeline
 - [ ] 4.4 Preserve runtime algorithm switching and public force-calculator interfaces while upgrading internals
@@ -36,7 +36,7 @@
 - [x] 5.2 Implement standards-based export for particle state and simulation metadata
 - [x] 5.3 Implement supported import paths for interoperable datasets with explicit validation failures
 - [x] 5.4 Keep the existing private checkpoint workflow intact alongside the new interoperability path
-- [ ] 5.5 Expose standards-based export or import through supported CLI and diagnostics workflows
+- [x] 5.5 Expose standards-based export or import through supported CLI and diagnostics workflows
 - [x] 5.6 Add round-trip and metadata coverage tests for the interoperability surface
 
 ## 6. Automation, documentation, and finish pass
