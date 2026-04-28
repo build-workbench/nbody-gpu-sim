@@ -5,6 +5,7 @@ option(NBODY_ENABLE_CUDA "Enable CUDA support" ON)
 option(NBODY_ENABLE_RENDERING "Enable OpenGL/GLFW visualization surfaces" ON)
 option(NBODY_ENABLE_UI "Enable Dear ImGui diagnostics panel (requires rendering)" ON)
 option(NBODY_ENABLE_PROFILING "Enable built-in profiling instrumentation" OFF)
+option(NBODY_ENABLE_HDF5 "Enable HDF5 for scientific data export/import" ON)
 
 if(NBODY_ENABLE_CUDA)
     project(NBodySimulation
@@ -121,6 +122,29 @@ if(NBODY_ENABLE_UI)
     target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 endif()
 
+# ── HDF5 for scientific data export/import ───────────────────────────────────
+if(NBODY_ENABLE_HDF5)
+    find_package(HDF5 QUIET COMPONENTS CXX)
+    if(HDF5_FOUND)
+        message(STATUS "HDF5 found: ${HDF5_VERSION}")
+    else()
+        message(STATUS "HDF5 not found - fetching via FetchContent")
+        include(FetchContent)
+        FetchContent_Declare(
+            hdf5
+            GIT_REPOSITORY https://github.com/HDFGroup/hdf5.git
+            GIT_TAG hdf5_1.14.4
+        )
+        set(HDF5_ENABLE_PARALLEL OFF CACHE BOOL "" FORCE)
+        set(HDF5_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(HDF5_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(HDF5_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(hdf5)
+        set(HDF5_CXX_LIBRARIES hdf5::hdf5_cpp-static)
+        set(HDF5_CXX_INCLUDE_DIRS ${hdf5_SOURCE_DIR}/c++/src ${hdf5_BINARY_DIR})
+    endif()
+endif()
+
 # Source files
 set(CUDA_SOURCES)
 if(NBODY_ENABLE_CUDA)
@@ -163,6 +187,12 @@ if(NBODY_ENABLE_RENDERING AND NBODY_ENABLE_CUDA)
     )
 endif()
 
+if(NBODY_ENABLE_HDF5)
+    list(APPEND CPP_SOURCES
+        src/utils/hdf5_io.cpp
+    )
+endif()
+
 # ── 主库 ─────────────────────────────────────────────────────────
 add_library(nbody_lib STATIC ${CUDA_SOURCES} ${CPP_SOURCES})
 add_library(nbody::nbody_lib ALIAS nbody_lib)
@@ -178,6 +208,7 @@ target_compile_definitions(nbody_lib
         NBODY_WITH_CUDA=$<BOOL:${NBODY_ENABLE_CUDA}>
         NBODY_WITH_RENDERING=$<BOOL:${NBODY_ENABLE_RENDERING}>
         NBODY_WITH_UI=$<BOOL:${NBODY_ENABLE_UI}>
+        NBODY_WITH_HDF5=$<BOOL:${NBODY_ENABLE_HDF5}>
         NBODY_ENABLE_PROFILING=$<BOOL:${NBODY_ENABLE_PROFILING}>
 )
 
@@ -200,6 +231,15 @@ endif()
 
 if(NBODY_ENABLE_UI)
     target_link_libraries(nbody_lib PUBLIC imgui)
+endif()
+
+if(NBODY_ENABLE_HDF5)
+    if(HDF5_FOUND)
+        target_include_directories(nbody_lib PUBLIC ${HDF5_INCLUDE_DIRS})
+        target_link_libraries(nbody_lib PUBLIC ${HDF5_CXX_LIBRARIES})
+    else()
+        target_link_libraries(nbody_lib PUBLIC hdf5::hdf5_cpp-static)
+    endif()
 endif()
 
 target_compile_options(nbody_lib
@@ -243,6 +283,7 @@ if(NBODY_BUILD_TESTS)
         tests/test_main.cpp
         tests/test_app_cli.cpp
         tests/test_performance_observability.cpp
+        tests/test_ui_panel.cpp
     )
     target_link_libraries(nbody_observability_tests PRIVATE
         nbody_lib
@@ -264,6 +305,7 @@ if(NBODY_BUILD_TESTS)
             tests/test_camera.cpp
             tests/test_color_mapping.cpp
             tests/test_validation.cpp
+            tests/test_hdf5_io.cpp
         )
         target_link_libraries(nbody_tests PRIVATE
             nbody_lib

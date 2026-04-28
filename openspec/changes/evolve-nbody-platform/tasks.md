@@ -19,7 +19,7 @@
 - [x] 3.2 Add validation and error reporting for the new CLI control surface
 - [x] 3.3 Introduce an in-application diagnostics/debug panel for runtime tuning and inspection
 - [x] 3.4 Surface key runtime metrics and supported tuning controls in the diagnostics UI
-- [ ] 3.5 Add tests and examples covering the expanded runtime control workflows
+- [x] 3.5 Add tests and examples covering the expanded runtime control workflows
 
 ## 4. GPU-native Barnes-Hut upgrade
 
@@ -32,12 +32,12 @@
 
 ## 5. Scientific data interoperability
 
-- [ ] 5.1 Choose and integrate the minimum viable standards-aware data library stack
-- [ ] 5.2 Implement standards-based export for particle state and simulation metadata
-- [ ] 5.3 Implement supported import paths for interoperable datasets with explicit validation failures
-- [ ] 5.4 Keep the existing private checkpoint workflow intact alongside the new interoperability path
+- [x] 5.1 Choose and integrate the minimum viable standards-aware data library stack
+- [x] 5.2 Implement standards-based export for particle state and simulation metadata
+- [x] 5.3 Implement supported import paths for interoperable datasets with explicit validation failures
+- [x] 5.4 Keep the existing private checkpoint workflow intact alongside the new interoperability path
 - [ ] 5.5 Expose standards-based export or import through supported CLI and diagnostics workflows
-- [ ] 5.6 Add round-trip and metadata coverage tests for the interoperability surface
+- [x] 5.6 Add round-trip and metadata coverage tests for the interoperability surface
 
 ## 6. Automation, documentation, and finish pass
 

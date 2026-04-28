@@ -1,3 +1,19 @@
+/**
+ * @file test_serialization.cpp
+ * @brief Tests for the private binary checkpoint format (.nbody).
+ *
+ * The Serializer class provides fast, internal checkpoint serialization
+ * for pause/resume and checkpoint/restart operations. This is the private
+ * .nbody binary format - for external interoperability, use HDF5 format
+ * when available (compiled with NBODY_WITH_HDF5).
+ *
+ * These tests verify:
+ * - Basic save/load round-trip correctness
+ * - Stream validation and format detection
+ * - Property-based testing for state preservation
+ * - Pause/resume state consistency
+ */
+
 #include "nbody/particle_system.hpp"
 #include "nbody/serialization.hpp"
 #include "nbody/types.hpp"
@@ -199,3 +215,69 @@ RC_GTEST_PROP(SimulationControl, PauseResumePreservesState, ()) {
   // State should have changed after resume
   RC_ASSERT(!(state_resumed == state_after));
 }
+
+// Test checkpoint round-trip with various particle counts
+// Verifies the private .nbody format continues to work correctly
+
+class ParticleCountTestFixture : public ::testing::TestWithParam<size_t> {};
+
+TEST_P(ParticleCountTestFixture, CheckpointRoundTrip) {
+  size_t particle_count = GetParam();
+
+  SimulationState original;
+  original.particle_count = particle_count;
+  original.simulation_time = 42.5f;
+  original.dt = 0.002f;
+  original.G = 6.674f;
+  original.softening = 0.05f;
+  original.force_method = ForceMethod::DIRECT_N2;
+
+  original.pos_x.resize(particle_count);
+  original.pos_y.resize(particle_count);
+  original.pos_z.resize(particle_count);
+  original.vel_x.resize(particle_count);
+  original.vel_y.resize(particle_count);
+  original.vel_z.resize(particle_count);
+  original.mass.resize(particle_count);
+
+  // Initialize with deterministic values based on index
+  for (size_t i = 0; i < particle_count; i++) {
+    original.pos_x[i] = static_cast<float>(i * 1.1);
+    original.pos_y[i] = static_cast<float>(i * 2.2);
+    original.pos_z[i] = static_cast<float>(i * 3.3);
+    original.vel_x[i] = static_cast<float>(i * 0.1);
+    original.vel_y[i] = static_cast<float>(i * 0.2);
+    original.vel_z[i] = static_cast<float>(i * 0.3);
+    original.mass[i] = static_cast<float>(1.0 + i * 0.01);
+  }
+
+  // Save to stream
+  std::stringstream ss;
+  Serializer::save(ss, original);
+
+  // Load from stream
+  ss.seekg(0);
+  SimulationState loaded = Serializer::load(ss);
+
+  // Verify all fields match
+  EXPECT_EQ(loaded.particle_count, original.particle_count);
+  EXPECT_NEAR(loaded.simulation_time, original.simulation_time, 1e-6);
+  EXPECT_NEAR(loaded.dt, original.dt, 1e-6);
+  EXPECT_NEAR(loaded.G, original.G, 1e-6);
+  EXPECT_NEAR(loaded.softening, original.softening, 1e-6);
+  EXPECT_EQ(loaded.force_method, original.force_method);
+
+  for (size_t i = 0; i < original.particle_count; i++) {
+    EXPECT_NEAR(loaded.pos_x[i], original.pos_x[i], 1e-6);
+    EXPECT_NEAR(loaded.pos_y[i], original.pos_y[i], 1e-6);
+    EXPECT_NEAR(loaded.pos_z[i], original.pos_z[i], 1e-6);
+    EXPECT_NEAR(loaded.vel_x[i], original.vel_x[i], 1e-6);
+    EXPECT_NEAR(loaded.vel_y[i], original.vel_y[i], 1e-6);
+    EXPECT_NEAR(loaded.vel_z[i], original.vel_z[i], 1e-6);
+    EXPECT_NEAR(loaded.mass[i], original.mass[i], 1e-6);
+  }
+}
+
+// Test with various particle counts: 0, 1, small, medium, and larger counts
+INSTANTIATE_TEST_SUITE_P(CheckpointRoundTripVariousCounts, ParticleCountTestFixture,
+                         ::testing::Values(0, 1, 10, 100, 1000, 10000));
