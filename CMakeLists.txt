@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.18)
 
 # ── 构建选项 (在 project() 之前) ─────────────────────────────────
 option(NBODY_ENABLE_CUDA "Enable CUDA support" ON)
+option(NBODY_ENABLE_RENDERING "Enable OpenGL/GLFW visualization surfaces" ON)
+option(NBODY_ENABLE_UI "Enable Dear ImGui diagnostics panel (requires rendering)" ON)
+option(NBODY_ENABLE_PROFILING "Enable built-in profiling instrumentation" OFF)
 
 if(NBODY_ENABLE_CUDA)
     project(NBodySimulation
@@ -41,15 +44,36 @@ else()
     message(STATUS "CUDA disabled (NBODY_ENABLE_CUDA=OFF)")
 endif()
 
-# ── 第三方依赖 ───────────────────────────────────────────────────
-find_package(OpenGL REQUIRED)
-find_package(glfw3 3.3 REQUIRED)
-find_package(GLEW 2.1 REQUIRED)
-find_package(glm 0.9.9 REQUIRED)
-
 # ── 构建选项 ─────────────────────────────────────────────────────
 option(NBODY_BUILD_TESTS "Build unit tests" ON)
 option(NBODY_BUILD_EXAMPLES "Build example executables" ON)
+option(NBODY_BUILD_BENCHMARKS "Build benchmark executables" ON)
+
+if(NBODY_ENABLE_RENDERING AND NOT NBODY_ENABLE_CUDA)
+    message(WARNING "Rendering requires CUDA-enabled interop in the current codebase; disabling rendering because NBODY_ENABLE_CUDA=OFF")
+    set(NBODY_ENABLE_RENDERING OFF)
+endif()
+
+if(NBODY_ENABLE_UI AND NOT NBODY_ENABLE_RENDERING)
+    message(STATUS "UI disabled (NBODY_ENABLE_RENDERING=OFF)")
+    set(NBODY_ENABLE_UI OFF)
+endif()
+
+if(NBODY_BUILD_EXAMPLES AND NOT NBODY_ENABLE_CUDA)
+    message(WARNING "Examples require CUDA support in the current codebase; disabling examples because NBODY_ENABLE_CUDA=OFF")
+    set(NBODY_BUILD_EXAMPLES OFF)
+endif()
+
+# ── 第三方依赖 ───────────────────────────────────────────────────
+if(NBODY_ENABLE_RENDERING)
+    find_package(OpenGL REQUIRED)
+    find_package(glfw3 3.3 REQUIRED)
+    find_package(GLEW 2.1 REQUIRED)
+endif()
+
+if(NBODY_ENABLE_RENDERING OR (NBODY_BUILD_TESTS AND NBODY_ENABLE_CUDA))
+    find_package(glm 0.9.9 REQUIRED)
+endif()
 
 include(FetchContent)
 
@@ -59,13 +83,42 @@ if(NBODY_BUILD_TESTS)
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.14.0
     )
-    FetchContent_Declare(
-        rapidcheck
-        GIT_REPOSITORY https://github.com/emil-e/rapidcheck.git
-        GIT_TAG v1.1.0
-    )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest rapidcheck)
+    FetchContent_MakeAvailable(googletest)
+    if(NBODY_ENABLE_CUDA)
+        FetchContent_Declare(
+            rapidcheck
+            GIT_REPOSITORY https://github.com/emil-e/rapidcheck.git
+            GIT_TAG 1.1.0
+        )
+        FetchContent_MakeAvailable(rapidcheck)
+    endif()
+endif()
+
+if(NBODY_ENABLE_UI)
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG docking
+    )
+    FetchContent_MakeAvailable(imgui)
+
+    # ImGui library with core and backend files
+    set(IMGUI_SOURCES
+        ${imgui_SOURCE_DIR}/imgui.cpp
+        ${imgui_SOURCE_DIR}/imgui_demo.cpp
+        ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_tables.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    )
+    add_library(imgui STATIC ${IMGUI_SOURCES})
+    target_include_directories(imgui PUBLIC
+        ${imgui_SOURCE_DIR}
+        ${imgui_SOURCE_DIR}/backends
+    )
+    target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
 endif()
 
 # Source files
@@ -81,16 +134,28 @@ if(NBODY_ENABLE_CUDA)
 endif()
 
 set(CPP_SOURCES
+    src/core/app_cli.cpp
     src/core/particle_system.cpp
     src/core/barnes_hut_tree.cpp
     src/core/spatial_hash_grid.cpp
-    src/render/renderer.cpp
-    src/render/camera.cpp
-    src/render/cuda_gl_interop.cpp
     src/utils/error_handling.cpp
+    src/utils/performance_observability.cpp
     src/utils/serialization.cpp
     src/utils/simulation_state.cpp
 )
+
+if(NBODY_ENABLE_RENDERING)
+    list(APPEND CPP_SOURCES
+        src/render/camera.cpp
+        src/render/renderer.cpp
+    )
+endif()
+
+if(NBODY_ENABLE_RENDERING AND NBODY_ENABLE_CUDA)
+    list(APPEND CPP_SOURCES
+        src/render/cuda_gl_interop.cpp
+    )
+endif()
 
 # ── 主库 ─────────────────────────────────────────────────────────
 add_library(nbody_lib STATIC ${CUDA_SOURCES} ${CPP_SOURCES})
@@ -102,24 +167,33 @@ target_include_directories(nbody_lib
         $<INSTALL_INTERFACE:include>
 )
 
+target_compile_definitions(nbody_lib
+    PUBLIC
+        NBODY_WITH_CUDA=$<BOOL:${NBODY_ENABLE_CUDA}>
+        NBODY_WITH_RENDERING=$<BOOL:${NBODY_ENABLE_RENDERING}>
+        NBODY_WITH_UI=$<BOOL:${NBODY_ENABLE_UI}>
+        NBODY_ENABLE_PROFILING=$<BOOL:${NBODY_ENABLE_PROFILING}>
+)
+
+if(NBODY_ENABLE_RENDERING OR (NBODY_BUILD_TESTS AND NBODY_ENABLE_CUDA))
+    target_link_libraries(nbody_lib PUBLIC glm::glm)
+endif()
+
 if(NBODY_ENABLE_CUDA)
-    target_link_libraries(nbody_lib PUBLIC
-        CUDA::cudart
-        OpenGL::GL
-        glfw
-        GLEW::GLEW
-        glm::glm
-    )
-    set_target_properties(nbody_lib PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON
-    )
-else()
+    target_link_libraries(nbody_lib PUBLIC CUDA::cudart)
+    set_target_properties(nbody_lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif()
+
+if(NBODY_ENABLE_RENDERING)
     target_link_libraries(nbody_lib PUBLIC
         OpenGL::GL
         glfw
         GLEW::GLEW
-        glm::glm
     )
+endif()
+
+if(NBODY_ENABLE_UI)
+    target_link_libraries(nbody_lib PUBLIC imgui)
 endif()
 
 target_compile_options(nbody_lib
@@ -129,8 +203,10 @@ target_compile_options(nbody_lib
 )
 
 # ── 主程序 ───────────────────────────────────────────────────────
-add_executable(nbody_sim src/main.cpp)
-target_link_libraries(nbody_sim PRIVATE nbody_lib)
+if(NBODY_ENABLE_RENDERING)
+    add_executable(nbody_sim src/main.cpp)
+    target_link_libraries(nbody_sim PRIVATE nbody_lib)
+endif()
 
 # ── 示例程序 ─────────────────────────────────────────────────────
 if(NBODY_BUILD_EXAMPLES)
@@ -147,27 +223,48 @@ if(NBODY_BUILD_EXAMPLES)
     endforeach()
 endif()
 
+if(NBODY_BUILD_BENCHMARKS)
+    add_executable(nbody_benchmarks
+        benchmarks/benchmark_main.cpp
+    )
+    target_link_libraries(nbody_benchmarks PRIVATE nbody_lib)
+endif()
+
 # ── 测试 ─────────────────────────────────────────────────────────
 if(NBODY_BUILD_TESTS)
     enable_testing()
-    add_executable(nbody_tests
+    add_executable(nbody_observability_tests
         tests/test_main.cpp
-        tests/test_particle_data.cpp
-        tests/test_force_calculation.cpp
-        tests/test_integrator.cpp
-        tests/test_barnes_hut.cpp
-        tests/test_spatial_hash.cpp
-        tests/test_serialization.cpp
-        tests/test_camera.cpp
-        tests/test_color_mapping.cpp
-        tests/test_validation.cpp
+        tests/test_app_cli.cpp
+        tests/test_performance_observability.cpp
     )
-    target_link_libraries(nbody_tests PRIVATE
+    target_link_libraries(nbody_observability_tests PRIVATE
         nbody_lib
         GTest::gtest
         GTest::gtest_main
-        rapidcheck
     )
+
     include(GoogleTest)
-    gtest_discover_tests(nbody_tests)
+    gtest_discover_tests(nbody_observability_tests)
+    if(NBODY_ENABLE_CUDA)
+        add_executable(nbody_tests
+            tests/test_main.cpp
+            tests/test_particle_data.cpp
+            tests/test_force_calculation.cpp
+            tests/test_integrator.cpp
+            tests/test_barnes_hut.cpp
+            tests/test_spatial_hash.cpp
+            tests/test_serialization.cpp
+            tests/test_camera.cpp
+            tests/test_color_mapping.cpp
+            tests/test_validation.cpp
+        )
+        target_link_libraries(nbody_tests PRIVATE
+            nbody_lib
+            GTest::gtest
+            GTest::gtest_main
+            rapidcheck
+        )
+        gtest_discover_tests(nbody_tests)
+    endif()
 endif()
