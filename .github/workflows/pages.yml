@@ -1,11 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy VitePress Docs
 
 on:
   push:
     branches: [master, main]
     paths:
       - 'site/**'
-      - 'docs/**'
       - 'README.md'
       - 'README.zh-CN.md'
       - 'CHANGELOG.md'
@@ -23,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Jekyll Site
+    name: Build VitePress Site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,59 +30,51 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          ruby-version: '3.2'
-          bundler-cache: false
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
 
-      - name: Install Dependencies
-        run: |
-          cd site
-          bundle config set path vendor/bundle
-          bundle install --jobs 4 --retry 3
+      - name: Install dependencies
+        working-directory: site
+        run: npm ci || npm install
 
-      - name: Build Jekyll Site
-        run: |
-          cd site
-          bundle exec jekyll build \
-            --destination ../_site \
-            --baseurl /n-body
-        env:
-          JEKYLL_ENV: production
-          PAGES_REPO_NWO: LessUp/n-body
+      - name: Build VitePress
+        working-directory: site
+        run: npm run build
+
+      - name: Add .nojekyll
+        run: touch site/.vitepress/dist/.nojekyll
 
       - name: Verify Build Output
         run: |
           echo "Verifying build output..."
-          ls -la ./_site/
-          
-          if [ ! -f "./_site/index.html" ]; then
+          ls -la site/.vitepress/dist/
+
+          if [ ! -f "site/.vitepress/dist/index.html" ]; then
             echo "❌ ERROR: index.html not found!"
             exit 1
           fi
           echo "✅ index.html exists"
-          
-          if [ ! -d "./_site/docs" ]; then
-            echo "⚠️ WARNING: docs directory may be missing"
-          else
-            echo "✅ docs directory exists"
+
+          if [ ! -d "site/.vitepress/dist/en" ]; then
+            echo "❌ ERROR: en directory not found!"
+            exit 1
           fi
-          
-          if [ ! -d "./_site/assets" ]; then
-            echo "⚠️ WARNING: assets directory may be missing"
-          else
-            echo "✅ assets directory exists"
-            ls -la ./_site/assets/
+          echo "✅ en directory exists"
+
+          if [ ! -d "site/.vitepress/dist/zh-CN" ]; then
+            echo "❌ ERROR: zh-CN directory not found!"
+            exit 1
           fi
+          echo "✅ zh-CN directory exists"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: ./_site
+          path: site/.vitepress/dist
 
   deploy:
     name: Deploy to Pages

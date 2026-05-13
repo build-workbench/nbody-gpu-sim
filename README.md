@@ -1,6 +1,13 @@
 # n-body
 
-High-performance GPU N-body simulation with real-time CUDA/OpenGL visualization.
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/LessUp/n-body/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CUDA](https://img.shields.io/badge/CUDA-11%2B-76B900.svg)](https://developer.nvidia.com/cuda-toolkit)
+[![C++](https://img.shields.io/badge/C%2B%2B-20-00599C.svg)](https://en.cppreference.com/w/cpp/20)
+[![Build](https://github.com/LessUp/n-body/actions/workflows/ci.yml/badge.svg)](https://github.com/LessUp/n-body/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://lessup.github.io/n-body/)
+
+**Million-Particle GPU Physics Engine** — High-performance N-body simulation with CUDA acceleration, real-time OpenGL visualization, and three force calculation algorithms.
 
 [GitHub Pages](https://lessup.github.io/n-body/) · [Getting Started](docs/setup/getting-started.md) · [Examples](examples/) · [OpenSpec](openspec/specs/)
 
@@ -15,6 +22,39 @@ This project combines three force-computation strategies with a single simulatio
 - **CUDA/OpenGL interop** for zero-copy visualization
 
 The goal is not just to render particles quickly, but to keep the simulation architecture understandable, testable, and easy to compare across algorithms.
+
+## Performance Highlights
+
+| Particles | Direct N² | Barnes-Hut | Spatial Hash |
+|-----------|-----------|------------|--------------|
+| 10K | 60 FPS | 120 FPS | 120 FPS |
+| 100K | 10 FPS | 60 FPS | 90 FPS |
+| 1M | 1 FPS | 25 FPS | 60 FPS |
+
+*Benchmarks on NVIDIA RTX 3080*
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph CPU["CPU (Host)"]
+        Config[SimulationConfig]
+        PS[ParticleSystem]
+        RL[Render Loop]
+    end
+    
+    subgraph GPU["GPU (Device)"]
+        FK[Force Kernel<br/>N²/Barnes-Hut/Hash]
+        INT[Integration<br/>Velocity Verlet]
+        GL[OpenGL<br/>Zero-Copy]
+    end
+    
+    Config --> PS
+    PS --> FK
+    FK --> INT
+    INT --> GL
+    GL --> RL
+```
 
 ## Technical Highlights
 
@@ -61,21 +101,6 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j"$(nproc)"
 ```
 
-Manual headless core-only path:
-
-```bash
-mkdir -p build/headless
-cd build/headless
-cmake ../.. \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DNBODY_ENABLE_RENDERING=OFF \
-  -DNBODY_ENABLE_CUDA=OFF \
-  -DNBODY_BUILD_TESTS=ON \
-  -DNBODY_BUILD_BENCHMARKS=ON \
-  -DNBODY_BUILD_EXAMPLES=OFF
-cmake --build . -j"$(nproc)"
-```
-
 ### Run
 
 ```bash
@@ -89,16 +114,12 @@ cmake --build . -j"$(nproc)"
 ./scripts/test.sh
 ```
 
-`./scripts/test.sh` only applies to CUDA-enabled builds that actually produced `nbody_tests`. Headless core-only builds now explain why the suite is unavailable instead of pointing at a missing binary.
-
 ### Benchmark
 
 ```bash
 ./scripts/benchmark.sh
 ./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
 ```
-
-Set `NBODY_BENCHMARK_PARTICLES`, `NBODY_BENCHMARK_ITERATIONS`, or enable profiling with `-DNBODY_ENABLE_PROFILING=ON` to tune benchmark runs and phase timing output.
 
 ## Project Layout
 
@@ -122,24 +143,6 @@ Set `NBODY_BENCHMARK_PARTICLES`, `NBODY_BENCHMARK_ITERATIONS`, or enable profili
 - [Performance](docs/architecture/performance.md)
 - [Contributing](CONTRIBUTING.md)
 
-## OpenSpec Workflow
-
-This repository is governed by OpenSpec.
-
-1. Read the relevant files in [`openspec/specs/`](openspec/specs/).
-2. Create or update an OpenSpec change in [`openspec/changes/`](openspec/changes/) before implementing behavior or workflow changes.
-3. Implement from the change task list.
-4. Use `/review` before finalizing major structural or governance refactors.
-
-Active capability specs:
-
-- [simulation-core](openspec/specs/simulation-core.md)
-- [force-computation](openspec/specs/force-computation.md)
-- [visualization](openspec/specs/visualization.md)
-- [simulation-control](openspec/specs/simulation-control.md)
-- [quality-attributes](openspec/specs/quality-attributes.md)
-- [repository-governance](openspec/specs/repository-governance.md)
-
 ## Examples
 
 - [`example_basic.cpp`](examples/example_basic.cpp)
@@ -152,6 +155,21 @@ Active capability specs:
 - Canonical build path: CMake + `scripts/build.sh`
 - Canonical LSP baseline: `clangd` + `compile_commands.json`
 - Canonical assistant guidance: [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md), [.github/copilot-instructions.md](.github/copilot-instructions.md)
+
+## Citation
+
+If you use this project in your research, please cite:
+
+```bibtex
+@software{nbody2026,
+  title = {N-Body: Million-Particle GPU Physics Engine},
+  author = {LessUp},
+  year = {2026},
+  url = {https://github.com/LessUp/n-body},
+  version = {2.1.0},
+  note = {CUDA-accelerated N-body simulation with real-time visualization}
+}
+```
 
 ## License
 

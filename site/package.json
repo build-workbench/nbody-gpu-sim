@@ -1,0 +1,22 @@
+{
+  "name": "n-body-docs",
+  "version": "2.1.0",
+  "type": "module",
+  "description": "Documentation for N-Body GPU Physics Engine",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0"
+  },
+  "dependencies": {
+    "mermaid": "^11.12.2",
+    "vitepress-plugin-llms": "^1.10.0",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
