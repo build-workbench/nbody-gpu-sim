@@ -38,7 +38,7 @@ This document summarizes the comprehensive stabilization of the n-body project f
 
 ### 5. GitHub Presentation (Complete)
 - ✅ Updated repo description: "High-performance N-body particle simulation with Barnes-Hut algorithm, GPU acceleration, and real-time visualization"
-- ✅ Set homepage URL: `https://lessup.github.io/n-body/`
+- ✅ Set homepage URL: `https://lessup.github.io/n-body/` → `https://aicl-lab.github.io/n-body/` (updated 2026-05-14)
 - ✅ Added curated GitHub topics: n-body-simulation, cuda, barnes-hut, gpu-acceleration, particle-physics
 - ✅ Rationalized Pages workflow (`pages.yml`) to trigger only on relevant path changes
 

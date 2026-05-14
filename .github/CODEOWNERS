@@ -2,30 +2,30 @@
 # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owners for everything
-* @LessUp
+* @AICL-Lab
 
 # CUDA kernel code
-/src/cuda/ @LessUp
+/src/cuda/ @AICL-Lab
 
 # Core simulation logic
-/src/core/ @LessUp
-/include/nbody/ @LessUp
+/src/core/ @AICL-Lab
+/include/nbody/ @AICL-Lab
 
 # Rendering code
-/src/render/ @LessUp
-/shaders/ @LessUp
+/src/render/ @AICL-Lab
+/shaders/ @AICL-Lab
 
 # Build system
-/CMakeLists.txt @LessUp
+/CMakeLists.txt @AICL-Lab
 
 # Documentation
-/docs/ @LessUp
-/README.md @LessUp
-/README.zh-CN.md @LessUp
-/CHANGELOG.md @LessUp
+/docs/ @AICL-Lab
+/README.md @AICL-Lab
+/README.zh-CN.md @AICL-Lab
+/CHANGELOG.md @AICL-Lab
 
 # Tests
-/tests/ @LessUp
+/tests/ @AICL-Lab
 
 # CI/CD
-/.github/workflows/ @LessUp
+/.github/workflows/ @AICL-Lab
