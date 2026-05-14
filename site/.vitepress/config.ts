@@ -97,7 +97,7 @@ export default withMermaid(defineConfig({
           ],
         },
         editLink: {
-          pattern: 'https://github.com/LessUp/n-body/edit/main/docs/:path',
+          pattern: 'https://github.com/LessUp/n-body/edit/main/site/:path',
           text: 'Edit this page on GitHub',
         },
         footer: {
@@ -195,7 +195,7 @@ export default withMermaid(defineConfig({
           ],
         },
         editLink: {
-          pattern: 'https://github.com/LessUp/n-body/edit/main/docs/:path',
+          pattern: 'https://github.com/LessUp/n-body/edit/main/site/:path',
           text: '在 GitHub 上编辑此页',
         },
         footer: {
@@ -243,6 +243,17 @@ export default withMermaid(defineConfig({
       light: 'github-light',
       dark: 'github-dark',
     },
+    codeTransformers: [
+      {
+        name: 'cuda-to-cpp',
+        preprocess(code, options) {
+          if (options?.lang === 'cuda') {
+            options.lang = 'cpp'
+          }
+          return code
+        }
+      }
+    ],
   },
 
   mermaid: {
