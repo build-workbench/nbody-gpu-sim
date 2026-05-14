@@ -1,15 +1,15 @@
 # n-body
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/LessUp/n-body/releases)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/AICL-Lab/n-body/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CUDA](https://img.shields.io/badge/CUDA-11%2B-76B900.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-00599C.svg)](https://en.cppreference.com/w/cpp/20)
-[![Build](https://github.com/LessUp/n-body/actions/workflows/ci.yml/badge.svg)](https://github.com/LessUp/n-body/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://lessup.github.io/n-body/)
+[![Build](https://github.com/AICL-Lab/n-body/actions/workflows/ci.yml/badge.svg)](https://github.com/AICL-Lab/n-body/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://aicl-lab.github.io/n-body/)
 
 **Million-Particle GPU Physics Engine** — High-performance N-body simulation with CUDA acceleration, real-time OpenGL visualization, and three force calculation algorithms.
 
-[GitHub Pages](https://lessup.github.io/n-body/) · [Getting Started](docs/setup/getting-started.md) · [Examples](examples/) · [OpenSpec](openspec/specs/)
+[GitHub Pages](https://aicl-lab.github.io/n-body/) · [Getting Started](docs/setup/getting-started.md) · [Examples](examples/) · [OpenSpec](openspec/specs/)
 
 ## Why this project
 
@@ -163,9 +163,9 @@ If you use this project in your research, please cite:
 ```bibtex
 @software{nbody2026,
   title = {N-Body: Million-Particle GPU Physics Engine},
-  author = {LessUp},
+  author = {AICL-Lab},
   year = {2026},
-  url = {https://github.com/LessUp/n-body},
+  url = {https://github.com/AICL-Lab/n-body},
   version = {2.1.0},
   note = {CUDA-accelerated N-body simulation with real-time visualization}
 }

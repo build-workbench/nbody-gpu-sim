@@ -97,12 +97,12 @@ export default withMermaid(defineConfig({
           ],
         },
         editLink: {
-          pattern: 'https://github.com/LessUp/n-body/edit/main/site/:path',
+          pattern: 'https://github.com/AICL-Lab/n-body/edit/main/site/:path',
           text: 'Edit this page on GitHub',
         },
         footer: {
           message: 'Released under the MIT License.',
-          copyright: 'Copyright © 2024-2026 LessUp',
+          copyright: 'Copyright © 2024-2026 AICL-Lab',
         },
         docFooter: {
           prev: 'Previous',
@@ -195,12 +195,12 @@ export default withMermaid(defineConfig({
           ],
         },
         editLink: {
-          pattern: 'https://github.com/LessUp/n-body/edit/main/site/:path',
+          pattern: 'https://github.com/AICL-Lab/n-body/edit/main/site/:path',
           text: '在 GitHub 上编辑此页',
         },
         footer: {
           message: '基于 MIT 许可证发布。',
-          copyright: '版权所有 © 2024-2026 LessUp',
+          copyright: '版权所有 © 2024-2026 AICL-Lab',
         },
         docFooter: {
           prev: '上一页',
@@ -224,7 +224,7 @@ export default withMermaid(defineConfig({
   // Shared theme config (applies to all locales)
   themeConfig: {
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/LessUp/n-body' },
+      { icon: 'github', link: 'https://github.com/AICL-Lab/n-body' },
     ],
     search: {
       provider: 'local',

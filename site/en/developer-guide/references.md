@@ -94,9 +94,9 @@ If you use this project in your research, please cite:
 ```bibtex
 @software{nbody2026,
   title = {N-Body: Million-Particle GPU Physics Engine},
-  author = {LessUp},
+  author = {AICL-Lab},
   year = {2026},
-  url = {https://github.com/LessUp/n-body},
+  url = {https://github.com/AICL-Lab/n-body},
   version = {2.1.0},
   note = {CUDA-accelerated N-body simulation with real-time visualization}
 }

@@ -63,7 +63,7 @@ This project is in **final closeout phase**. All core features are complete and 
 
 ### ✅ GitHub Presentation
 - [x] Description: "High-performance N-body particle simulation with Barnes-Hut algorithm, GPU acceleration, and real-time visualization"
-- [x] Homepage: https://lessup.github.io/n-body/
+- [x] Homepage: https://aicl-lab.github.io/n-body/
 - [x] Topics: n-body-simulation, cuda, barnes-hut, gpu-acceleration, particle-physics
 
 ---
@@ -138,8 +138,8 @@ If further work is required, use the OpenSpec workflow:
 
 ## Contact & Archival
 
-- **Repository**: https://github.com/LessUp/n-body
-- **Pages**: https://lessup.github.io/n-body/
+- **Repository**: https://github.com/AICL-Lab/n-body
+- **Pages**: https://aicl-lab.github.io/n-body/
 - **Maintainer**: See CONTRIBUTING.md
 
 ---

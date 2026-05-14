@@ -5,7 +5,7 @@ How to contribute to the project.
 ## Development Setup
 
 ```bash
-git clone https://github.com/LessUp/n-body.git
+git clone https://github.com/AICL-Lab/n-body.git
 cd n-body
 ./scripts/build.sh
 ./scripts/test.sh

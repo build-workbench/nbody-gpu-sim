@@ -77,7 +77,7 @@ sudo apt-get install -y \
     libglm-dev
 
 # 2. Clone the repository
-git clone https://github.com/LessUp/n-body.git
+git clone https://github.com/AICL-Lab/n-body.git
 cd n-body
 
 # 3. Verify structure
@@ -364,7 +364,7 @@ Tested on RTX 3080:
 ## 🆘 Getting Help
 
 1. Check this guide first
-2. Review [GitHub Issues](https://github.com/LessUp/n-body/issues)
+2. Review [GitHub Issues](https://github.com/AICL-Lab/n-body/issues)
 3. Create new issue with:
    - GPU model and driver version
    - CUDA version (`nvcc --version`)

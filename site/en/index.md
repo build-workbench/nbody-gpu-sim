@@ -116,7 +116,7 @@ High-performance N-body simulation with CUDA acceleration, real-time OpenGL visu
   <div class="quick-start-title">Build and Run</div>
   <div class="quick-start-content">
     <div class="command-block">
-      <code>git clone https://github.com/LessUp/n-body.git<br>cd n-body<br>./scripts/build.sh<br>./build/nbody_sim 100000</code>
+      <code>git clone https://github.com/AICL-Lab/n-body.git<br>cd n-body<br>./scripts/build.sh<br>./build/nbody_sim 100000</code>
     </div>
     <p>Requires: NVIDIA GPU with CUDA support, CUDA Toolkit 11+, CMake 3.18+, OpenGL 3.3+</p>
   </div>
@@ -163,9 +163,9 @@ graph TB
 ```bibtex
 @software{nbody2026,
   title = {N-Body: Million-Particle GPU Physics Engine},
-  author = {LessUp},
+  author = {AICL-Lab},
   year = {2026},
-  url = {https://github.com/LessUp/n-body},
+  url = {https://github.com/AICL-Lab/n-body},
   version = {2.1.0},
   note = {CUDA-accelerated N-body simulation with real-time visualization}
 }
@@ -179,4 +179,4 @@ graph TB
 - [Architecture](/en/developer-guide/architecture) - System design and patterns
 - [API Reference](/en/api-reference/particle-system) - Detailed API documentation
 - [Benchmarks](/en/benchmarks/performance) - Performance analysis and methodology
-- [GitHub](https://github.com/LessUp/n-body) - Source code and issues
+- [GitHub](https://github.com/AICL-Lab/n-body) - Source code and issues

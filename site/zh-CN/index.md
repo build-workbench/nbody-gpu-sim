@@ -116,7 +116,7 @@ layout: home
   <div class="quick-start-title">构建与运行</div>
   <div class="quick-start-content">
     <div class="command-block">
-      <code>git clone https://github.com/LessUp/n-body.git<br>cd n-body<br>./scripts/build.sh<br>./build/nbody_sim 100000</code>
+      <code>git clone https://github.com/AICL-Lab/n-body.git<br>cd n-body<br>./scripts/build.sh<br>./build/nbody_sim 100000</code>
     </div>
     <p>依赖：NVIDIA GPU（支持 CUDA）、CUDA Toolkit 11+、CMake 3.18+、OpenGL 3.3+</p>
   </div>
@@ -163,9 +163,9 @@ graph TB
 ```bibtex
 @software{nbody2026,
   title = {N-Body: Million-Particle GPU Physics Engine},
-  author = {LessUp},
+  author = {AICL-Lab},
   year = {2026},
-  url = {https://github.com/LessUp/n-body},
+  url = {https://github.com/AICL-Lab/n-body},
   version = {2.1.0},
   note = {CUDA-accelerated N-body simulation with real-time visualization}
 }
@@ -179,4 +179,4 @@ graph TB
 - [架构设计](/zh-CN/developer-guide/architecture) - 系统设计和模式
 - [API 参考](/zh-CN/api-reference/particle-system) - 详细 API 文档
 - [性能基准](/zh-CN/benchmarks/performance) - 性能分析和测试方法
-- [GitHub](https://github.com/LessUp/n-body) - 源代码和问题反馈
+- [GitHub](https://github.com/AICL-Lab/n-body) - 源代码和问题反馈

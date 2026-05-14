@@ -83,7 +83,7 @@ vcpkg install glfw3 glew glm hdf5
 ### Quick Build (Linux/macOS)
 
 ```bash
-git clone https://github.com/LessUp/n-body.git
+git clone https://github.com/AICL-Lab/n-body.git
 cd n-body
 ./scripts/build.sh
 ```

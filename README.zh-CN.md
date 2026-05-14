@@ -2,7 +2,7 @@
 
 基于 GPU 的高性能 N 体模拟项目，提供实时 CUDA/OpenGL 可视化。
 
-[GitHub Pages](https://lessup.github.io/n-body/) · [快速开始](docs/setup/getting-started.md) · [示例](examples/) · [OpenSpec](openspec/specs/)
+[GitHub Pages](https://aicl-lab.github.io/n-body/) · [快速开始](docs/setup/getting-started.md) · [示例](examples/) · [OpenSpec](openspec/specs/)
 
 ## 项目价值
 
