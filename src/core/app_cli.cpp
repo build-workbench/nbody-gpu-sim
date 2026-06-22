@@ -107,20 +107,8 @@ AppCliOptions parseAppCliOptions(int argc, const char* const argv[]) {
       options.export_path = requireValue(argc, argv, i, argument);
       continue;
     }
-    if (argument == "--export-format") {
-      options.export_format = requireValue(argc, argv, i, argument);
-      continue;
-    }
     if (argument == "--import") {
       options.import_path = requireValue(argc, argv, i, argument);
-      continue;
-    }
-    if (argument == "--list-algorithms") {
-      options.list_algorithms = true;
-      continue;
-    }
-    if (argument == "--diagnostics") {
-      options.show_diagnostics = true;
       continue;
     }
     if (!argument.empty() && argument.front() == '-') {
@@ -166,13 +154,9 @@ std::string appCliUsage() {
         << "  --benchmark-steps N    Set benchmark update steps\n"
         << "  --benchmark-output P   Write benchmark JSON to path P\n"
         << "\nData export/import:\n"
-        << "  --export PATH          Export particle state to file\n"
-        << "  --export-format FMT    Export format: checkpoint (default)\n"
-        << "  --import PATH          Import particle state from file\n"
-        << "\nDiagnostics:\n"
-        << "  --list-algorithms      List available force methods and exit\n"
-        << "  --diagnostics          Output diagnostic information\n"
-        << "  --help                 Show this message\n";
+        << "  --export PATH          Export particle state to checkpoint file\n"
+        << "  --import PATH          Import particle state from checkpoint file\n"
+        << "\n  --help                 Show this message\n";
   return usage.str();
 }
 

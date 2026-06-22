@@ -2,7 +2,7 @@
 
 基于 GPU 的高性能 N 体模拟项目，提供实时 CUDA/OpenGL 可视化。
 
-[GitHub Pages](https://aicl-lab.github.io/n-body/) · [快速开始](docs/setup/getting-started.md) · [示例](examples/) · [OpenSpec](openspec/specs/)
+[GitHub Pages](https://aicl-lab.github.io/n-body/) · [快速开始](docs/setup/getting-started.md) · [示例](examples/)
 
 ## 项目价值
 
@@ -24,7 +24,7 @@
 | 算法 | Direct N²、Barnes-Hut、Spatial Hash |
 | 渲染 | OpenGL 渲染器与 CUDA/OpenGL 互操作 |
 | 架构 | `ParticleSystem` 外观 + `ForceCalculator` 策略 |
-| 质量 | GoogleTest + RapidCheck、OpenSpec 驱动流程 |
+| 质量 | GoogleTest + RapidCheck |
 
 ## 算法选型
 
@@ -110,8 +110,6 @@ cmake --build . -j"$(nproc)"
 | `examples/` | 示例程序与使用模式 |
 | `docs/` | 仓库内规范文档入口 |
 | `site/` | GitHub Pages 展示站点 |
-| `openspec/specs/` | 当前活跃规格 |
-| `openspec/changes/` | 活跃提案与实施任务 |
 
 ## 规范文档入口
 
@@ -121,24 +119,6 @@ cmake --build . -j"$(nproc)"
 - [API 参考](docs/architecture/api.md)
 - [性能说明](docs/architecture/performance.md)
 - [贡献指南](CONTRIBUTING.md)
-
-## OpenSpec 工作流
-
-本仓库以 OpenSpec 为治理核心。
-
-1. 先阅读 [`openspec/specs/`](openspec/specs/) 中的相关规格。
-2. 任何会改变行为或工作流的修改，都应先在 [`openspec/changes/`](openspec/changes/) 中创建或更新变更。
-3. 实现必须来自变更任务清单。
-4. 重大结构或治理性重构在完成前应使用 `/review` 做显式审查。
-
-当前能力规格：
-
-- [simulation-core](openspec/specs/simulation-core.md)
-- [force-computation](openspec/specs/force-computation.md)
-- [visualization](openspec/specs/visualization.md)
-- [simulation-control](openspec/specs/simulation-control.md)
-- [quality-attributes](openspec/specs/quality-attributes.md)
-- [repository-governance](openspec/specs/repository-governance.md)
 
 ## 示例
 

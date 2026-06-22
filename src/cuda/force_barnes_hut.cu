@@ -273,51 +273,65 @@ void BarnesHutTree::computeMortonCodes(const ParticleData* d_particles) {
   CUDA_CHECK_KERNEL();
 }
 
-void BarnesHutTree::sortParticlesByMorton() {
+void BarnesHutTree::sortParticlesByMorton(size_t particle_count) {
   thrust::device_ptr<unsigned int> keys(d_morton_codes_);
   thrust::device_ptr<int> values(d_sorted_indices_);
-  thrust::sort_by_key(keys, keys + max_particles_, values);
+  thrust::sort_by_key(keys, keys + particle_count, values);
 }
 
 void BarnesHutTree::build(const ParticleData* d_particles) {
   NBODY_PROFILE_SCOPE("barnes_hut.build");
   computeBoundingBox(d_particles);
   computeMortonCodes(d_particles);
-  sortParticlesByMorton();
-  buildTreeGPU(d_particles);
-  computeCentersOfMass(d_particles);
+  sortParticlesByMorton(d_particles->count);
+  buildTreeOnHost(d_particles);
 }
 
-void BarnesHutTree::buildTreeGPU(const ParticleData* d_particles) {
+// Determine which octant of `node` contains `pos`.
+static int octantOf(const Vec3& pos, const Vec3& center) {
+  int octant = 0;
+  if (pos.x >= center.x)
+    octant |= 1;
+  if (pos.y >= center.y)
+    octant |= 2;
+  if (pos.z >= center.z)
+    octant |= 4;
+  return octant;
+}
+
+// Allocate a new leaf node holding a single particle.
+int BarnesHutTree::allocateLeaf(int parent, int octant, int particle_index,
+                                const Vec3& pos, float mass) {
+  int new_idx = node_count_++;
+  OctreeNode& parent_node = h_nodes_[parent];
+  parent_node.children[octant] = new_idx;
+  parent_node.is_leaf = false;
+
+  float hs = parent_node.half_size * 0.5f;
+  const Vec3& c = parent_node.center;
+  OctreeNode& child = h_nodes_[new_idx];
+  child.center = Vec3(c.x + ((octant & 1) ? hs : -hs), c.y + ((octant & 2) ? hs : -hs),
+                      c.z + ((octant & 4) ? hs : -hs));
+  child.half_size = hs;
+  child.is_leaf = true;
+  child.particle_index = particle_index;
+  child.particle_count = 1;
+  child.total_mass = mass;
+  child.center_of_mass = pos;
+  for (int j = 0; j < 8; j++)
+    child.children[j] = -1;
+  return new_idx;
+}
+
+void BarnesHutTree::buildTreeOnHost(const ParticleData* d_particles) {
   NBODY_PROFILE_SCOPE("barnes_hut.tree_build_host");
-  // =========================================================================
-  // PERFORMANCE NOTE: CPU Tree Building
-  // =========================================================================
-  // This implementation builds the Barnes-Hut octree on the CPU, then copies
-  // the result to GPU memory. This approach:
-  //
-  // Pros:
-  //   - Simpler implementation with guaranteed correctness
-  //   - Easier to debug and maintain
-  //   - Works reliably across all CUDA architectures
-  //
-  // Cons:
-  //   - Requires device-to-host memory copies (performance bottleneck)
-  //   - Tree building is not parallelized
-  //   - Scales poorly for very large particle counts (>1M particles)
-  //
-  // TODO: Implement GPU-native tree building using:
-  //   - Parallel Morton code computation (already done)
-  //   - GPU-based radix sort (already done via Thrust)
-  //   - Parallel tree construction using atomic operations
-  //   - This would eliminate device-host copies and improve scalability
-  //
-  // For typical use cases (<500K particles), CPU building is acceptable.
-  // =========================================================================
+  // Builds the Barnes-Hut octree on the CPU, then copies the result to GPU
+  // memory. Simple and correct; the device-host copy is the main bottleneck
+  // for very large N, but is acceptable for typical demo workloads.
 
-  int N = static_cast<int>(d_particles->count);
+  const int N = static_cast<int>(d_particles->count);
 
-  // Copy particle data to host
+  // Copy particle data to host once (reused for center-of-mass aggregation).
   std::vector<float> h_pos_x(N), h_pos_y(N), h_pos_z(N), h_mass(N);
   std::vector<int> h_sorted_indices(N);
 
@@ -332,9 +346,8 @@ void BarnesHutTree::buildTreeGPU(const ParticleData* d_particles) {
   CUDA_CHECK(cudaMemcpy(h_sorted_indices.data(), d_sorted_indices_, N * sizeof(int),
                         cudaMemcpyDeviceToHost));
 
-  // Initialize root node
-  h_nodes_.clear();
-  h_nodes_.resize(max_nodes_);
+  // Initialize root node.
+  h_nodes_.assign(max_nodes_, OctreeNode{});
 
   OctreeNode& root = h_nodes_[0];
   root.center = Vec3((bbox_min_.x + bbox_max_.x) * 0.5f, (bbox_min_.y + bbox_max_.y) * 0.5f,
@@ -345,142 +358,114 @@ void BarnesHutTree::buildTreeGPU(const ParticleData* d_particles) {
   root.is_leaf = false;
   root.particle_index = -1;
   root.particle_count = N;
-  for (int i = 0; i < 8; i++)
-    root.children[i] = -1;
 
   node_count_ = 1;
+  max_depth_ = 0;
 
-  // Insert particles
+  constexpr int MAX_DEPTH = 32;
+
+  // Insert particles one by one, splitting existing leaf nodes when necessary.
   for (int i = 0; i < N; i++) {
-    int idx = h_sorted_indices[i];
-    Vec3 pos(h_pos_x[idx], h_pos_y[idx], h_pos_z[idx]);
-    float m = h_mass[idx];
+    const int idx = h_sorted_indices[i];
+    const Vec3 pos(h_pos_x[idx], h_pos_y[idx], h_pos_z[idx]);
+    const float m = h_mass[idx];
 
-    // Find leaf node for this particle
     int current = 0;
     int depth = 0;
 
-    while (!h_nodes_[current].is_leaf && depth < 20) {
-      Vec3& center = h_nodes_[current].center;
-      int octant = 0;
-      if (pos.x >= center.x)
-        octant |= 1;
-      if (pos.y >= center.y)
-        octant |= 2;
-      if (pos.z >= center.z)
-        octant |= 4;
+    while (depth < MAX_DEPTH) {
+      OctreeNode& node = h_nodes_[current];
 
-      if (h_nodes_[current].children[octant] < 0) {
-        // Create new leaf node
-        int new_idx = node_count_++;
-        h_nodes_[current].children[octant] = new_idx;
+      if (node.is_leaf) {
+        // This leaf already holds a particle. Convert it into an internal
+        // node and re-insert both the existing particle and the new one into
+        // deeper children. If both land in the same octant at MAX_DEPTH, we
+        // keep them together in one leaf (multi-particle leaf).
+        const int existing_idx = node.particle_index;
+        const Vec3 existing_pos = node.center_of_mass;
+        const float existing_mass = node.total_mass;
 
-        OctreeNode& child = h_nodes_[new_idx];
-        float hs = h_nodes_[current].half_size * 0.5f;
-        child.center =
-            Vec3(center.x + ((octant & 1) ? hs : -hs), center.y + ((octant & 2) ? hs : -hs),
-                 center.z + ((octant & 4) ? hs : -hs));
-        child.half_size = hs;
-        child.is_leaf = true;
-        child.particle_index = idx;
-        child.particle_count = 1;
-        child.total_mass = m;
-        child.center_of_mass = pos;
-        for (int j = 0; j < 8; j++)
-          child.children[j] = -1;
+        node.is_leaf = false;
+        node.particle_index = -1;
+        node.particle_count = 0;
+        node.total_mass = 0.0f;
+        node.center_of_mass = Vec3(0, 0, 0);
+
+        // Re-insert the existing particle into a child leaf.
+        int existing_octant = octantOf(existing_pos, node.center);
+        if (node.children[existing_octant] < 0) {
+          allocateLeaf(current, existing_octant, existing_idx, existing_pos, existing_mass);
+        }
+        // Fall through to insert the new particle below.
+      }
+
+      // node is now an internal node: descend into the correct octant.
+      int octant = octantOf(pos, node.center);
+      int child = node.children[octant];
+      if (child < 0) {
+        // Empty octant: create a new leaf holding the new particle.
+        allocateLeaf(current, octant, idx, pos, m);
         break;
       }
 
-      current = h_nodes_[current].children[octant];
+      current = child;
       depth++;
     }
 
-    // Handle particles at max depth by inserting into current node
-    // This ensures no particles are lost even with extreme distributions
-    if (!h_nodes_[current].is_leaf && depth >= 20) {
-      // Force insert at max depth - treat non-leaf as leaf for this particle
-      // The center of mass computation will handle aggregation correctly
-      int new_idx = node_count_++;
-      Vec3& center = h_nodes_[current].center;
-      int octant = 0;
-      if (pos.x >= center.x)
-        octant |= 1;
-      if (pos.y >= center.y)
-        octant |= 2;
-      if (pos.z >= center.z)
-        octant |= 4;
-
-      // Create the child node even if it would normally be skipped
-      h_nodes_[current].children[octant] = new_idx;
-      float hs = h_nodes_[current].half_size * 0.5f;
-      OctreeNode& child = h_nodes_[new_idx];
-      child.center =
-          Vec3(center.x + ((octant & 1) ? hs : -hs), center.y + ((octant & 2) ? hs : -hs),
-               center.z + ((octant & 4) ? hs : -hs));
-      child.half_size = hs;
-      child.is_leaf = true;
-      child.particle_index = idx;
-      child.particle_count = 1;
-      child.total_mass = m;
-      child.center_of_mass = pos;
-      for (int j = 0; j < 8; j++)
-        child.children[j] = -1;
+    if (depth >= MAX_DEPTH) {
+      // Degenerate case: two (or more) particles collapse into the same
+      // spatial cell at max depth. Merge into the current leaf, accumulating
+      // mass and center of mass so force calculation still sees the group.
+      OctreeNode& node = h_nodes_[current];
+      if (!node.is_leaf) {
+        node.is_leaf = true;
+        node.particle_index = idx;
+        node.particle_count = 1;
+        node.total_mass = m;
+        node.center_of_mass = pos;
+      } else {
+        float total = node.total_mass + m;
+        node.center_of_mass =
+            Vec3((node.center_of_mass.x * node.total_mass + pos.x * m) / total,
+                 (node.center_of_mass.y * node.total_mass + pos.y * m) / total,
+                 (node.center_of_mass.z * node.total_mass + pos.z * m) / total);
+        node.total_mass = total;
+        node.particle_count += 1;
+      }
     }
 
     max_depth_ = std::max(max_depth_, depth);
   }
 
-  // Copy tree to device
-  CUDA_CHECK(cudaMemcpy(d_nodes_, h_nodes_.data(), node_count_ * sizeof(OctreeNode),
-                        cudaMemcpyHostToDevice));
-}
-
-void BarnesHutTree::computeCentersOfMass(const ParticleData* d_particles) {
-  // Compute centers of mass bottom-up (CPU for simplicity)
-  int N = static_cast<int>(d_particles->count);
-
-  std::vector<float> h_pos_x(N), h_pos_y(N), h_pos_z(N), h_mass(N);
-  CUDA_CHECK(
-      cudaMemcpy(h_pos_x.data(), d_particles->pos_x, N * sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_pos_y.data(), d_particles->pos_y, N * sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_pos_z.data(), d_particles->pos_z, N * sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(
-      cudaMemcpy(h_mass.data(), d_particles->mass, N * sizeof(float), cudaMemcpyDeviceToHost));
-
-  // Process nodes in reverse order (bottom-up)
+  // Aggregate centers of mass bottom-up. Leaf nodes already carry their
+  // particle's mass/com from insertion, so only internal nodes need work.
   for (int i = node_count_ - 1; i >= 0; i--) {
     OctreeNode& node = h_nodes_[i];
+    if (node.is_leaf)
+      continue;
 
-    if (node.is_leaf) {
-      if (node.particle_index >= 0) {
-        int idx = node.particle_index;
-        node.center_of_mass = Vec3(h_pos_x[idx], h_pos_y[idx], h_pos_z[idx]);
-        node.total_mass = h_mass[idx];
+    float total_mass = 0.0f;
+    Vec3 com(0, 0, 0);
+    int count = 0;
+    for (int c = 0; c < 8; c++) {
+      int child_idx = node.children[c];
+      if (child_idx >= 0) {
+        const OctreeNode& child = h_nodes_[child_idx];
+        total_mass += child.total_mass;
+        com.x += child.center_of_mass.x * child.total_mass;
+        com.y += child.center_of_mass.y * child.total_mass;
+        com.z += child.center_of_mass.z * child.total_mass;
+        count += child.particle_count;
       }
-    } else {
-      float total_mass = 0.0f;
-      Vec3 com(0, 0, 0);
-
-      for (int c = 0; c < 8; c++) {
-        if (node.children[c] >= 0) {
-          OctreeNode& child = h_nodes_[node.children[c]];
-          total_mass += child.total_mass;
-          com.x += child.center_of_mass.x * child.total_mass;
-          com.y += child.center_of_mass.y * child.total_mass;
-          com.z += child.center_of_mass.z * child.total_mass;
-        }
-      }
-
-      node.total_mass = total_mass;
-      if (total_mass > 0) {
-        node.center_of_mass = com / total_mass;
-      }
+    }
+    node.total_mass = total_mass;
+    node.particle_count = count;
+    if (total_mass > 0.0f) {
+      node.center_of_mass = com / total_mass;
     }
   }
 
-  // Copy updated tree to device
+  // Copy tree to device.
   CUDA_CHECK(cudaMemcpy(d_nodes_, h_nodes_.data(), node_count_ * sizeof(OctreeNode),
                         cudaMemcpyHostToDevice));
 }
@@ -500,12 +485,6 @@ void BarnesHutTree::computeForces(ParticleData* d_particles, float theta, float 
 void BarnesHutTree::copyNodesToHost() {
   CUDA_CHECK(cudaMemcpy(h_nodes_.data(), d_nodes_, node_count_ * sizeof(OctreeNode),
                         cudaMemcpyDeviceToHost));
-}
-
-bool BarnesHutTree::verifyTreeStructure() const {
-  // Verify all particles are in tree
-  // This is a simplified check
-  return node_count_ > 0;
 }
 
 bool BarnesHutTree::verifyMassConservation(const ParticleData* h_particles) const {

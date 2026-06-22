@@ -11,7 +11,6 @@ graph TB
         PS[ParticleSystem<br/>Facade]
         Config[SimulationConfig]
         Ser[Serialization<br/>Save / Load]
-        HDF5[HDF5 I/O]
     end
     
     subgraph GPU["GPU (Device)"]
@@ -30,7 +29,6 @@ graph TB
     INT --> REN
     REN --> GL
     PS --> Ser
-    PS --> HDF5
 ```
 
 ## Design Patterns
@@ -209,5 +207,5 @@ public:
 | `src/core/` | ParticleSystem, CLI, algorithm stubs |
 | `src/cuda/` | CUDA kernels (force, integration, init) |
 | `src/render/` | OpenGL rendering, camera, interop |
-| `src/utils/` | Serialization, HDF5, profiling |
+| `src/utils/` | Serialization, profiling |
 | `include/nbody/` | Public headers |

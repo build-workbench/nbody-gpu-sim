@@ -28,10 +28,9 @@ cd n-body
 
 ## Adding New Features
 
-1. Update OpenSpec specs in `openspec/specs/`
-2. Implement the feature
-3. Add tests
-4. Update documentation
+1. Implement the feature
+2. Add tests
+3. Update documentation
 
 ## Reporting Issues
 

@@ -8,12 +8,7 @@
  * - Fast checkpoint/restart operations
  * - Internal simulation snapshots
  *
- * The .nbody binary format is versioned and includes validation headers,
- * but is intended for internal use within this simulation platform.
- *
- * For external interoperability with other tools and formats, use the
- * HDF5 format when available (conditionally compiled with NBODY_WITH_HDF5).
- * HDF5 provides better interchange with scientific computing tools.
+ * The .nbody binary format is versioned and includes validation headers.
  *
  * @note The binary format uses NBODY_MAGIC and NBODY_VERSION for validation.
  * @note Maximum particle count is limited to prevent memory exhaustion.
@@ -78,9 +73,6 @@ struct FileHeader {
  * // Load checkpoint
  * SimulationState state = Serializer::load("checkpoint.nbody");
  * @endcode
- *
- * For HDF5 interoperability (when compiled with NBODY_WITH_HDF5),
- * use the HDF5 serializer instead.
  */
 class Serializer {
 public:

@@ -32,8 +32,7 @@
 sudo apt update
 sudo apt install -y \
   build-essential cmake git \
-  libglfw3-dev libglew-dev libglm-dev \
-  libhdf5-dev
+  libglfw3-dev libglew-dev libglm-dev
 
 # 验证 CUDA
 nvcc --version

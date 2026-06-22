@@ -49,8 +49,7 @@ public:
   const OctreeNode* getNodes() const { return h_nodes_.data(); }
   void copyNodesToHost();
 
-  // Verify tree structure (for testing)
-  bool verifyTreeStructure() const;
+  // Verify mass conservation (for testing)
   bool verifyMassConservation(const ParticleData* h_particles) const;
 
 private:
@@ -75,22 +74,10 @@ private:
   // Internal methods
   void computeBoundingBox(const ParticleData* d_particles);
   void computeMortonCodes(const ParticleData* d_particles);
-  void sortParticlesByMorton();
-  void buildTreeGPU(const ParticleData* d_particles);
-  void computeCentersOfMass(const ParticleData* d_particles);
+  void sortParticlesByMorton(size_t particle_count);
+  void buildTreeOnHost(const ParticleData* d_particles);
+  int allocateLeaf(int parent, int octant, int particle_index, const Vec3& pos, float mass);
 };
-
-// GPU kernel declarations
-void launchComputeBoundingBoxKernel(const ParticleData* d_particles, Vec3* d_min, Vec3* d_max);
-void launchComputeMortonCodesKernel(const ParticleData* d_particles, unsigned int* d_codes,
-                                    const Vec3& bbox_min, const Vec3& bbox_max);
-void launchBuildTreeKernel(OctreeNode* d_nodes, const int* d_sorted_indices,
-                           const ParticleData* d_particles, int* d_node_count, const Vec3& bbox_min,
-                           const Vec3& bbox_max);
-void launchComputeCentersOfMassKernel(OctreeNode* d_nodes, int node_count);
-void launchBarnesHutForceKernel(const OctreeNode* d_nodes, const ParticleData* d_particles,
-                                float* d_acc_x, float* d_acc_y, float* d_acc_z, int N, float theta,
-                                float G, float eps2, int block_size);
 
 // Morton code utilities
 __host__ __device__ unsigned int expandBits(unsigned int v);

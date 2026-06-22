@@ -139,27 +139,4 @@ system.saveState("checkpoint.nbody");
 system.loadState("checkpoint.nbody");
 ```
 
-## HDF5 导出
 
-```cpp
-// 导出为 HDF5
-system.exportHDF5("simulation_output.h5");
-
-// HDF5 文件包含：
-// - /particles/positions
-// - /particles/velocities
-// - /particles/masses
-// - /metadata/config
-// - /metadata/timestamp
-```
-
-使用 Python 读取：
-
-```python
-import h5py
-
-with h5py.File('simulation_output.h5', 'r') as f:
-    positions = f['/particles/positions'][:]
-    velocities = f['/particles/velocities'][:]
-    masses = f['/particles/masses'][:]
-```

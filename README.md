@@ -9,7 +9,7 @@
 
 **Million-Particle GPU Physics Engine** — High-performance N-body simulation with CUDA acceleration, real-time OpenGL visualization, and three force calculation algorithms.
 
-[GitHub Pages](https://aicl-lab.github.io/n-body/) · [Getting Started](docs/setup/getting-started.md) · [Examples](examples/) · [OpenSpec](openspec/specs/)
+[GitHub Pages](https://aicl-lab.github.io/n-body/) · [Getting Started](docs/setup/getting-started.md) · [Examples](examples/)
 
 ## Why this project
 
@@ -64,7 +64,7 @@ graph TB
 | Algorithms | Direct N², Barnes-Hut, Spatial Hash |
 | Rendering | OpenGL renderer with CUDA/OpenGL interop |
 | Architecture | `ParticleSystem` facade + `ForceCalculator` strategy |
-| Quality | GoogleTest + RapidCheck, OpenSpec-driven workflow |
+| Quality | GoogleTest + RapidCheck |
 
 ## Algorithm Guide
 
@@ -131,8 +131,6 @@ cmake --build . -j"$(nproc)"
 | `examples/` | Example programs and usage patterns |
 | `docs/` | Canonical repository-local documentation |
 | `site/` | GitHub Pages showcase |
-| `openspec/specs/` | Active specifications |
-| `openspec/changes/` | Active proposals and implementation tasks |
 
 ## Canonical Documentation
 

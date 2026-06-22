@@ -19,10 +19,7 @@ struct AppCliOptions {
   std::string benchmark_output_path;
   bool show_help = false;
   std::string export_path;
-  std::string export_format;
   std::string import_path;
-  bool list_algorithms = false;
-  bool show_diagnostics = false;
 };
 
 AppCliOptions parseAppCliOptions(int argc, const char* const argv[]);

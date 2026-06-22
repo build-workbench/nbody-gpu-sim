@@ -37,40 +37,26 @@ TEST(AppCliTest, RejectsUnknownForceMethod) {
 }
 
 TEST(AppCliTest, ParsesExportImportOptions) {
-  const char* argv[] = {"nbody_sim",  "--export", "output.nbody", "--export-format",
-                        "checkpoint", "--import", "input.nbody"};
+  const char* argv[] = {"nbody_sim", "--export", "output.nbody", "--import", "input.nbody"};
 
   const AppCliOptions options = parseAppCliOptions(static_cast<int>(std::size(argv)), argv);
 
   EXPECT_EQ(options.export_path, "output.nbody");
-  EXPECT_EQ(options.export_format, "checkpoint");
   EXPECT_EQ(options.import_path, "input.nbody");
 }
 
-TEST(AppCliTest, ParsesListAlgorithmsFlag) {
-  const char* argv[] = {"nbody_sim", "--list-algorithms"};
-
-  const AppCliOptions options = parseAppCliOptions(static_cast<int>(std::size(argv)), argv);
-
-  EXPECT_TRUE(options.list_algorithms);
-}
-
-TEST(AppCliTest, ParsesDiagnosticsFlag) {
-  const char* argv[] = {"nbody_sim", "--diagnostics"};
-
-  const AppCliOptions options = parseAppCliOptions(static_cast<int>(std::size(argv)), argv);
-
-  EXPECT_TRUE(options.show_diagnostics);
+TEST(AppCliTest, RejectsUnknownArgument) {
+  const char* argv[] = {"nbody_sim", "--bogus-flag"};
+  EXPECT_THROW(parseAppCliOptions(static_cast<int>(std::size(argv)), argv), ValidationException);
 }
 
 TEST(AppCliTest, ParsesCombinedOptions) {
   const char* argv[] = {"nbody_sim",  "--particles", "5000",        "--method",
-                        "barnes-hut", "--export",    "state.nbody", "--diagnostics"};
+                        "barnes-hut", "--export",    "state.nbody"};
 
   const AppCliOptions options = parseAppCliOptions(static_cast<int>(std::size(argv)), argv);
 
   EXPECT_EQ(options.particle_count, 5000u);
   EXPECT_EQ(options.force_method, ForceMethod::BARNES_HUT);
   EXPECT_EQ(options.export_path, "state.nbody");
-  EXPECT_TRUE(options.show_diagnostics);
 }

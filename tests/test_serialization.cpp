@@ -1,11 +1,9 @@
 /**
  * @file test_serialization.cpp
- * @brief Tests for the private binary checkpoint format (.nbody).
+ * @brief Tests for the binary checkpoint format (.nbody).
  *
- * The Serializer class provides fast, internal checkpoint serialization
- * for pause/resume and checkpoint/restart operations. This is the private
- * .nbody binary format - for external interoperability, use HDF5 format
- * when available (compiled with NBODY_WITH_HDF5).
+ * The Serializer class provides fast binary checkpoint serialization
+ * for pause/resume and checkpoint/restart operations.
  *
  * These tests verify:
  * - Basic save/load round-trip correctness

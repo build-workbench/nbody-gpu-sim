@@ -382,19 +382,11 @@ std::unique_ptr<ForceCalculator> createForceCalculator(ForceMethod method,
   switch (method) {
   case ForceMethod::DIRECT_N2:
     return std::make_unique<DirectForceCalculator>(config.cuda_block_size);
-  case ForceMethod::BARNES_HUT: {
-    auto calc = std::make_unique<BarnesHutCalculator>(config.barnes_hut_theta);
-    calc->setGravitationalConstant(config.G);
-    calc->setSofteningParameter(config.softening);
-    return calc;
-  }
-  case ForceMethod::SPATIAL_HASH: {
-    auto calc = std::make_unique<SpatialHashCalculator>(config.spatial_hash_cell_size,
-                                                        config.spatial_hash_cutoff);
-    calc->setGravitationalConstant(config.G);
-    calc->setSofteningParameter(config.softening);
-    return calc;
-  }
+  case ForceMethod::BARNES_HUT:
+    return std::make_unique<BarnesHutCalculator>(config.barnes_hut_theta);
+  case ForceMethod::SPATIAL_HASH:
+    return std::make_unique<SpatialHashCalculator>(config.spatial_hash_cell_size,
+                                                   config.spatial_hash_cutoff);
   default:
     return std::make_unique<DirectForceCalculator>(config.cuda_block_size);
   }

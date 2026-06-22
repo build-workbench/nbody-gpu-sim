@@ -5,10 +5,6 @@
 #include "nbody/renderer.hpp"
 #include "nbody/serialization.hpp"
 
-#if NBODY_WITH_HDF5
-#include "nbody/hdf5_io.hpp"
-#endif
-
 #if NBODY_WITH_UI
 #include "nbody/ui_panel.hpp"
 #endif
@@ -348,14 +344,10 @@ private:
 
     // Import state if specified
     if (!options_.import_path.empty()) {
-#if NBODY_WITH_HDF5
       std::cout << "Importing state from: " << options_.import_path << std::endl;
-      SimulationState state = HDF5IO::importFromFile(options_.import_path);
+      SimulationState state = Serializer::load(options_.import_path);
       particle_system_.setState(state);
       std::cout << "Imported " << state.particle_count << " particles" << std::endl;
-#else
-      std::cerr << "Warning: HDF5 import requested but HDF5 support is disabled" << std::endl;
-#endif
     }
 
     consumeGlobalPhaseSnapshot();
@@ -369,21 +361,8 @@ private:
     // Export state if specified
     if (!options_.export_path.empty()) {
       SimulationState state = particle_system_.getState();
-      if (options_.export_format == "checkpoint" || options_.export_format.empty()) {
-        std::cout << "Exporting checkpoint to: " << options_.export_path << std::endl;
-        Serializer::save(options_.export_path, state);
-      }
-#if NBODY_WITH_HDF5
-      else if (options_.export_format == "hdf5" || options_.export_format.empty()) {
-        std::cout << "Exporting HDF5 to: " << options_.export_path << std::endl;
-        HDF5IO::exportToFile(options_.export_path, state);
-      }
-#endif
-      else {
-        std::cerr << "Warning: Unknown export format '" << options_.export_format
-                  << "', using checkpoint" << std::endl;
-        Serializer::save(options_.export_path, state);
-      }
+      std::cout << "Exporting checkpoint to: " << options_.export_path << std::endl;
+      Serializer::save(options_.export_path, state);
       std::cout << "Exported " << state.particle_count << " particles" << std::endl;
     }
 

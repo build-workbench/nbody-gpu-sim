@@ -96,13 +96,6 @@ layout: home
   </div>
 
   <div class="feature-card">
-    <div class="feature-card-title">📦 HDF5 导出</div>
-    <div class="feature-card-desc">
-      以 HDF5 格式导出科学数据，便于分析和可视化。
-    </div>
-  </div>
-
-  <div class="feature-card">
     <div class="feature-card-title">🖥️ 跨平台</div>
     <div class="feature-card-desc">
       支持 Linux、Windows、macOS（需 NVIDIA GPU）。无头模式支持 CI/测试。

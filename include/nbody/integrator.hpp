@@ -149,12 +149,9 @@ private:
   int scratch_blocks_ = 0;      ///< Number of blocks in scratch buffer
 };
 
-// GPU kernel declarations (implemented in .cu file)
+// GPU kernel launch wrappers (implemented in .cu file)
 void launchUpdatePositionsKernel(ParticleData* d_particles, float dt, int block_size);
 void launchUpdateVelocitiesKernel(ParticleData* d_particles, float dt, int block_size);
 void launchStoreAccelerationsKernel(ParticleData* d_particles, int block_size);
-float launchComputeKineticEnergyKernel(const ParticleData* d_particles, int block_size);
-float launchComputePotentialEnergyKernel(const ParticleData* d_particles, float G, float eps,
-                                         int block_size);
 
 }  // namespace nbody

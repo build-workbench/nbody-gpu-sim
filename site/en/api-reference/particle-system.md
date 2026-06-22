@@ -33,8 +33,6 @@ public:
     // Persistence
     void saveState(const std::string& path);
     void loadState(const std::string& path);
-    void exportHDF5(const std::string& path);
-    void importHDF5(const std::string& path);
     
     // Data access
     const ParticleData& getParticleData() const;
@@ -137,16 +135,6 @@ system.saveState("checkpoint_1000.nbody");
 
 // Load checkpoint
 system.loadState("checkpoint_1000.nbody");
-```
-
-### HDF5 Format
-
-```cpp
-// Export
-system.exportHDF5("simulation_output.h5");
-
-// Import
-system.importHDF5("simulation_input.h5");
 ```
 
 ## Error Handling

@@ -53,26 +53,6 @@ private:
 
   // Internal methods
   void computeBoundingBox(const ParticleData* d_particles);
-  void assignParticlesToCells(const ParticleData* d_particles);
-  void sortParticlesByCell();
-  void computeCellRanges();
 };
-
-// GPU kernel declarations
-void launchAssignCellsKernel(const ParticleData* d_particles, int* d_particle_cell, float cell_size,
-                             const Vec3& bbox_min, int3 grid_dims);
-void launchCountCellsKernel(const int* d_particle_cell, int* d_cell_counts, int particle_count,
-                            int total_cells);
-void launchPrefixSumKernel(int* d_cell_counts, int* d_cell_start, int total_cells);
-void launchSortParticlesByCellKernel(const int* d_particle_cell, const int* d_cell_start,
-                                     int* d_sorted_indices, int* d_cell_counts_temp,
-                                     int particle_count);
-void launchComputeCellEndKernel(const int* d_cell_start, int* d_cell_end, const int* d_cell_counts,
-                                int total_cells);
-void launchSpatialHashForceKernel(const int* d_cell_start, const int* d_cell_end,
-                                  const int* d_sorted_indices, const ParticleData* d_particles,
-                                  float* d_acc_x, float* d_acc_y, float* d_acc_z, int3 grid_dims,
-                                  float cell_size, const Vec3& bbox_min, float cutoff, float G,
-                                  float eps2, int block_size);
 
 }  // namespace nbody

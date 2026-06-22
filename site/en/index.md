@@ -96,13 +96,6 @@ High-performance N-body simulation with CUDA acceleration, real-time OpenGL visu
   </div>
 
   <div class="feature-card">
-    <div class="feature-card-title">📦 HDF5 Export</div>
-    <div class="feature-card-desc">
-      Scientific data export in HDF5 format for analysis and visualization.
-    </div>
-  </div>
-
-  <div class="feature-card">
     <div class="feature-card-title">🖥️ Cross-Platform</div>
     <div class="feature-card-desc">
       Linux, Windows, macOS with NVIDIA GPU. Headless mode for CI/testing.

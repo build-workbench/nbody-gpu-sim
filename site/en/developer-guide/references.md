@@ -71,13 +71,6 @@ Green, S. (2008). **Particle simulation using CUDA**. *NVIDIA Whitepaper*. [PDF]
 | [GLFW](https://www.glfw.org/) | C | Window and input handling |
 | [GLEW](https://glew.sourceforge.net/) | C/C++ | OpenGL extension wrangler |
 
-## Data Formats
-
-### HDF5
-
-- The HDF Group. **HDF5 Documentation**. [Reference](https://www.hdfgroup.org/solutions/hdf5/)
-- Python: `h5py`. [Documentation](https://docs.h5py.org/)
-
 ## Books
 
 - **Numerical Recipes** by Press, Teukolsky, Vetterling, and Flannery

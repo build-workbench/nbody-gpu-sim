@@ -151,56 +151,6 @@ void launchStoreAccelerationsKernel(ParticleData* d_particles, int block_size) {
   CUDA_CHECK_KERNEL();
 }
 
-float launchComputeKineticEnergyKernel(const ParticleData* d_particles, int block_size) {
-  int N = static_cast<int>(d_particles->count);
-  int num_blocks = (N + block_size - 1) / block_size;
-
-  float* d_partial;
-  CUDA_CHECK(cudaMalloc(&d_partial, num_blocks * sizeof(float)));
-
-  computeKineticEnergyKernel<<<num_blocks, block_size, block_size * sizeof(float)>>>(
-      d_particles->vel_x, d_particles->vel_y, d_particles->vel_z, d_particles->mass, d_partial, N);
-  CUDA_CHECK_KERNEL();
-
-  // Sum partial results on host
-  std::vector<float> h_partial(num_blocks);
-  CUDA_CHECK(
-      cudaMemcpy(h_partial.data(), d_partial, num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaFree(d_partial));
-
-  float total_ke = 0.0f;
-  for (int i = 0; i < num_blocks; i++) {
-    total_ke += h_partial[i];
-  }
-  return total_ke;
-}
-
-float launchComputePotentialEnergyKernel(const ParticleData* d_particles, float G, float eps,
-                                         int block_size) {
-  int N = static_cast<int>(d_particles->count);
-  int num_blocks = (N + block_size - 1) / block_size;
-
-  float* d_partial;
-  CUDA_CHECK(cudaMalloc(&d_partial, num_blocks * sizeof(float)));
-
-  computePotentialEnergyKernel<<<num_blocks, block_size, block_size * sizeof(float)>>>(
-      d_particles->pos_x, d_particles->pos_y, d_particles->pos_z, d_particles->mass, d_partial, N,
-      G, eps);
-  CUDA_CHECK_KERNEL();
-
-  // Sum partial results on host
-  std::vector<float> h_partial(num_blocks);
-  CUDA_CHECK(
-      cudaMemcpy(h_partial.data(), d_partial, num_blocks * sizeof(float), cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaFree(d_partial));
-
-  float total_pe = 0.0f;
-  for (int i = 0; i < num_blocks; i++) {
-    total_pe += h_partial[i];
-  }
-  return total_pe;
-}
-
 // Integrator class implementation
 Integrator::Integrator(int block_size) : block_size_(block_size) {}
 

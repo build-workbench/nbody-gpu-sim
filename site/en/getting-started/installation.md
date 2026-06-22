@@ -26,7 +26,6 @@ This guide covers installing and building the N-Body simulation on your system.
 
 | Dependency | Version | Purpose |
 |------------|---------|---------|
-| HDF5 | 1.14+ | Scientific data export |
 | Python | 3.8+ | Analysis scripts |
 
 ## Install Dependencies
@@ -41,8 +40,7 @@ This guide covers installing and building the N-Body simulation on your system.
 sudo apt update
 sudo apt install -y \
   build-essential cmake git \
-  libglfw3-dev libglew-dev libglm-dev \
-  libhdf5-dev
+  libglfw3-dev libglew-dev libglm-dev
 
 # Verify CUDA
 nvcc --version
@@ -54,15 +52,14 @@ nvcc --version
 # CUDA (follow NVIDIA's guide)
 sudo dnf install -y \
   gcc-c++ cmake git \
-  glfw-devel glew-devel glm-devel \
-  hdf5-devel
+  glfw-devel glew-devel glm-devel
 ```
 
 ### macOS
 
 ```bash
 # Homebrew
-brew install cmake glfw glew glm hdf5
+brew install cmake glfw glew glm
 
 # CUDA on macOS requires external GPU or cloud
 ```
@@ -75,7 +72,7 @@ brew install cmake glfw glew glm hdf5
 4. Use vcpkg for dependencies:
 
 ```powershell
-vcpkg install glfw3 glew glm hdf5
+vcpkg install glfw3 glew glm
 ```
 
 ## Build
@@ -105,7 +102,6 @@ cmake --build . -j$(nproc)
 | `NBODY_ENABLE_CUDA` | ON | CUDA support |
 | `NBODY_ENABLE_RENDERING` | ON | OpenGL visualization |
 | `NBODY_ENABLE_UI` | ON | Dear ImGui panel |
-| `NBODY_ENABLE_HDF5` | ON | HDF5 export |
 | `NBODY_BUILD_TESTS` | ON | Unit tests |
 | `NBODY_BUILD_EXAMPLES` | ON | Example programs |
 | `NBODY_BUILD_BENCHMARKS` | ON | Benchmarks |
