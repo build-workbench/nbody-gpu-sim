@@ -168,8 +168,4 @@ graph TB
 
 ## 链接
 
-- [入门指南](/zh-CN/getting-started/installation) - 安装和设置指南
-- [架构设计](/zh-CN/developer-guide/architecture) - 系统设计和模式
-- [API 参考](/zh-CN/api-reference/particle-system) - 详细 API 文档
-- [性能基准](/zh-CN/benchmarks/performance) - 性能分析和测试方法
 - [GitHub](https://github.com/AICL-Lab/n-body) - 源代码和问题反馈

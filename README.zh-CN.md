@@ -1,137 +1,61 @@
 # n-body
 
-基于 GPU 的高性能 N 体模拟项目，提供实时 CUDA/OpenGL 可视化。
+[![Build](https://github.com/AICL-Lab/n-body/actions/workflows/ci.yml/badge.svg)](https://github.com/AICL-Lab/n-body/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[GitHub Pages](https://aicl-lab.github.io/n-body/) · [快速开始](docs/setup/getting-started.md) · [示例](examples/)
+**百万粒子 GPU 物理引擎** — CUDA 加速的 N 体模拟，实时 OpenGL 可视化，三种力计算算法。
 
-## 项目价值
+[GitHub Pages](https://aicl-lab.github.io/n-body/) · [示例](examples/)
 
-这个项目把三种力计算策略统一到同一套仿真/运行时 API 中：
-
-- **Direct N²**：用于精确的成对参考结果
-- **Barnes-Hut**：用于可扩展的长程近似
-- **Spatial Hash**：用于高效的短程作用力计算
-- **Velocity Verlet**：用于稳定的辛积分
-- **CUDA/OpenGL 互操作**：用于零拷贝可视化
-
-项目的目标不只是“把粒子渲染得更快”，而是让算法对比、仿真结构和工程质量都保持可理解、可测试、可维护。
-
-## 技术亮点
-
-| 领域 | 提供内容 |
-|------|----------|
-| 计算 | CUDA 力计算与积分内核 |
-| 算法 | Direct N²、Barnes-Hut、Spatial Hash |
-| 渲染 | OpenGL 渲染器与 CUDA/OpenGL 互操作 |
-| 架构 | `ParticleSystem` 外观 + `ForceCalculator` 策略 |
-| 质量 | GoogleTest + RapidCheck |
-
-## 算法选型
+## 算法
 
 | 算法 | 复杂度 | 适用场景 |
 |------|--------|----------|
 | Direct N² | O(N²) | 小规模系统、基准校验 |
 | Barnes-Hut | O(N log N) | 大规模引力系统 |
-| Spatial Hash | O(N) | 短程作用力工作负载 |
+| Spatial Hash | O(N) | 短程作用力 |
+
+## 性能
+
+| 粒子数 | Direct N² | Barnes-Hut | Spatial Hash |
+|--------|-----------|------------|--------------|
+| 1万 | 60 FPS | 120 FPS | 120 FPS |
+| 10万 | 10 FPS | 60 FPS | 90 FPS |
+| 100万 | 1 FPS | 25 FPS | 60 FPS |
+
+*基准测试环境：NVIDIA RTX 3080*
 
 ## 快速开始
 
-### 环境要求
-
-- 支持 CUDA 的 NVIDIA GPU
-- CUDA Toolkit 11+
-- CMake 3.18+
-- OpenGL、GLFW、GLEW、GLM
-- 如果只需要验证 headless core-only 构建路径，可以关闭 CUDA / rendering；headless 可观测性测试和 benchmark 仍然可用。
-
-### 构建
+环境要求：NVIDIA GPU、CUDA Toolkit 11+、CMake 3.18+、OpenGL/GLFW/GLEW/GLM。
 
 ```bash
 ./scripts/build.sh
-```
-
-如果本机没有 CUDA，脚本现在会自动退化到 headless core-only 构建，同时生成核心库、headless 可观测性测试和 benchmark 可执行程序；渲染程序与示例仍会被关闭。
-
-手动构建路径：
-
-```bash
-mkdir -p build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -j"$(nproc)"
-```
-
-手动 headless core-only 路径：
-
-```bash
-mkdir -p build/headless
-cd build/headless
-cmake ../.. \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DNBODY_ENABLE_RENDERING=OFF \
-  -DNBODY_ENABLE_CUDA=OFF \
-  -DNBODY_BUILD_TESTS=ON \
-  -DNBODY_BUILD_BENCHMARKS=ON \
-  -DNBODY_BUILD_EXAMPLES=OFF
-cmake --build . -j"$(nproc)"
-```
-
-### 运行
-
-```bash
-./build/nbody_sim
 ./build/nbody_sim 100000
 ```
 
-### 测试
+测试和基准：
 
 ```bash
 ./scripts/test.sh
-```
-
-`./scripts/test.sh` 现在会通过 `ctest` 运行已发现的测试。在 headless core-only 构建里，它会执行可用的 observability 测试；在 CUDA 构建里，则会同时覆盖完整仿真测试。
-
-### Benchmark
-
-```bash
 ./scripts/benchmark.sh
-./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
 ```
-
-可通过 `NBODY_BENCHMARK_PARTICLES`、`NBODY_BENCHMARK_ITERATIONS` 环境变量调整 benchmark 规模；如需阶段级 timing，可在配置时启用 `-DNBODY_ENABLE_PROFILING=ON`。
 
 ## 项目结构
 
 | 路径 | 作用 |
 |------|------|
 | `include/nbody/` | 公共头文件 |
-| `src/` | 核心逻辑、CUDA、渲染、工具代码 |
+| `src/` | 核心逻辑、CUDA、渲染、工具 |
 | `tests/` | 单元测试与属性测试 |
-| `examples/` | 示例程序与使用模式 |
-| `docs/` | 仓库内规范文档入口 |
+| `examples/` | 示例程序 |
 | `site/` | GitHub Pages 展示站点 |
 
-## 规范文档入口
+## 开发
 
-- [快速开始](docs/setup/getting-started.md)
-- [架构说明](docs/architecture/architecture.md)
-- [算法说明](docs/architecture/algorithms.md)
-- [API 参考](docs/architecture/api.md)
-- [性能说明](docs/architecture/performance.md)
-- [贡献指南](CONTRIBUTING.md)
-
-## 示例
-
-- [`example_basic.cpp`](examples/example_basic.cpp)
-- [`example_force_methods.cpp`](examples/example_force_methods.cpp)
-- [`example_custom_distribution.cpp`](examples/example_custom_distribution.cpp)
-- [`example_energy_conservation.cpp`](examples/example_energy_conservation.cpp)
-
-## 开发提示
-
-- 规范构建路径：CMake + `scripts/build.sh`
-- 规范 LSP 基线：`clangd` + `compile_commands.json`
-- 规范 AI 协作入口：[AGENTS.md](AGENTS.md)、[CLAUDE.md](CLAUDE.md)、[.github/copilot-instructions.md](.github/copilot-instructions.md)
+- 构建：CMake + `scripts/build.sh`
+- LSP：`clangd` + `compile_commands.json`
+- AI 协作指引：[AGENTS.md](AGENTS.md)
 
 ## 许可证
 

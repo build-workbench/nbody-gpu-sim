@@ -17,12 +17,6 @@
 
 using namespace nbody;
 
-// ============================================================================
-// Application Class
-// ============================================================================
-// Encapsulates all application state and callbacks, avoiding global mutable
-// state. The GLFW user pointer mechanism is used to pass this to callbacks.
-
 class Application {
 public:
   // Configuration constants
@@ -412,10 +406,6 @@ private:
               << appCliUsage() << "\n";
   }
 };
-
-// ============================================================================
-// Main Entry Point
-// ============================================================================
 
 int main(int argc, char* argv[]) {
   Application app;

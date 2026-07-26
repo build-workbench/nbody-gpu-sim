@@ -168,8 +168,4 @@ graph TB
 
 ## Links
 
-- [Getting Started](/en/getting-started/installation) - Installation and setup guide
-- [Architecture](/en/developer-guide/architecture) - System design and patterns
-- [API Reference](/en/api-reference/particle-system) - Detailed API documentation
-- [Benchmarks](/en/benchmarks/performance) - Performance analysis and methodology
 - [GitHub](https://github.com/AICL-Lab/n-body) - Source code and issues

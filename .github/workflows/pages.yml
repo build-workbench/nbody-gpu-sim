@@ -5,9 +5,6 @@ on:
     branches: [master, main]
     paths:
       - 'site/**'
-      - 'README.md'
-      - 'README.zh-CN.md'
-      - 'CHANGELOG.md'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 

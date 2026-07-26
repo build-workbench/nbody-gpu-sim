@@ -5,16 +5,6 @@
 
 namespace nbody {
 
-/**
- * @class UIPanel
- * @brief Dear ImGui-based diagnostics panel for runtime inspection and tuning
- *
- * Provides an in-application panel for viewing performance metrics,
- * simulation state, and adjusting parameters at runtime.
- *
- * This class is only available when both NBODY_WITH_RENDERING and
- * NBODY_WITH_UI are enabled.
- */
 class UIPanel {
 public:
   UIPanel();

@@ -22,9 +22,8 @@ Thanks for improving the project.
 ## Documentation Rules
 
 - `README.md` / `README.zh-CN.md` explain the project and quick start.
-- `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` must describe the same operating model.
-- `docs/` holds canonical repository-local documentation.
-- `site/` is the GitHub Pages showcase surface and should complement the repository rather than mirror it.
+- `AGENTS.md` is the single AI assistant guidance file.
+- `site/` is the GitHub Pages showcase surface.
 - Update required bilingual counterparts when changing primary onboarding docs.
 
 ## Engineering Rules

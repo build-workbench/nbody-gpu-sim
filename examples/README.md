@@ -1,10 +1,3 @@
----
-layout: default
-title: Examples
-parent: Documentation
-nav_order: 7
----
-
 # Examples
 
 This directory contains focused example programs for the major n-body workflows.
@@ -71,9 +64,6 @@ Generated executables live in `build/`:
 - inspect timestep sensitivity
 - evaluate integrator stability
 
-## Related Docs
+## Related
 
 - [Getting Started](../docs/setup/getting-started.md)
-- [Architecture](../docs/architecture/architecture.md)
-- [Algorithms](../docs/architecture/algorithms.md)
-- [Performance](../docs/architecture/performance.md)
