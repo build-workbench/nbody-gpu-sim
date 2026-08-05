@@ -79,6 +79,12 @@ void main() {
 Renderer::Renderer()
     : shader_program_(0),
       vao_(0),
+      view_loc_(-1),
+      projection_loc_(-1),
+      point_size_loc_(-1),
+      max_depth_loc_(-1),
+      max_velocity_loc_(-1),
+      color_mode_loc_(-1),
       color_mode_(ColorMode::DEPTH),
       point_size_(2.0f),
       max_depth_(100.0f),

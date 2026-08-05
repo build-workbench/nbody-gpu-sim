@@ -1,5 +1,4 @@
 {
-  "kiroAgent.configureMCP": "Disabled",
   "cmake.configureOnOpen": false,
   "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
   "files.associations": {

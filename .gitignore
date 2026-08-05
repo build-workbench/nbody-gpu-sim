@@ -29,8 +29,9 @@ cmake-build-*/
 *.png
 *.csv
 
-# IDE
-.vscode/
+# IDE — share the team-wide VS Code settings, ignore everything else
+.vscode/*
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo

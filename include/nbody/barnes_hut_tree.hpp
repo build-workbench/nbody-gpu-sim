@@ -35,6 +35,12 @@ public:
   BarnesHutTree(size_t max_particles);
   ~BarnesHutTree();
 
+  // Non-copyable, non-movable: owns raw device memory.
+  BarnesHutTree(const BarnesHutTree&) = delete;
+  BarnesHutTree& operator=(const BarnesHutTree&) = delete;
+  BarnesHutTree(BarnesHutTree&&) = delete;
+  BarnesHutTree& operator=(BarnesHutTree&&) = delete;
+
   // Build tree from particle positions
   void build(const ParticleData* d_particles);
 

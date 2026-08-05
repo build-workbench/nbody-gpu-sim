@@ -2,6 +2,7 @@
 #include "nbody/force_calculator.hpp"
 #include "nbody/performance_observability.hpp"
 #include "nbody/spatial_hash_grid.hpp"
+#include <algorithm>
 #include <cuda_runtime.h>
 #include <thrust/device_ptr.h>
 #include <thrust/scan.h>
@@ -96,10 +97,15 @@ __global__ void spatialHashForceKernel(const int* cell_start, const int* cell_en
 
   float ax = 0.0f, ay = 0.0f, az = 0.0f;
 
-  // Get cell of this particle
+  // Get cell of this particle. Must mirror assignCellsKernel exactly,
+  // including the clamp: without it, a particle on the padded bounding-box
+  // edge would look up different cells here and in the assignment stage.
   int3 cell = make_int3(static_cast<int>(floorf((xi - min_x) / cell_size)),
                         static_cast<int>(floorf((yi - min_y) / cell_size)),
                         static_cast<int>(floorf((zi - min_z) / cell_size)));
+  cell.x = max(0, min(cell.x, grid_dims.x - 1));
+  cell.y = max(0, min(cell.y, grid_dims.y - 1));
+  cell.z = max(0, min(cell.z, grid_dims.z - 1));
 
   // Iterate over neighboring cells (3x3x3)
   for (int dz = -1; dz <= 1; dz++) {
@@ -369,8 +375,13 @@ SpatialHashCalculator::~SpatialHashCalculator() = default;
 
 void SpatialHashCalculator::computeForces(ParticleData* d_particles) {
   NBODY_PROFILE_SCOPE("force.spatial_hash");
-  if (!grid_) {
-    grid_ = std::make_unique<SpatialHashGrid>(d_particles->count, cell_size_);
+  // The 3x3x3 neighbor search in spatialHashForceKernel is only complete when
+  // cell_size >= cutoff: any pair within cutoff then necessarily lies in
+  // adjacent cells. Validation rejects cutoff > cell_size, but enforce the
+  // invariant here too so a misconfiguration can never silently drop pairs.
+  const float effective_cell = std::max(cell_size_, cutoff_radius_);
+  if (!grid_ || grid_->getCellSize() != effective_cell) {
+    grid_ = std::make_unique<SpatialHashGrid>(d_particles->count, effective_cell);
   }
   grid_->build(d_particles);
   grid_->computeForces(d_particles, cutoff_radius_, G_, softening_eps_);

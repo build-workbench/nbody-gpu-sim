@@ -25,14 +25,6 @@ public:
 
   // Copy data from device to host
   static void copyToHost(ParticleData& h_data, const ParticleData& d_data);
-
-  // Copy only positions from device to host
-  static void copyPositionsToHost(float* h_pos_x, float* h_pos_y, float* h_pos_z,
-                                  const ParticleData& d_data);
-
-  // Copy only positions from host to device
-  static void copyPositionsToDevice(ParticleData& d_data, const float* h_pos_x,
-                                    const float* h_pos_y, const float* h_pos_z);
 };
 
 // Particle initialization
@@ -56,13 +48,5 @@ public:
 private:
   static std::mt19937 createRNG(unsigned int seed);
 };
-
-// GPU kernels for particle initialization (declared in .cu file)
-void launchInitUniformKernel(ParticleData* d_data, const UniformDistParams& params,
-                             unsigned int seed, int block_size);
-void launchInitSphericalKernel(ParticleData* d_data, const SphericalDistParams& params,
-                               unsigned int seed, int block_size);
-void launchInitDiskKernel(ParticleData* d_data, const DiskDistParams& params, unsigned int seed,
-                          int block_size);
 
 }  // namespace nbody

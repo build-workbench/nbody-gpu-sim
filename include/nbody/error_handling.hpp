@@ -101,6 +101,12 @@ public:
       : std::runtime_error("Validation Error: " + msg) {}
 };
 
+// I/O Exception class (file open/read/write failures)
+class IOException : public std::runtime_error {
+public:
+  explicit IOException(const std::string& msg) : std::runtime_error("I/O Error: " + msg) {}
+};
+
 // CUDA error checking macro
 #define CUDA_CHECK(call)                                                       \
   do {                                                                         \
@@ -143,7 +149,9 @@ void validateResourceRequirements(size_t particle_count);
 
 // Input validation
 void validateSimulationConfig(const struct SimulationConfig& config);
+// Range check plus GPU resource probe; use for counts about to be allocated.
 void validateParticleCount(size_t count);
+// Pure range check (no hardware probe); used by config validation and tests.
 void validateParticleCountRange(size_t count);
 void validateTimeStep(float dt);
 void validateSoftening(float eps);

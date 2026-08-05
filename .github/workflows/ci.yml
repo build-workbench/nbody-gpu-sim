@@ -35,8 +35,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  headless-core-build:
-    name: Headless Core Build
+  headless-core:
+    name: Headless Core Build + Tests
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -44,17 +44,67 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Cache FetchContent dependencies (gtest, rapidcheck)
+        uses: actions/cache@v4
+        with:
+          path: build/headless/_deps
+          key: deps-headless-${{ hashFiles('CMakeLists.txt') }}
+
       - name: Configure headless core build
         run: |
           cmake -S . -B build/headless \
             -DNBODY_ENABLE_RENDERING=OFF \
             -DNBODY_ENABLE_CUDA=OFF \
-            -DNBODY_BUILD_TESTS=OFF \
+            -DNBODY_BUILD_TESTS=ON \
             -DNBODY_BUILD_EXAMPLES=OFF \
             -G "Unix Makefiles"
 
-      - name: Build headless core library
+      - name: Build headless core library and core tests
         run: cmake --build build/headless -j"$(nproc)"
+
+      - name: Run core tests (serialization, validation, CLI, observability)
+        run: ctest --test-dir build/headless --output-on-failure
+
+  cuda-build:
+    # Compiles every CUDA source file, the GPU test binary and all examples so
+    # .cu regressions are caught before merge. GitHub has no GPU runners, so
+    # the GPU tests are compile-only here; running them is a local duty
+    # (./scripts/test.sh on a CUDA machine). The CPU-side core tests still run.
+    name: CUDA Compile + Core Tests (no GPU)
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install CUDA toolkit (nvcc only, no driver needed to compile)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y nvidia-cuda-toolkit > /dev/null 2>&1
+          nvcc --version
+
+      - name: Cache FetchContent dependencies (gtest, rapidcheck)
+        uses: actions/cache@v4
+        with:
+          path: build/cuda/_deps
+          key: deps-cuda-${{ hashFiles('CMakeLists.txt') }}
+
+      - name: Configure CUDA build (rendering off — no GL libs on the runner)
+        run: |
+          cmake -S . -B build/cuda \
+            -DNBODY_ENABLE_CUDA=ON \
+            -DNBODY_ENABLE_RENDERING=OFF \
+            -DNBODY_BUILD_TESTS=ON \
+            -DNBODY_BUILD_EXAMPLES=ON \
+            -DCMAKE_CUDA_ARCHITECTURES=75 \
+            -G "Unix Makefiles"
+
+      - name: Build all targets (lib, GPU tests, examples, benchmarks)
+        run: cmake --build build/cuda -j"$(nproc)"
+
+      - name: Run CPU-side core tests in the CUDA-enabled build
+        run: ./build/cuda/nbody_core_tests
 
   format-check:
     name: Format Check
@@ -68,11 +118,11 @@ jobs:
       - name: Check C/C++/CUDA formatting
         run: |
           set -e
-          echo "Installing clang-format..."
+          echo "Installing clang-format-18 (pinned for reproducible gates)..."
           sudo apt-get update -qq
-          sudo apt-get install -qq -y clang-format > /dev/null 2>&1
-          echo "Using clang-format version: $(clang-format --version)"
-          
+          sudo apt-get install -qq -y clang-format-18 > /dev/null 2>&1
+          echo "Using: $(clang-format-18 --version)"
+
           echo "Checking formatting on all C/C++/CUDA files..."
           FIND_CMD="find . -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.cu' -o -name '*.cuh' \) \
             ! -path './build/*' \
@@ -80,27 +130,26 @@ jobs:
             ! -path './external/*' \
             ! -path './vendor/*' \
             ! -path './.git/*' \
-            ! -path './docs/*' \
-            ! -path './examples/*'"
-          
+            ! -path './docs/*'"
+
           FAIL=0
           while IFS= read -r file; do
-            if ! clang-format --dry-run --Werror "$file" 2>&1; then
+            if ! clang-format-18 --dry-run --Werror "$file" 2>&1; then
               echo "✗ $file"
               FAIL=1
             fi
           done < <(eval $FIND_CMD)
-          
+
           if [ $FAIL -eq 1 ]; then
             echo ""
-            echo "✗ Format check failed. Please run clang-format on the above files."
+            echo "✗ Format check failed. Run ./scripts/format.sh (clang-format 18) and commit."
             exit 1
           fi
-          
+
           echo "✓ All files pass formatting check"
 
-  docs-consistency:
-    name: Documentation Consistency
+  structure-check:
+    name: Structure Check
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -152,8 +201,7 @@ jobs:
         run: |
           echo ""
           echo "=========================================="
-          echo "Documentation Consistency Check Complete"
+          echo "Structure Check Complete"
           echo "=========================================="
           echo ""
-          echo "All checks passed. Ready for deployment."
-
+          echo "All checks passed."

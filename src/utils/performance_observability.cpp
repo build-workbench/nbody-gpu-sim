@@ -1,4 +1,5 @@
 #include "nbody/performance_observability.hpp"
+#include "nbody/error_handling.hpp"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -78,25 +79,19 @@ void PhaseProfiler::reset() {
   phases_.clear();
 }
 
+std::vector<PhaseTiming> PhaseProfiler::consume() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::vector<PhaseTiming> result;
+  result.swap(phases_);
+  return result;
+}
+
 ScopedPhaseProfile::ScopedPhaseProfile(PhaseProfiler& profiler, std::string name)
     : profiler_(profiler), name_(std::move(name)), start_time_(std::chrono::steady_clock::now()) {}
 
 ScopedPhaseProfile::~ScopedPhaseProfile() {
   const auto end_time = std::chrono::steady_clock::now();
   profiler_.record(name_, std::chrono::duration_cast<Milliseconds>(end_time - start_time_));
-}
-
-std::string forceMethodToString(ForceMethod method) {
-  switch (method) {
-  case ForceMethod::DIRECT_N2:
-    return "direct_n2";
-  case ForceMethod::BARNES_HUT:
-    return "barnes_hut";
-  case ForceMethod::SPATIAL_HASH:
-    return "spatial_hash";
-  default:
-    return "unknown";
-  }
 }
 
 std::string serializeBenchmarkRunRecord(const BenchmarkRunRecord& record) {
@@ -147,7 +142,7 @@ void writeBenchmarkRunRecords(const std::string& path,
                               const std::vector<BenchmarkRunRecord>& records) {
   std::ofstream output(path);
   if (!output) {
-    throw std::runtime_error("Failed to open benchmark output file: " + path);
+    throw IOException("Failed to open benchmark output file: " + path);
   }
   output << serializeBenchmarkRunRecords(records) << "\n";
 }
@@ -157,9 +152,7 @@ PhaseProfiler& globalPhaseProfiler() {
 }
 
 std::vector<PhaseTiming> consumeGlobalPhaseSnapshot() {
-  auto phases = global_profiler.snapshot();
-  global_profiler.reset();
-  return phases;
+  return global_profiler.consume();
 }
 
 }  // namespace nbody

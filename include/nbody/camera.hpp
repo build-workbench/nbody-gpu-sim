@@ -56,10 +56,9 @@ public:
   float getFar() const { return far_; }
 
   // Camera controls
-  void rotate(float yaw, float pitch);  // Rotate around target
+  void rotate(float yaw, float pitch);  // Orbit around target
   void pan(float dx, float dy);         // Pan in view plane
   void zoom(float delta);               // Move toward/away from target
-  void orbit(float yaw, float pitch);   // Orbit around target
 
   // Reset to default position
   void reset();

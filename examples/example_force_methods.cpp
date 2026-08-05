@@ -16,6 +16,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 using namespace nbody;
 
@@ -30,40 +31,16 @@ double measureTime(Func func, int iterations = 1) {
   return std::chrono::duration<double, std::milli>(end - start).count() / iterations;
 }
 
-// Helper function to compute force magnitude for comparison
-void computeReferenceForces(ParticleSystem& system, std::vector<float>& forces) {
-  // Get current state
-  auto state = system.getState();
-  size_t N = state.particle_count;
-
-  forces.resize(N * 3);
-  float G = system.getGravitationalConstant();
-  float eps = system.getSofteningParameter();
-
-  // CPU force calculation (reference)
-  for (size_t i = 0; i < N; i++) {
-    float ax = 0, ay = 0, az = 0;
-    for (size_t j = 0; j < N; j++) {
-      if (i == j)
-        continue;
-
-      float dx = state.pos_x[j] - state.pos_x[i];
-      float dy = state.pos_y[j] - state.pos_y[i];
-      float dz = state.pos_z[j] - state.pos_z[i];
-
-      float dist2 = dx * dx + dy * dy + dz * dz + eps * eps;
-      float inv_dist = 1.0f / std::sqrt(dist2);
-      float inv_dist3 = inv_dist * inv_dist * inv_dist;
-
-      float f = G * state.mass[j] * inv_dist3;
-      ax += f * dx;
-      ay += f * dy;
-      az += f * dz;
-    }
-    forces[i * 3 + 0] = ax;
-    forces[i * 3 + 1] = ay;
-    forces[i * 3 + 2] = az;
+// RMS position drift between two states with the same particle count.
+double rmsPositionDrift(const SimulationState& a, const SimulationState& b) {
+  double sum_sq = 0.0;
+  for (size_t i = 0; i < a.particle_count; i++) {
+    double dx = static_cast<double>(a.pos_x[i]) - b.pos_x[i];
+    double dy = static_cast<double>(a.pos_y[i]) - b.pos_y[i];
+    double dz = static_cast<double>(a.pos_z[i]) - b.pos_z[i];
+    sum_sq += dx * dx + dy * dy + dz * dz;
   }
+  return std::sqrt(sum_sq / static_cast<double>(a.particle_count));
 }
 
 int main() {
@@ -93,12 +70,19 @@ int main() {
     std::cout << "Comparing Force Calculation Methods:\n";
     std::cout << std::string(70, '-') << "\n";
     std::cout << std::left << std::setw(20) << "Method" << std::setw(15) << "Time (ms)"
-              << std::setw(15) << "Rel. Error" << std::setw(20) << "Notes" << "\n";
+              << std::setw(15) << "RMS Drift" << std::setw(20) << "Notes" << "\n";
     std::cout << std::string(70, '-') << "\n";
 
-    // Reference forces (computed once)
-    std::vector<float> reference_forces;
-    computeReferenceForces(system, reference_forces);
+    // Reference trajectory: evolve the exact Direct N² method 10 steps from
+    // the initial state. Approximate methods are scored by how far their own
+    // 10-step trajectory drifts from this reference.
+    constexpr int kCompareSteps = 10;
+    system.setState(initial_state);
+    system.setForceMethod(ForceMethod::DIRECT_N2);
+    for (int i = 0; i < kCompareSteps; i++) {
+      system.update(system.getTimeStep());
+    }
+    const SimulationState reference_state = system.getState();
 
     // Test each method
     struct MethodTest {
@@ -126,23 +110,18 @@ int main() {
         system.setBarnesHutTheta(theta);
       }
 
-      // Measure time for 10 steps
-      double time_ms = measureTime([&]() { system.update(system.getTimeStep()); }, 10);
+      // Measure time for the same 10 steps used for the reference trajectory
+      double time_ms = measureTime([&]() { system.update(system.getTimeStep()); }, kCompareSteps);
 
-      // Compute relative error (skip for Spatial Hash - different physics)
+      // Position drift vs the Direct N² reference after the same 10 steps.
+      // N/A for Spatial Hash: it models different (short-range) physics, so
+      // its trajectory is not comparable to the gravitational reference.
       std::string error_str = "N/A";
       if (test.method != ForceMethod::SPATIAL_HASH) {
-        auto state = system.getState();
-        size_t N = state.particle_count;
-
-        // Compute current forces
-        system.update(system.getTimeStep());  // Trigger force recalc
-        auto current_state = system.getState();
-
-        float total_error = 0;
-        // Note: For proper comparison, we'd need to access accelerations
-        // This is a simplified demonstration
-        error_str = "< 1%";
+        const SimulationState state = system.getState();
+        std::ostringstream oss;
+        oss << std::scientific << std::setprecision(2) << rmsPositionDrift(state, reference_state);
+        error_str = oss.str();
       }
 
       std::cout << std::left << std::setw(20) << test.name << std::setw(15) << std::fixed
@@ -195,7 +174,7 @@ int main() {
 }
 
 /*
-Expected output:
+Expected output (times and drift values will differ on your hardware):
 
 N-Body Simulation - Force Methods Comparison
 =============================================
@@ -205,13 +184,17 @@ Configuration:
 
 Comparing Force Calculation Methods:
 ----------------------------------------------------------------------
-Method              Time (ms)      Rel. Error     Notes
+Method              Time (ms)      RMS Drift      Notes
 ----------------------------------------------------------------------
-Direct N²           12.34          < 1%           Exact calculation
-Barnes-Hut (θ=0.5)  3.45           < 1%           Default accuracy
-Barnes-Hut (θ=0.3)  5.67           < 0.1%         High accuracy
+Direct N²           12.34          0.00e+00       Exact calculation
+Barnes-Hut (θ=0.5)  3.45           1.23e-03       Default accuracy
+Barnes-Hut (θ=0.3)  5.67           4.56e-04       High accuracy
 Spatial Hash        1.23           N/A            Short-range only
 ----------------------------------------------------------------------
+
+"RMS Drift" is the per-particle RMS position difference from the exact
+Direct N² trajectory after the same 10 steps. Spatial Hash is not
+comparable: it models short-range interactions, not full gravity.
 
 Performance Scaling:
 ------------------------------------------------------------

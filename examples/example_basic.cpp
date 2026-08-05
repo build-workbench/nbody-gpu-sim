@@ -10,6 +10,7 @@
  * - Save and load simulation state
  */
 
+#include "nbody/error_handling.hpp"
 #include "nbody/particle_system.hpp"
 #include <chrono>
 #include <iostream>

@@ -13,7 +13,7 @@ ParticleSystem::ParticleSystem()
     : particle_count_(0),
       dt_(0.001f),
       G_(1.0f),
-      softening_(0.01f),
+      softening_(0.1f),
       simulation_time_(0.0f),
       force_method_(ForceMethod::DIRECT_N2),
       is_paused_(false),
@@ -30,10 +30,33 @@ void ParticleSystem::allocateMemory(size_t count) {
 }
 
 void ParticleSystem::freeMemory() {
-  if (is_initialized_) {
-    ParticleDataManager::freeDevice(d_particles_);
-    ParticleDataManager::freeHost(h_particles_);
-    is_initialized_ = false;
+  // Idempotent: freeDevice/freeHost skip null pointers and reset the structs,
+  // so this is safe even if initialize() threw partway (which must not leak
+  // the buffers that were already allocated).
+  ParticleDataManager::freeDevice(d_particles_);
+  ParticleDataManager::freeHost(h_particles_);
+  is_initialized_ = false;
+}
+
+// Shared tail of initialize()/setState(): uploads the prepared host buffers,
+// (re)builds the force calculator and integrator from config_, computes the
+// initial forces and marks the system ready. Callers must have set config_,
+// the scalar parameters, particle_count_ and h_particles_ beforehand.
+void ParticleSystem::finishInitialization() {
+  ParticleDataManager::copyToDevice(d_particles_, h_particles_);
+
+  createForceCalculator();
+  integrator_ = std::make_unique<Integrator>(config_.cuda_block_size);
+
+  // Compute initial forces so the first Verlet step has a(0).
+  force_calculator_->computeForces(&d_particles_);
+
+  is_paused_ = false;
+  is_initialized_ = true;
+
+  if (interop_) {
+    interop_->initialize(particle_count_);
+    updateInteropBuffer();
   }
 }
 
@@ -78,25 +101,9 @@ void ParticleSystem::initialize(const SimulationConfig& config) {
   }
   }
 
-  // Copy to device
-  ParticleDataManager::copyToDevice(d_particles_, h_particles_);
-
-  // Create force calculator
-  createForceCalculator();
-
-  // Create integrator
-  integrator_ = std::make_unique<Integrator>(config.cuda_block_size);
-
-  // Compute initial forces
-  force_calculator_->computeForces(&d_particles_);
-
+  // Copy to device, build calculator/integrator, compute initial forces
   simulation_time_ = 0.0f;
-  is_initialized_ = true;
-
-  if (interop_) {
-    interop_->initialize(particle_count_);
-    updateInteropBuffer();
-  }
+  finishInitialization();
 }
 
 void ParticleSystem::initializeWithDistribution(size_t particle_count, InitDistribution dist) {
@@ -115,6 +122,8 @@ void ParticleSystem::createForceCalculator() {
 void ParticleSystem::update(float dt) {
   if (!is_initialized_ || is_paused_)
     return;
+
+  validateTimeStep(dt);
 
   NBODY_PROFILE_SCOPE("simulation.update");
   integrator_->integrate(&d_particles_, force_calculator_.get(), dt);
@@ -184,6 +193,9 @@ void ParticleSystem::setSpatialHashCellSize(float size) {
   if (size <= 0 || std::isnan(size) || std::isinf(size)) {
     throw ValidationException("Spatial hash cell size must be positive and finite");
   }
+  if (size < config_.spatial_hash_cutoff) {
+    throw ValidationException("Spatial hash cell size must not be smaller than the cutoff");
+  }
 
   config_.spatial_hash_cell_size = size;
   if (force_method_ == ForceMethod::SPATIAL_HASH) {
@@ -196,6 +208,9 @@ void ParticleSystem::setSpatialHashCellSize(float size) {
 void ParticleSystem::setSpatialHashCutoff(float cutoff) {
   if (cutoff <= 0 || std::isnan(cutoff) || std::isinf(cutoff)) {
     throw ValidationException("Spatial hash cutoff must be positive and finite");
+  }
+  if (cutoff > config_.spatial_hash_cell_size) {
+    throw ValidationException("Spatial hash cutoff must not exceed the cell size");
   }
 
   config_.spatial_hash_cutoff = cutoff;
@@ -238,6 +253,17 @@ SimulationState ParticleSystem::getState() const {
 }
 
 void ParticleSystem::setState(const SimulationState& state) {
+  // Enforce the API contract: every data vector must hold exactly
+  // particle_count elements, or the copies below would write out of bounds
+  // (or leave device memory uninitialized). Serializer::load guarantees this,
+  // but setState is public and SimulationState is user-constructible.
+  if (state.pos_x.size() != state.particle_count || state.pos_y.size() != state.particle_count ||
+      state.pos_z.size() != state.particle_count || state.vel_x.size() != state.particle_count ||
+      state.vel_y.size() != state.particle_count || state.vel_z.size() != state.particle_count ||
+      state.mass.size() != state.particle_count) {
+    throw ValidationException("SimulationState data vector sizes do not match particle_count");
+  }
+
   SimulationConfig config = config_;
   config.particle_count = state.particle_count;
   config.dt = state.dt;
@@ -260,9 +286,6 @@ void ParticleSystem::setState(const SimulationState& state) {
   std::copy(state.mass.begin(), state.mass.end(), h_particles_.mass);
   ParticleInitializer::zeroAccelerations(h_particles_);
 
-  // Copy to device
-  ParticleDataManager::copyToDevice(d_particles_, h_particles_);
-
   // Set parameters
   simulation_time_ = state.simulation_time;
   dt_ = state.dt;
@@ -276,19 +299,8 @@ void ParticleSystem::setState(const SimulationState& state) {
   config_.softening = state.softening;
   config_.force_method = state.force_method;
 
-  createForceCalculator();
-  integrator_ = std::make_unique<Integrator>(config_.cuda_block_size);
-
-  // Compute initial forces
-  force_calculator_->computeForces(&d_particles_);
-
-  is_paused_ = false;
-  is_initialized_ = true;
-
-  if (interop_) {
-    interop_->initialize(particle_count_);
-    updateInteropBuffer();
-  }
+  // Copy to device, build calculator/integrator, compute initial forces
+  finishInitialization();
 }
 
 void ParticleSystem::saveState(const std::string& filename) const {

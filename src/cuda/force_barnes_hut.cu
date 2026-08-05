@@ -17,6 +17,17 @@ namespace {
 // Used to find the actual min/max of particle positions
 constexpr float BBOX_INIT_MIN = 1e30f;
 constexpr float BBOX_INIT_MAX = -1e30f;
+
+// Maximum octree depth for the host tree build: coincident particles form a
+// unary split chain that is cut off (and merged into a multi-particle leaf)
+// at this depth.
+constexpr int BH_MAX_DEPTH = 32;
+
+// DFS stack size for the force kernel. A depth-first traversal holds at most
+// ~7 sibling entries per tree level, so this must scale with BH_MAX_DEPTH.
+constexpr int BH_STACK_SIZE = 256;
+static_assert(BH_STACK_SIZE >= 7 * BH_MAX_DEPTH + 1,
+              "BH_STACK_SIZE is too small to traverse a BH_MAX_DEPTH tree");
 }  // namespace
 
 // Morton code utilities
@@ -29,10 +40,11 @@ __host__ __device__ unsigned int expandBits(unsigned int v) {
 }
 
 __host__ __device__ unsigned int computeMortonCode(float x, float y, float z) {
-  // Normalize to [0, 1023] range
-  unsigned int ix = min(max(static_cast<unsigned int>(x * 1024.0f), 0u), 1023u);
-  unsigned int iy = min(max(static_cast<unsigned int>(y * 1024.0f), 0u), 1023u);
-  unsigned int iz = min(max(static_cast<unsigned int>(z * 1024.0f), 0u), 1023u);
+  // Normalize to [0, 1023] range. Clamp in the float domain first: casting a
+  // negative float to unsigned is undefined behavior on the host.
+  unsigned int ix = static_cast<unsigned int>(fminf(fmaxf(x, 0.0f), 1.0f) * 1023.0f);
+  unsigned int iy = static_cast<unsigned int>(fminf(fmaxf(y, 0.0f), 1.0f) * 1023.0f);
+  unsigned int iz = static_cast<unsigned int>(fminf(fmaxf(z, 0.0f), 1.0f) * 1023.0f);
 
   return (expandBits(ix) << 2) | (expandBits(iy) << 1) | expandBits(iz);
 }
@@ -141,15 +153,14 @@ __global__ void barnesHutForceKernel(const OctreeNode* nodes, const float* pos_x
 
   float ax = 0.0f, ay = 0.0f, az = 0.0f;
 
-  // Stack for tree traversal
-  // Stack size of 256 supports trees up to depth ~85 (log8(256*8) ≈ 85)
-  // Increased from 128 to handle highly non-uniform particle distributions.
-  // For extremely deep trees, if stack overflow occurs, some nodes will be
-  // skipped (graceful degradation) - see the overflow check below.
-  constexpr int STACK_SIZE = 256;
-  int stack[STACK_SIZE];
+  // Stack for tree traversal. If the (pathological) tree is deeper than the
+  // stack can hold, the overflow check below skips the deepest subtrees —
+  // approximate, but never out-of-bounds.
+  int stack[BH_STACK_SIZE];
   int stack_ptr = 0;
   stack[stack_ptr++] = 0;  // Start with root
+
+  const float mi = mass[i];
 
   while (stack_ptr > 0) {
     int node_idx = stack[--stack_ptr];
@@ -161,29 +172,66 @@ __global__ void barnesHutForceKernel(const OctreeNode* nodes, const float* pos_x
     if (node.total_mass == 0.0f)
       continue;
 
+    // Does this node's box contain particle i? Such a node aggregates i's
+    // own mass, so its center of mass must never be used directly — that
+    // would exert a spurious self-force (the theta criterion alone does not
+    // prevent this, especially with softening). Internal nodes containing i
+    // are always opened; leaves subtract i's own contribution.
+    const bool contains_i = fabsf(xi - node.center.x) <= node.half_size &&
+                            fabsf(yi - node.center.y) <= node.half_size &&
+                            fabsf(zi - node.center.z) <= node.half_size;
+
+    if (node.is_leaf) {
+      float m_eff = node.total_mass;
+      float com_x = node.center_of_mass.x;
+      float com_y = node.center_of_mass.y;
+      float com_z = node.center_of_mass.z;
+
+      if (contains_i) {
+        // Remove particle i's own contribution. Exact for single-particle
+        // leaves (m_eff drops to 0 and no force is added); corrects the
+        // degenerate multi-particle leaves produced by deep merges.
+        m_eff -= mi;
+        if (m_eff <= 0.0f)
+          continue;
+        com_x = (com_x * node.total_mass - xi * mi) / m_eff;
+        com_y = (com_y * node.total_mass - yi * mi) / m_eff;
+        com_z = (com_z * node.total_mass - zi * mi) / m_eff;
+      }
+
+      float dx = com_x - xi;
+      float dy = com_y - yi;
+      float dz = com_z - zi;
+      float dist2 = dx * dx + dy * dy + dz * dz + eps2;
+      float inv_dist = rsqrtf(dist2);
+      float inv_dist3 = inv_dist * inv_dist * inv_dist;
+      float f = G * m_eff * inv_dist3;
+
+      ax += f * dx;
+      ay += f * dy;
+      az += f * dz;
+      continue;
+    }
+
+    // Internal node: accept the center-of-mass approximation only when the
+    // node does not contain particle i and passes the theta criterion.
     float dx = node.center_of_mass.x - xi;
     float dy = node.center_of_mass.y - yi;
     float dz = node.center_of_mass.z - zi;
     float dist2 = dx * dx + dy * dy + dz * dz + eps2;
-
-    // Check if we can use this node as approximation
     float size2 = 4.0f * node.half_size * node.half_size;
 
-    if (node.is_leaf || size2 / dist2 < theta2) {
-      // Use node's center of mass
-      if (node.particle_index != i) {  // Don't compute self-interaction
-        float inv_dist = rsqrtf(dist2);
-        float inv_dist3 = inv_dist * inv_dist * inv_dist;
-        float f = G * node.total_mass * inv_dist3;
+    if (!contains_i && size2 / dist2 < theta2) {
+      float inv_dist = rsqrtf(dist2);
+      float inv_dist3 = inv_dist * inv_dist * inv_dist;
+      float f = G * node.total_mass * inv_dist3;
 
-        ax += f * dx;
-        ay += f * dy;
-        az += f * dz;
-      }
+      ax += f * dx;
+      ay += f * dy;
+      az += f * dz;
     } else {
-      // Need to go deeper - add children to stack
-      // Check for stack overflow to prevent memory corruption
-      if (stack_ptr + 8 <= STACK_SIZE) {
+      // Open the node: either the criterion failed or it contains particle i.
+      if (stack_ptr + 8 <= BH_STACK_SIZE) {
         for (int c = 0; c < 8; c++) {
           if (node.children[c] >= 0) {
             stack[stack_ptr++] = node.children[c];
@@ -191,7 +239,7 @@ __global__ void barnesHutForceKernel(const OctreeNode* nodes, const float* pos_x
         }
       }
       // If stack overflow would occur, skip this node's children
-      // This results in approximate force calculation (graceful degradation)
+      // (approximate force, graceful degradation).
     }
   }
 
@@ -299,9 +347,26 @@ static int octantOf(const Vec3& pos, const Vec3& center) {
   return octant;
 }
 
+// Merge a particle into an existing leaf without splitting. Used when the
+// node budget is exhausted: (near-)coincident particles form unary split
+// chains that can exceed the 2N node budget, so rather than writing out of
+// bounds we keep a multi-particle leaf. That loses accuracy for this one
+// cluster but keeps the tree within bounds and mass-conserving.
+static void mergeParticleIntoLeaf(OctreeNode& node, int particle_index, const Vec3& pos,
+                                  float mass) {
+  const float total = node.total_mass + mass;
+  node.center_of_mass = Vec3((node.center_of_mass.x * node.total_mass + pos.x * mass) / total,
+                             (node.center_of_mass.y * node.total_mass + pos.y * mass) / total,
+                             (node.center_of_mass.z * node.total_mass + pos.z * mass) / total);
+  node.total_mass = total;
+  node.particle_count += 1;
+  if (node.particle_index < 0)
+    node.particle_index = particle_index;
+}
+
 // Allocate a new leaf node holding a single particle.
-int BarnesHutTree::allocateLeaf(int parent, int octant, int particle_index,
-                                const Vec3& pos, float mass) {
+int BarnesHutTree::allocateLeaf(int parent, int octant, int particle_index, const Vec3& pos,
+                                float mass) {
   int new_idx = node_count_++;
   OctreeNode& parent_node = h_nodes_[parent];
   parent_node.children[octant] = new_idx;
@@ -362,8 +427,6 @@ void BarnesHutTree::buildTreeOnHost(const ParticleData* d_particles) {
   node_count_ = 1;
   max_depth_ = 0;
 
-  constexpr int MAX_DEPTH = 32;
-
   // Insert particles one by one, splitting existing leaf nodes when necessary.
   for (int i = 0; i < N; i++) {
     const int idx = h_sorted_indices[i];
@@ -372,14 +435,26 @@ void BarnesHutTree::buildTreeOnHost(const ParticleData* d_particles) {
 
     int current = 0;
     int depth = 0;
+    bool merged = false;
 
-    while (depth < MAX_DEPTH) {
+    while (depth < BH_MAX_DEPTH) {
       OctreeNode& node = h_nodes_[current];
 
       if (node.is_leaf) {
+        // Splitting this leaf can allocate up to BH_MAX_DEPTH further nodes
+        // if the particles are (nearly) coincident and keep landing in the
+        // same octant (a unary chain), so max_nodes_ = 2N is not a valid
+        // upper bound. Refuse to split when the remaining budget is too
+        // tight and degrade to a multi-particle leaf instead of overflowing.
+        if (static_cast<size_t>(node_count_) + BH_MAX_DEPTH + 1 >= max_nodes_) {
+          mergeParticleIntoLeaf(node, idx, pos, m);
+          merged = true;
+          break;
+        }
+
         // This leaf already holds a particle. Convert it into an internal
         // node and re-insert both the existing particle and the new one into
-        // deeper children. If both land in the same octant at MAX_DEPTH, we
+        // deeper children. If both land in the same octant at BH_MAX_DEPTH, we
         // keep them together in one leaf (multi-particle leaf).
         const int existing_idx = node.particle_index;
         const Vec3 existing_pos = node.center_of_mass;
@@ -412,26 +487,23 @@ void BarnesHutTree::buildTreeOnHost(const ParticleData* d_particles) {
       depth++;
     }
 
-    if (depth >= MAX_DEPTH) {
-      // Degenerate case: two (or more) particles collapse into the same
-      // spatial cell at max depth. Merge into the current leaf, accumulating
-      // mass and center of mass so force calculation still sees the group.
-      OctreeNode& node = h_nodes_[current];
-      if (!node.is_leaf) {
-        node.is_leaf = true;
-        node.particle_index = idx;
-        node.particle_count = 1;
-        node.total_mass = m;
-        node.center_of_mass = pos;
-      } else {
-        float total = node.total_mass + m;
-        node.center_of_mass =
-            Vec3((node.center_of_mass.x * node.total_mass + pos.x * m) / total,
-                 (node.center_of_mass.y * node.total_mass + pos.y * m) / total,
-                 (node.center_of_mass.z * node.total_mass + pos.z * m) / total);
-        node.total_mass = total;
-        node.particle_count += 1;
+    if (!merged && depth >= BH_MAX_DEPTH) {
+      // Degenerate case: two (or more) particles collapsed into the same
+      // spatial cell at max depth. Merge into a leaf so force calculation
+      // still sees the group's aggregated mass.
+      int leaf = current;
+      while (!h_nodes_[leaf].is_leaf) {
+        // Internal node at max depth (rare): descend to its first leaf
+        // instead of converting the node itself, which would orphan its
+        // subtree and drop the mass aggregated there.
+        for (int c = 0; c < 8; c++) {
+          if (h_nodes_[leaf].children[c] >= 0) {
+            leaf = h_nodes_[leaf].children[c];
+            break;
+          }
+        }
       }
+      mergeParticleIntoLeaf(h_nodes_[leaf], idx, pos, m);
     }
 
     max_depth_ = std::max(max_depth_, depth);

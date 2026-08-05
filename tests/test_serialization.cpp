@@ -9,19 +9,23 @@
  * - Basic save/load round-trip correctness
  * - Stream validation and format detection
  * - Property-based testing for state preservation
- * - Pause/resume state consistency
+ *
+ * Pure-Serializer tests only: they run in the headless core test binary.
+ * Pause/resume tests that drive a real ParticleSystem (CUDA backend) live
+ * in test_simulation_control.cpp.
  */
 
-#include "nbody/particle_system.hpp"
+#include "nbody/error_handling.hpp"
 #include "nbody/serialization.hpp"
 #include "nbody/types.hpp"
-#include <cmath>
+#include "rapidcheck_float.hpp"
 #include <gtest/gtest.h>
 #include <rapidcheck.h>
 #include <rapidcheck/gtest.h>
 #include <sstream>
 
 using namespace nbody;
+using nbody::test::genFloatInRange;
 
 // Unit Tests
 
@@ -111,21 +115,130 @@ TEST(SerializationTest, InvalidMagicNumber) {
   EXPECT_FALSE(Serializer::validateStream(ss));
 }
 
+namespace {
+// Build a small, fully populated state for error-path tests.
+SimulationState makeTestState(size_t n) {
+  SimulationState state;
+  state.particle_count = n;
+  state.simulation_time = 1.0f;
+  state.dt = 0.001f;
+  state.G = 1.0f;
+  state.softening = 0.1f;
+  state.force_method = ForceMethod::BARNES_HUT;
+  state.pos_x.resize(n, 0.1f);
+  state.pos_y.resize(n, 0.2f);
+  state.pos_z.resize(n, 0.3f);
+  state.vel_x.resize(n, 0.0f);
+  state.vel_y.resize(n, 0.0f);
+  state.vel_z.resize(n, 0.0f);
+  state.mass.resize(n, 1.0f);
+  return state;
+}
+
+// Write a header with the given overrides onto a fresh stream.
+std::stringstream makeHeaderStream(uint64_t particle_count, uint32_t version,
+                                   uint32_t force_method) {
+  FileHeader header{};  // zero-initializes padding too
+  header.magic = NBODY_MAGIC;
+  header.version = version;
+  header.particle_count = particle_count;
+  header.force_method = force_method;
+  std::stringstream ss;
+  ss.write(reinterpret_cast<const char*>(&header), sizeof(header));
+  ss.seekg(0);
+  return ss;
+}
+}  // namespace
+
+TEST(SerializationTest, RejectsTruncatedHeader) {
+  std::stringstream ss;
+  uint32_t magic = NBODY_MAGIC;
+  ss.write(reinterpret_cast<const char*>(&magic), sizeof(magic));  // 4 of 56 bytes
+  ss.seekg(0);
+  EXPECT_THROW(Serializer::load(ss), ValidationException);
+}
+
+TEST(SerializationTest, RejectsTruncatedParticleData) {
+  std::stringstream full;
+  Serializer::save(full, makeTestState(8));
+  const std::string bytes = full.str();
+  ASSERT_GT(bytes.size(), sizeof(FileHeader) + sizeof(float));
+
+  std::stringstream truncated;
+  truncated.write(bytes.data(), static_cast<std::streamsize>(bytes.size() - sizeof(float)));
+  truncated.seekg(0);
+  EXPECT_THROW(Serializer::load(truncated), ValidationException);
+}
+
+TEST(SerializationTest, RejectsUnsupportedVersion) {
+  std::stringstream ss = makeHeaderStream(1, NBODY_VERSION + 1, 0);
+  EXPECT_THROW(Serializer::load(ss), ValidationException);
+}
+
+TEST(SerializationTest, RejectsExcessiveParticleCount) {
+  std::stringstream ss = makeHeaderStream(MAX_PARTICLE_COUNT + 1, NBODY_VERSION, 0);
+  EXPECT_THROW(Serializer::load(ss), ValidationException);
+}
+
+TEST(SerializationTest, RejectsInvalidForceMethod) {
+  std::stringstream ss = makeHeaderStream(0, NBODY_VERSION, 99);
+  EXPECT_THROW(Serializer::load(ss), ValidationException);
+}
+
+TEST(SerializationTest, LoadMissingFileThrowsIOException) {
+  EXPECT_THROW(Serializer::load("definitely_missing_file_9f3a.nbody"), IOException);
+}
+
+TEST(SerializationTest, SaveToUnwritablePathThrowsIOException) {
+  const SimulationState state = makeTestState(1);
+  EXPECT_THROW(Serializer::save("/nonexistent_dir_9f3a/state.nbody", state), IOException);
+}
+
+TEST(SerializationTest, RoundTripsAllForceMethods) {
+  for (const ForceMethod method :
+       {ForceMethod::DIRECT_N2, ForceMethod::BARNES_HUT, ForceMethod::SPATIAL_HASH}) {
+    SimulationState state = makeTestState(4);
+    state.force_method = method;
+
+    std::stringstream ss;
+    Serializer::save(ss, state);
+    ss.seekg(0);
+    const SimulationState loaded = Serializer::load(ss);
+
+    EXPECT_EQ(loaded.force_method, method);
+    EXPECT_TRUE(loaded == state);
+  }
+}
+
+TEST(SimulationStateTest, EqualForIdenticalStates) {
+  const SimulationState a = makeTestState(6);
+  const SimulationState b = a;
+  EXPECT_TRUE(a == b);
+}
+
+TEST(SimulationStateTest, NotEqualWhenVectorShorterThanParticleCount) {
+  // Malformed states (vectors shorter than particle_count) must compare
+  // unequal instead of reading out of bounds.
+  SimulationState a = makeTestState(6);
+  a.pos_x.resize(2);
+  const SimulationState b = a;
+  EXPECT_FALSE(a == b);
+}
+
 // Property-Based Tests
 // Feature: n-body-simulation, Property 12: Save/Load State Round-Trip
 
-RC_GTEST_PROP(Serialization, RoundTripPreservesState,
-              (size_t particle_count, float sim_time, float dt, float G, float softening)) {
+RC_GTEST_PROP(Serialization, RoundTripPreservesState, ()) {
   // Feature: n-body-simulation, Property 12: Save/Load State Round-Trip
   // Validates: Requirements 8.4
 
-  RC_PRE(particle_count > 0 && particle_count <= 100);
-  RC_PRE(sim_time >= 0.0f && sim_time < 1000.0f);
-  RC_PRE(dt > 0.0001f && dt < 1.0f);
-  RC_PRE(G > 0.0f && G < 100.0f);
-  RC_PRE(softening >= 0.0f && softening < 10.0f);
-  RC_PRE(std::isfinite(sim_time) && std::isfinite(dt) && std::isfinite(G) &&
-         std::isfinite(softening));
+  // Generate values directly in the valid ranges; RC_PRE-filtering full-range
+  // arbitrary values would (almost) never hit and the property would give up.
+  const size_t particle_count = *rc::gen::inRange<size_t>(1, 101);
+  const float sim_time = *genFloatInRange(0.0f, 1000.0f);
+  const float dt = *genFloatInRange(0.001f, 1.0f);
+  const float G = *genFloatInRange(0.001f, 100.0f);
+  const float softening = *genFloatInRange(0.0f, 10.0f);
 
   SimulationState original;
   original.particle_count = particle_count;
@@ -145,13 +258,13 @@ RC_GTEST_PROP(Serialization, RoundTripPreservesState,
 
   // Generate random particle data
   for (size_t i = 0; i < particle_count; i++) {
-    original.pos_x[i] = *rc::gen::inRange(-100.0f, 100.0f);
-    original.pos_y[i] = *rc::gen::inRange(-100.0f, 100.0f);
-    original.pos_z[i] = *rc::gen::inRange(-100.0f, 100.0f);
-    original.vel_x[i] = *rc::gen::inRange(-10.0f, 10.0f);
-    original.vel_y[i] = *rc::gen::inRange(-10.0f, 10.0f);
-    original.vel_z[i] = *rc::gen::inRange(-10.0f, 10.0f);
-    original.mass[i] = *rc::gen::inRange(0.1f, 10.0f);
+    original.pos_x[i] = *genFloatInRange(-100.0f, 100.0f);
+    original.pos_y[i] = *genFloatInRange(-100.0f, 100.0f);
+    original.pos_z[i] = *genFloatInRange(-100.0f, 100.0f);
+    original.vel_x[i] = *genFloatInRange(-10.0f, 10.0f);
+    original.vel_y[i] = *genFloatInRange(-10.0f, 10.0f);
+    original.vel_z[i] = *genFloatInRange(-10.0f, 10.0f);
+    original.mass[i] = *genFloatInRange(0.1f, 10.0f);
   }
 
   // Round-trip through serialization
@@ -165,54 +278,7 @@ RC_GTEST_PROP(Serialization, RoundTripPreservesState,
 }
 
 // Feature: n-body-simulation, Property 11: Pause/Resume State Preservation
-
-RC_GTEST_PROP(SimulationControl, PauseResumePreservesState, ()) {
-  // Feature: n-body-simulation, Property 11: Pause/Resume State Preservation
-  // Validates: Requirements 8.1
-
-  // Create a simulation
-  SimulationConfig config;
-  config.particle_count = 50;
-  config.init_distribution = InitDistribution::SPHERICAL;
-  config.force_method = ForceMethod::DIRECT_N2;
-  config.dt = 0.001f;
-
-  ParticleSystem system;
-  system.initialize(config);
-
-  // Run a few steps
-  for (int i = 0; i < 10; i++) {
-    system.update(config.dt);
-  }
-
-  // Get state before pause
-  SimulationState state_before = system.getState();
-
-  // Pause
-  system.pause();
-  RC_ASSERT(system.isPaused());
-
-  // Try to update (should not change state)
-  for (int i = 0; i < 10; i++) {
-    system.update(config.dt);
-  }
-
-  // Get state after pause
-  SimulationState state_after = system.getState();
-
-  // Property: State should be unchanged during pause
-  RC_ASSERT(state_before == state_after);
-
-  // Resume and verify simulation continues
-  system.resume();
-  RC_ASSERT(!system.isPaused());
-
-  system.update(config.dt);
-  SimulationState state_resumed = system.getState();
-
-  // State should have changed after resume
-  RC_ASSERT(!(state_resumed == state_after));
-}
+// moved to test_simulation_control.cpp (requires the CUDA backend).
 
 // Test checkpoint round-trip with various particle counts
 // Verifies the private .nbody format continues to work correctly

@@ -1,4 +1,5 @@
 #include "nbody/error_handling.hpp"
+#include "nbody/serialization.hpp"
 #include "nbody/types.hpp"
 #include <cmath>
 
@@ -66,10 +67,22 @@ void validateSimulationConfig(const SimulationConfig& config) {
         std::isinf(config.spatial_hash_cutoff)) {
       throw ValidationException("Spatial hash cutoff must be positive and finite");
     }
+
+    // The 3x3x3 neighbor search only finds all pairs within cutoff when
+    // cell_size >= cutoff; otherwise interactions are silently missed.
+    if (config.spatial_hash_cutoff > config.spatial_hash_cell_size) {
+      throw ValidationException("Spatial hash cutoff must not exceed cell size");
+    }
   }
 
   if (config.cuda_block_size <= 0 || config.cuda_block_size > 1024) {
     throw ValidationException("CUDA block size must be between 1 and 1024");
+  }
+
+  // The shared-memory energy reductions assume a power-of-two block size;
+  // with any other size the final partial sums are silently dropped.
+  if ((config.cuda_block_size & (config.cuda_block_size - 1)) != 0) {
+    throw ValidationException("CUDA block size must be a power of two");
   }
 }
 
@@ -78,7 +91,7 @@ void validateParticleCountRange(size_t count) {
     throw ValidationException("Particle count must be greater than 0");
   }
 
-  if (count > 100000000) {  // 100 million
+  if (count > MAX_PARTICLE_COUNT) {
     throw ValidationException("Particle count exceeds maximum supported (100M)");
   }
 }
@@ -103,12 +116,14 @@ void validateTimeStep(float dt) {
 }
 
 void validateSoftening(float eps) {
-  if (eps < 0) {
-    throw ValidationException("Softening parameter must be non-negative");
-  }
-
   if (std::isnan(eps) || std::isinf(eps)) {
     throw ValidationException("Softening parameter must be a finite number");
+  }
+
+  // eps = 0 makes coincident particles evaluate rsqrtf(0) = inf, which turns
+  // into NaN accelerations and poisons the whole simulation.
+  if (eps <= 0) {
+    throw ValidationException("Softening parameter must be positive");
   }
 }
 

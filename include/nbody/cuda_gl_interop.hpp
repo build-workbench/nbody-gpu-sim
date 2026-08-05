@@ -16,6 +16,13 @@ public:
   CudaGLInterop();
   ~CudaGLInterop();
 
+  // Non-copyable, non-movable: owns GL buffer objects and CUDA graphics
+  // resources that must not be shared.
+  CudaGLInterop(const CudaGLInterop&) = delete;
+  CudaGLInterop& operator=(const CudaGLInterop&) = delete;
+  CudaGLInterop(CudaGLInterop&&) = delete;
+  CudaGLInterop& operator=(CudaGLInterop&&) = delete;
+
   // Initialize with particle count
   void initialize(size_t particle_count);
 
@@ -82,6 +89,12 @@ class CudaGLInterop {
 public:
   CudaGLInterop() = default;
   ~CudaGLInterop() = default;
+
+  // Match the real interface: non-copyable, non-movable.
+  CudaGLInterop(const CudaGLInterop&) = delete;
+  CudaGLInterop& operator=(const CudaGLInterop&) = delete;
+  CudaGLInterop(CudaGLInterop&&) = delete;
+  CudaGLInterop& operator=(CudaGLInterop&&) = delete;
 
   void initialize(size_t particle_count) { particle_count_ = particle_count; }
   void cleanup() { particle_count_ = 0; }

@@ -17,10 +17,13 @@ public:
   ParticleSystem();
   ~ParticleSystem();
 
+  // Non-copyable, non-movable: ParticleData holds raw device/host pointers
+  // without ownership semantics, so a default move would shallow-copy the
+  // pointers and double-free in both destructors.
   ParticleSystem(const ParticleSystem&) = delete;
   ParticleSystem& operator=(const ParticleSystem&) = delete;
-  ParticleSystem(ParticleSystem&&) noexcept = default;
-  ParticleSystem& operator=(ParticleSystem&&) noexcept = default;
+  ParticleSystem(ParticleSystem&&) = delete;
+  ParticleSystem& operator=(ParticleSystem&&) = delete;
 
   void initialize(const SimulationConfig& config);
   void initializeWithDistribution(size_t particle_count, InitDistribution dist);
@@ -86,6 +89,7 @@ private:
   void allocateMemory(size_t count);
   void freeMemory();
   void createForceCalculator();
+  void finishInitialization();
 };
 
 }  // namespace nbody

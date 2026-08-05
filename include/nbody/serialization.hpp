@@ -1,10 +1,11 @@
 #pragma once
 
+#include "nbody/error_handling.hpp"
 #include "nbody/simulation_state.hpp"
 #include "nbody/types.hpp"
 #include <cstdint>
-#include <fstream>
-#include <iostream>
+#include <iosfwd>
+#include <string>
 #include <vector>
 
 namespace nbody {
@@ -13,6 +14,10 @@ constexpr uint32_t NBODY_MAGIC = 0x4E424F44;
 constexpr uint32_t NBODY_VERSION = 1;
 constexpr uint64_t MAX_PARTICLE_COUNT = 100'000'000;
 
+// On-disk checkpoint header. Written/read as a raw blob, so the layout is
+// part of the file format: native byte order (little-endian on all supported
+// targets) and the exact size/offsets pinned by the static_assert below.
+// Writers must zero the whole struct (including tail padding) before writing.
 struct FileHeader {
   uint32_t magic;
   uint32_t version;
@@ -24,6 +29,7 @@ struct FileHeader {
   uint32_t force_method;
   uint32_t reserved[4];
 };
+static_assert(sizeof(FileHeader) == 56, "FileHeader layout changed; on-disk format would break");
 
 class Serializer {
 public:

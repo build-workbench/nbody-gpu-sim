@@ -48,6 +48,7 @@ endif()
 option(NBODY_BUILD_TESTS "Build unit tests" ON)
 option(NBODY_BUILD_EXAMPLES "Build example executables" ON)
 option(NBODY_BUILD_BENCHMARKS "Build benchmark executables" ON)
+option(NBODY_ENABLE_SANITIZERS "Enable AddressSanitizer and UBSan (GCC/Clang)" OFF)
 
 if(NBODY_ENABLE_RENDERING AND NOT NBODY_ENABLE_CUDA)
     message(WARNING "Rendering requires CUDA-enabled interop in the current codebase; disabling rendering because NBODY_ENABLE_CUDA=OFF")
@@ -71,7 +72,7 @@ if(NBODY_ENABLE_RENDERING)
     find_package(GLEW 2.1 REQUIRED)
 endif()
 
-if(NBODY_ENABLE_RENDERING OR (NBODY_BUILD_TESTS AND NBODY_ENABLE_CUDA))
+if(NBODY_ENABLE_RENDERING)
     find_package(glm 0.9.9 REQUIRED)
 endif()
 
@@ -85,21 +86,26 @@ if(NBODY_BUILD_TESTS)
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
-    if(NBODY_ENABLE_CUDA)
-        FetchContent_Declare(
-            rapidcheck
-            GIT_REPOSITORY https://github.com/emil-e/rapidcheck.git
-            GIT_TAG 1.1.0
-        )
-        FetchContent_MakeAvailable(rapidcheck)
-    endif()
+    # rapidcheck has no release tags; pin to a known-good master commit
+    # (b2d9ed2, current HEAD at time of writing) for reproducible builds.
+    # Used by both headless (serialization/validation) and CUDA tests.
+    # RC_ENABLE_GTEST builds the rapidcheck/gtest.h integration headers.
+    set(RC_ENABLE_GTEST ON CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        rapidcheck
+        GIT_REPOSITORY https://github.com/emil-e/rapidcheck.git
+        GIT_TAG b2d9ed2dddefc4b84318d664b4f221eb792d89c7
+    )
+    FetchContent_MakeAvailable(rapidcheck)
 endif()
 
 if(NBODY_ENABLE_UI)
+    # Pin to a release tag: tracking the moving `docking` branch made builds
+    # non-reproducible and exposed us to upstream breaking changes.
     FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG docking
+        GIT_TAG v1.92.9-docking
     )
     FetchContent_MakeAvailable(imgui)
 
@@ -119,6 +125,25 @@ if(NBODY_ENABLE_UI)
         ${imgui_SOURCE_DIR}/backends
     )
     target_link_libraries(imgui PUBLIC glfw OpenGL::GL)
+endif()
+
+# ── 警告与 sanitizer ─────────────────────────────────────────────
+# Placed AFTER all third-party FetchContent targets (gtest, rapidcheck, imgui)
+# so -Wall/-Wextra and sanitizers apply only to this project's own targets
+# (lib, sim, examples, benchmarks, tests) defined below.
+add_compile_options(
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU,Clang>>:-Wall>
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU,Clang>>:-Wextra>
+    $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/W4>
+)
+
+if(NBODY_ENABLE_SANITIZERS)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(WARNING "NBODY_ENABLE_SANITIZERS is only supported with GCC/Clang; ignoring")
+    else()
+        add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address,undefined)
+    endif()
 endif()
 
 # Source files
@@ -165,11 +190,9 @@ endif()
 add_library(nbody_lib STATIC ${CUDA_SOURCES} ${CPP_SOURCES})
 add_library(nbody::nbody_lib ALIAS nbody_lib)
 
-target_include_directories(nbody_lib
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-)
+# No install() rules exist yet, so a plain path is enough; add
+# BUILD_INTERFACE/INSTALL_INTERFACE generators back when adding install rules.
+target_include_directories(nbody_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_definitions(nbody_lib
     PUBLIC
@@ -179,7 +202,7 @@ target_compile_definitions(nbody_lib
         NBODY_ENABLE_PROFILING=$<BOOL:${NBODY_ENABLE_PROFILING}>
 )
 
-if(NBODY_ENABLE_RENDERING OR (NBODY_BUILD_TESTS AND NBODY_ENABLE_CUDA))
+if(NBODY_ENABLE_RENDERING)
     target_link_libraries(nbody_lib PUBLIC glm::glm)
 endif()
 
@@ -199,12 +222,6 @@ endif()
 if(NBODY_ENABLE_UI)
     target_link_libraries(nbody_lib PUBLIC imgui)
 endif()
-
-target_compile_options(nbody_lib
-    PRIVATE
-        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU,Clang>>:-Wall -Wextra>
-        $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/W4>
-)
 
 # ── 主程序 ───────────────────────────────────────────────────────
 if(NBODY_ENABLE_RENDERING)
@@ -235,22 +252,33 @@ if(NBODY_BUILD_BENCHMARKS)
 endif()
 
 # ── 测试 ─────────────────────────────────────────────────────────
+# Three tiers, each runnable in the environments that can build it:
+#   nbody_core_tests   — pure C++ (headless): CLI, observability, UI gating,
+#                        serialization, validation. Runs in GPU-less CI.
+#   nbody_tests        — needs CUDA: particle data, force kernels, integrator,
+#                        Barnes-Hut, spatial hash.
+#   nbody_render_tests — needs CUDA + rendering: camera, color mapping.
+# test_main.cpp provides main(); do not also link GTest::gtest_main.
 if(NBODY_BUILD_TESTS)
     enable_testing()
-    add_executable(nbody_observability_tests
+    include(GoogleTest)
+
+    add_executable(nbody_core_tests
         tests/test_main.cpp
         tests/test_app_cli.cpp
         tests/test_performance_observability.cpp
         tests/test_ui_panel.cpp
+        tests/test_serialization.cpp
+        tests/test_validation.cpp
     )
-    target_link_libraries(nbody_observability_tests PRIVATE
+    target_link_libraries(nbody_core_tests PRIVATE
         nbody_lib
         GTest::gtest
-        GTest::gtest_main
+        rapidcheck
+        rapidcheck_gtest
     )
+    gtest_discover_tests(nbody_core_tests)
 
-    include(GoogleTest)
-    gtest_discover_tests(nbody_observability_tests)
     if(NBODY_ENABLE_CUDA)
         add_executable(nbody_tests
             tests/test_main.cpp
@@ -259,17 +287,29 @@ if(NBODY_BUILD_TESTS)
             tests/test_integrator.cpp
             tests/test_barnes_hut.cpp
             tests/test_spatial_hash.cpp
-            tests/test_serialization.cpp
-            tests/test_camera.cpp
-            tests/test_color_mapping.cpp
-            tests/test_validation.cpp
+            tests/test_simulation_control.cpp
         )
         target_link_libraries(nbody_tests PRIVATE
             nbody_lib
             GTest::gtest
-            GTest::gtest_main
             rapidcheck
+            rapidcheck_gtest
         )
         gtest_discover_tests(nbody_tests)
+    endif()
+
+    if(NBODY_ENABLE_RENDERING)
+        add_executable(nbody_render_tests
+            tests/test_main.cpp
+            tests/test_camera.cpp
+            tests/test_color_mapping.cpp
+        )
+        target_link_libraries(nbody_render_tests PRIVATE
+            nbody_lib
+            GTest::gtest
+            rapidcheck
+            rapidcheck_gtest
+        )
+        gtest_discover_tests(nbody_render_tests)
     endif()
 endif()

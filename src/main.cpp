@@ -1,4 +1,5 @@
 #include "nbody/app_cli.hpp"
+#include "nbody/cuda_gl_interop.hpp"
 #include "nbody/error_handling.hpp"
 #include "nbody/particle_system.hpp"
 #include "nbody/performance_observability.hpp"
@@ -17,6 +18,16 @@
 
 using namespace nbody;
 
+// RAII deleter for GLFWwindow so the window (and, via Application::cleanup,
+// the GLFW library itself) is released even if initialize() throws partway.
+struct GLFWWindowDeleter {
+  void operator()(GLFWwindow* window) const {
+    if (window) {
+      glfwDestroyWindow(window);
+    }
+  }
+};
+
 class Application {
 public:
   // Configuration constants
@@ -26,7 +37,7 @@ public:
   static constexpr float DEFAULT_ZOOM_SENSITIVITY = 2.0f;
 
   Application() = default;
-  ~Application() = default;
+  ~Application() { cleanup(); }
 
   // Non-copyable, non-movable (owns resources)
   Application(const Application&) = delete;
@@ -36,7 +47,7 @@ public:
 
   int run(int argc, char* argv[]) {
     try {
-      options_ = parseAppCliOptions(argc, const_cast<const char* const*>(argv));
+      options_ = parseAppCliOptions(argc, argv);
       if (options_.show_help) {
         std::cout << appCliUsage();
         return 0;
@@ -54,7 +65,8 @@ public:
 
       initialize();
       mainLoop();
-      cleanup();
+      // Resources are released by the destructor (cleanup is idempotent), so
+      // exception paths below cannot leak the window or GLFW context.
 
     } catch (const CudaException& e) {
       std::cerr << "CUDA Error: " << e.what() << std::endl;
@@ -72,7 +84,8 @@ public:
 
 private:
   // State
-  GLFWwindow* window_ = nullptr;
+  std::unique_ptr<GLFWwindow, GLFWWindowDeleter> window_;
+  bool glfw_initialized_ = false;
   ParticleSystem particle_system_;
   Renderer renderer_;
   size_t particle_count_ = 10000;
@@ -93,36 +106,46 @@ private:
     if (!glfwInit()) {
       throw std::runtime_error("Failed to initialize GLFW");
     }
+    glfw_initialized_ = true;
 
     // Create window
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window_ = glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "N-Body Simulation",
-                               nullptr, nullptr);
+    window_.reset(glfwCreateWindow(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT, "N-Body Simulation",
+                                   nullptr, nullptr));
     if (!window_) {
-      glfwTerminate();
       throw std::runtime_error("Failed to create GLFW window");
     }
 
-    glfwMakeContextCurrent(window_);
+    glfwMakeContextCurrent(window_.get());
     glfwSwapInterval(1);  // VSync
 
     // Store 'this' in GLFW window user pointer for callbacks
-    glfwSetWindowUserPointer(window_, this);
+    glfwSetWindowUserPointer(window_.get(), this);
 
     // Set callbacks (static wrapper functions)
-    glfwSetKeyCallback(window_, keyCallback);
-    glfwSetMouseButtonCallback(window_, mouseButtonCallback);
-    glfwSetCursorPosCallback(window_, cursorPosCallback);
-    glfwSetScrollCallback(window_, scrollCallback);
-    glfwSetFramebufferSizeCallback(window_, framebufferSizeCallback);
+    glfwSetKeyCallback(window_.get(), keyCallback);
+    glfwSetMouseButtonCallback(window_.get(), mouseButtonCallback);
+    glfwSetCursorPosCallback(window_.get(), cursorPosCallback);
+    glfwSetScrollCallback(window_.get(), scrollCallback);
+    glfwSetFramebufferSizeCallback(window_.get(), framebufferSizeCallback);
 
     // Initialize renderer
     renderer_.initialize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
 
     // Initialize particle system
+    particle_system_.initialize(configFromOptions());
+    particle_system_.initializeInterop();
+    paused_ = false;
+
+#if NBODY_WITH_UI
+    ui_panel_.initialize();
+#endif
+  }
+
+  SimulationConfig configFromOptions() const {
     SimulationConfig config;
     config.particle_count = options_.particle_count;
     config.init_distribution = InitDistribution::SPHERICAL;
@@ -133,14 +156,7 @@ private:
     config.barnes_hut_theta = options_.barnes_hut_theta;
     config.spatial_hash_cell_size = options_.spatial_hash_cell_size;
     config.spatial_hash_cutoff = options_.spatial_hash_cutoff;
-
-    particle_system_.initialize(config);
-    particle_system_.initializeInterop();
-    paused_ = false;
-
-#if NBODY_WITH_UI
-    ui_panel_.initialize();
-#endif
+    return config;
   }
 
   void mainLoop() {
@@ -148,7 +164,7 @@ private:
     int frame_count = 0;
     float fps = 0.0f;
 
-    while (!glfwWindowShouldClose(window_)) {
+    while (!glfwWindowShouldClose(window_.get())) {
       auto current_time = std::chrono::high_resolution_clock::now();
       float delta_time = std::chrono::duration<float>(current_time - last_time).count();
 
@@ -164,7 +180,7 @@ private:
         title << "N-Body Simulation | " << particle_count_ << " particles | " << std::fixed
               << std::setprecision(1) << fps << " FPS | " << "Time: " << std::setprecision(2)
               << particle_system_.getSimulationTime();
-        glfwSetWindowTitle(window_, title.str().c_str());
+        glfwSetWindowTitle(window_.get(), title.str().c_str());
       }
 
 #if NBODY_WITH_UI
@@ -206,18 +222,24 @@ private:
       paused_ = ui_panel_.isPaused();
 #endif
 
-      glfwSwapBuffers(window_);
+      glfwSwapBuffers(window_.get());
       glfwPollEvents();
     }
   }
 
+  // Idempotent: safe to call from the destructor regardless of how far
+  // initialize()/mainLoop() got. GL objects are deleted before the window is
+  // destroyed so the context is still current for renderer/ui cleanup.
   void cleanup() {
 #if NBODY_WITH_UI
     ui_panel_.cleanup();
 #endif
     renderer_.cleanup();
-    glfwDestroyWindow(window_);
-    glfwTerminate();
+    window_.reset();
+    if (glfw_initialized_) {
+      glfwTerminate();
+      glfw_initialized_ = false;
+    }
   }
 
   // Static callback wrappers that dispatch to instance methods
@@ -258,7 +280,7 @@ private:
 
     switch (key) {
     case GLFW_KEY_ESCAPE:
-      glfwSetWindowShouldClose(window_, GLFW_TRUE);
+      glfwSetWindowShouldClose(window_.get(), GLFW_TRUE);
       break;
     case GLFW_KEY_SPACE:
       paused_ = !paused_;
@@ -308,8 +330,8 @@ private:
       double dx = xpos - last_mouse_x_;
       double dy = ypos - last_mouse_y_;
 
-      renderer_.getCamera().orbit(static_cast<float>(-dx * mouse_sensitivity_),
-                                  static_cast<float>(-dy * mouse_sensitivity_));
+      renderer_.getCamera().rotate(static_cast<float>(-dx * mouse_sensitivity_),
+                                   static_cast<float>(-dy * mouse_sensitivity_));
 
       last_mouse_x_ = xpos;
       last_mouse_y_ = ypos;
@@ -323,17 +345,7 @@ private:
   void onResize(int width, int height) { renderer_.onResize(width, height); }
 
   int runBenchmarkMode() {
-    SimulationConfig config;
-    config.particle_count = options_.particle_count;
-    config.init_distribution = InitDistribution::SPHERICAL;
-    config.force_method = options_.force_method;
-    config.dt = options_.dt;
-    config.G = options_.G;
-    config.softening = options_.softening;
-    config.barnes_hut_theta = options_.barnes_hut_theta;
-    config.spatial_hash_cell_size = options_.spatial_hash_cell_size;
-    config.spatial_hash_cutoff = options_.spatial_hash_cutoff;
-
+    SimulationConfig config = configFromOptions();
     particle_system_.initialize(config);
 
     // Import state if specified

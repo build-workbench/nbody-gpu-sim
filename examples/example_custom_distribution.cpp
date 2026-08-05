@@ -18,6 +18,10 @@
 
 using namespace nbody;
 
+// Portable pi: M_PI is not standard C++ (MSVC needs _USE_MATH_DEFINES, and
+// this project builds with CMAKE_CXX_EXTENSIONS OFF).
+constexpr float kPi = 3.14159265358979323846f;
+
 /**
  * @brief Create a spiral galaxy distribution
  *
@@ -33,7 +37,7 @@ void initSpiralGalaxy(ParticleData& h_data, const Vec3& center, float radius, fl
   std::normal_distribution<float> dist_normal(0.0f, 1.0f);
 
   size_t N = h_data.count;
-  float arm_angle_step = 2.0f * M_PI / num_arms;
+  float arm_angle_step = 2.0f * kPi / num_arms;
 
   for (size_t i = 0; i < N; i++) {
     // Determine if particle is in bulge or disk
@@ -44,7 +48,7 @@ void initSpiralGalaxy(ParticleData& h_data, const Vec3& center, float radius, fl
     if (in_bulge) {
       // Central bulge - spherical distribution
       r = std::cbrt(dist_01(rng)) * radius * 0.2f;  // Smaller radius
-      theta = dist_01(rng) * 2.0f * M_PI;
+      theta = dist_01(rng) * 2.0f * kPi;
       float phi = std::acos(2.0f * dist_01(rng) - 1.0f);
 
       h_data.pos_x[i] = center.x + r * std::sin(phi) * std::cos(theta);

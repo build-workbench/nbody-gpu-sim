@@ -11,6 +11,12 @@ public:
   SpatialHashGrid(size_t max_particles, float cell_size = 1.0f);
   ~SpatialHashGrid();
 
+  // Non-copyable, non-movable: owns raw device memory.
+  SpatialHashGrid(const SpatialHashGrid&) = delete;
+  SpatialHashGrid& operator=(const SpatialHashGrid&) = delete;
+  SpatialHashGrid(SpatialHashGrid&&) = delete;
+  SpatialHashGrid& operator=(SpatialHashGrid&&) = delete;
+
   // Build grid from particle positions
   void build(const ParticleData* d_particles);
 

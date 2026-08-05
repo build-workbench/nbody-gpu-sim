@@ -14,6 +14,12 @@ public:
   Renderer();
   ~Renderer();
 
+  // Non-copyable, non-movable: owns OpenGL shader program and VAO.
+  Renderer(const Renderer&) = delete;
+  Renderer& operator=(const Renderer&) = delete;
+  Renderer(Renderer&&) = delete;
+  Renderer& operator=(Renderer&&) = delete;
+
   // Initialize renderer with window dimensions
   void initialize(int width, int height);
 
@@ -22,8 +28,10 @@ public:
 
   // Render particles from VBOs
   // position_vbo: VBO containing particle positions (vec3)
-  // velocity_vbo: VBO containing particle velocities (vec3), optional
-  //               If 0, velocity-based coloring falls back to depth-based
+  // velocity_vbo: VBO containing particle velocities (vec3), optional.
+  //               If 0, the velocity attribute is disabled and treated as
+  //               zero (velocity coloring then renders the zero-velocity
+  //               end of the gradient).
   void render(GLuint position_vbo, size_t particle_count, GLuint velocity_vbo = 0);
 
   // Camera access

@@ -1,4 +1,5 @@
 #include "nbody/camera.hpp"
+#include "rapidcheck_float.hpp"
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <gtest/gtest.h>
@@ -47,14 +48,14 @@ TEST(CameraTest, ZoomChangesDistance) {
   EXPECT_LT(new_distance, initial_distance);
 }
 
-TEST(CameraTest, OrbitMaintainsDistance) {
+TEST(CameraTest, RotateMaintainsDistance) {
   Camera camera;
   camera.setPosition(glm::vec3(0, 0, 50));
   camera.setTarget(glm::vec3(0, 0, 0));
 
   float initial_distance = camera.getOrbitDistance();
 
-  camera.orbit(0.5f, 0.3f);
+  camera.rotate(0.5f, 0.3f);
 
   float new_distance = camera.getOrbitDistance();
   EXPECT_NEAR(new_distance, initial_distance, 0.01f);
@@ -115,14 +116,20 @@ RC_GTEST_PROP(Camera, ViewMatrixTransformsCorrectly,
   RC_ASSERT(target_view.z < 0);  // In front of camera
 }
 
-RC_GTEST_PROP(Camera, ProjectionPreservesRelativePositions,
-              (float x1, float y1, float z1, float x2, float y2, float z2)) {
+RC_GTEST_PROP(Camera, ProjectionPreservesRelativePositions, ()) {
   // Feature: n-body-simulation, Property 9: Camera Transformation Correctness
   // Validates: Requirements 7.2
+  //
+  // Constructive generation: both points directly in front of the camera
+  // (z < -1) at distinct depths, instead of filtering arbitrary floats.
 
-  RC_PRE(std::abs(x1) < 50 && std::abs(y1) < 50 && std::abs(z1) < 50);
-  RC_PRE(std::abs(x2) < 50 && std::abs(y2) < 50 && std::abs(z2) < 50);
-  RC_PRE(z1 < -1.0f && z2 < -1.0f);  // Both in front of camera
+  const float x1 = *nbody::test::genFloatInRange(-50.0f, 50.0f);
+  const float y1 = *nbody::test::genFloatInRange(-50.0f, 50.0f);
+  const float z1 = *nbody::test::genFloatInRange(-50.0f, -1.01f);
+  const float x2 = *nbody::test::genFloatInRange(-50.0f, 50.0f);
+  const float y2 = *nbody::test::genFloatInRange(-50.0f, 50.0f);
+  const float z2 = *nbody::test::genFloatInRange(-50.0f, -1.01f);
+  RC_PRE(std::abs(z1 - z2) > 0.01f);  // distinct depths
 
   Camera camera;
   camera.setPosition(glm::vec3(0, 0, 0));

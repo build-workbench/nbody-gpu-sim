@@ -4,6 +4,16 @@
 
 namespace nbody {
 
+namespace {
+// Pitch clamp (radians): keeps the camera from flipping over the poles
+// (gimbal lock) while still allowing near-vertical views.
+constexpr float kMinPitch = 0.1f;
+constexpr float kMaxPitch = 3.04f;  // just under pi
+// Orbit distance bounds used by zoom().
+constexpr float kMinZoomDistance = 1.0f;
+constexpr float kMaxZoomDistance = 1000.0f;
+}  // namespace
+
 Camera::Camera(float fov, float aspect, float near, float far)
     : position_(0, 0, 50),
       target_(0, 0, 0),
@@ -53,7 +63,7 @@ void Camera::rotate(float yaw, float pitch) {
 
   // Apply rotation
   theta += yaw;
-  phi = std::clamp(phi + pitch, 0.1f, 3.04f);  // Clamp to avoid gimbal lock
+  phi = std::clamp(phi + pitch, kMinPitch, kMaxPitch);
 
   // Convert back to Cartesian
   direction.x = distance * std::sin(phi) * std::sin(theta);
@@ -79,14 +89,10 @@ void Camera::zoom(float delta) {
   float distance = glm::length(direction);
 
   // Prevent getting too close or too far
-  float new_distance = std::clamp(distance - delta, 1.0f, 1000.0f);
+  float new_distance = std::clamp(distance - delta, kMinZoomDistance, kMaxZoomDistance);
 
   position_ = target_ - glm::normalize(direction) * new_distance;
   view_dirty_ = true;
-}
-
-void Camera::orbit(float yaw, float pitch) {
-  rotate(yaw, pitch);
 }
 
 void Camera::reset() {

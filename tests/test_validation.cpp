@@ -1,5 +1,6 @@
 #include "nbody/error_handling.hpp"
 #include "nbody/types.hpp"
+#include "rapidcheck_float.hpp"
 #include <cmath>
 #include <gtest/gtest.h>
 #include <limits>
@@ -7,6 +8,7 @@
 #include <rapidcheck/gtest.h>
 
 using namespace nbody;
+using nbody::test::genFloatInRange;
 
 // Unit Tests
 
@@ -32,12 +34,12 @@ TEST(ValidationTest, InvalidTimeStep) {
 }
 
 TEST(ValidationTest, ValidSoftening) {
-  EXPECT_NO_THROW(validateSoftening(0.0f));
   EXPECT_NO_THROW(validateSoftening(0.01f));
   EXPECT_NO_THROW(validateSoftening(1.0f));
 }
 
 TEST(ValidationTest, InvalidSoftening) {
+  EXPECT_THROW(validateSoftening(0.0f), ValidationException);
   EXPECT_THROW(validateSoftening(-0.01f), ValidationException);
   EXPECT_THROW(validateSoftening(std::numeric_limits<float>::quiet_NaN()), ValidationException);
 }
@@ -73,6 +75,29 @@ TEST(ValidationTest, InvalidSimulationConfig) {
   config.G = 1.0f;
   config.softening = 0.01f;
 
+  EXPECT_THROW(validateSimulationConfig(config), ValidationException);
+}
+
+TEST(ValidationTest, SpatialHashAcceptsCellSizeEqualCutoff) {
+  SimulationConfig config;
+  config.force_method = ForceMethod::SPATIAL_HASH;
+  config.spatial_hash_cell_size = 2.0f;
+  config.spatial_hash_cutoff = 2.0f;
+  EXPECT_NO_THROW(validateSimulationConfig(config));
+}
+
+TEST(ValidationTest, SpatialHashRejectsCutoffLargerThanCellSize) {
+  // The 3x3x3 neighbor search misses pairs when cutoff > cell_size.
+  SimulationConfig config;
+  config.force_method = ForceMethod::SPATIAL_HASH;
+  config.spatial_hash_cell_size = 1.0f;
+  config.spatial_hash_cutoff = 2.0f;
+  EXPECT_THROW(validateSimulationConfig(config), ValidationException);
+}
+
+TEST(ValidationTest, RejectsNonPowerOfTwoBlockSize) {
+  SimulationConfig config;
+  config.cuda_block_size = 384;  // not a power of two
   EXPECT_THROW(validateSimulationConfig(config), ValidationException);
 }
 
@@ -147,17 +172,17 @@ RC_GTEST_PROP(Validation, RejectsOutOfRangeTheta, (float theta)) {
   RC_ASSERT(threw);
 }
 
-RC_GTEST_PROP(Validation, AcceptsValidParameters,
-              (size_t count, float dt, float softening, float theta)) {
+RC_GTEST_PROP(Validation, AcceptsValidParameters, ()) {
   // Feature: n-body-simulation, Property 13: Input Validation Robustness
   // Validates: Requirements 10.4
 
-  // Generate valid parameters
-  RC_PRE(count > 0 && count <= 1000000);
-  RC_PRE(dt > 0.0001f && dt <= 1.0f);
-  RC_PRE(softening >= 0.0f && softening < 10.0f);
-  RC_PRE(theta >= 0.0f && theta <= 2.0f);
-  RC_PRE(std::isfinite(dt) && std::isfinite(softening) && std::isfinite(theta));
+  // Generate parameters directly within the valid ranges; RC_PRE-filtering
+  // full-range arbitrary values would (almost) never hit all four ranges at
+  // once, so the property would give up without testing anything.
+  const size_t count = *rc::gen::inRange<size_t>(1, 1000001);
+  const float dt = *genFloatInRange(0.001f, 1.0f);
+  const float softening = *genFloatInRange(0.001f, 9.999f);
+  const float theta = *genFloatInRange(0.0f, 2.0f);
 
   // Property: System accepts valid parameters without throwing
   bool threw = false;

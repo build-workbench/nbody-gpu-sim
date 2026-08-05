@@ -12,7 +12,7 @@ struct AppCliOptions {
   float G = 1.0f;
   float softening = 0.1f;
   float barnes_hut_theta = 0.5f;
-  float spatial_hash_cell_size = 1.0f;
+  float spatial_hash_cell_size = 2.0f;
   float spatial_hash_cutoff = 2.0f;
   bool benchmark_mode = false;
   size_t benchmark_steps = 120;

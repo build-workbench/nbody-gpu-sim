@@ -105,9 +105,9 @@ void DirectForceCalculator::computeForces(ParticleData* d_particles) {
   launchDirectForceKernel(d_particles, G_, softening_eps2_, block_size_);
 }
 
-// CPU reference implementation for testing
-Vec3 computeGravitationalForceCPU(const Vec3& p1, const Vec3& p2, float m1, float m2, float G,
-                                  float eps) {
+// CPU reference implementation for testing (see header for semantics).
+Vec3 computeGravitationalAccelerationCPU(const Vec3& p1, const Vec3& p2, float m2, float G,
+                                         float eps) {
   Vec3 r = p2 - p1;
   float dist2 = r.length2() + eps * eps;
   float inv_dist = 1.0f / sqrtf(dist2);

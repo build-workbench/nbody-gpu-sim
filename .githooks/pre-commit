@@ -5,7 +5,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-mapfile -t staged_files < <(git diff --cached --name-only --diff-filter=ACMR)
+# Plain while-read loop: mapfile requires bash 4+, but macOS ships bash 3.2.
+staged_files=()
+while IFS= read -r file; do
+  staged_files+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR)
 
 if [ "${#staged_files[@]}" -eq 0 ]; then
   exit 0
@@ -29,7 +33,9 @@ if [ "${#cpp_like_files[@]}" -gt 0 ]; then
 
   echo "Checking staged C++/CUDA formatting..."
   for file in "${cpp_like_files[@]}"; do
-    clang-format --dry-run --Werror "$file"
+    # Check the staged blob, not the working tree, so partially staged
+    # (git add -p) commits are validated on exactly what will be committed.
+    git show ":$file" | clang-format --dry-run --Werror --assume-filename "$file"
   done
 fi
 

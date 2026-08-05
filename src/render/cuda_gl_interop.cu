@@ -3,6 +3,11 @@
 
 namespace nbody {
 
+namespace {
+// Block size for the SoA→interleaved copy kernels.
+constexpr int kCopyBlockSize = 256;
+}  // namespace
+
 // Kernel to copy SoA positions to interleaved VBO format
 __global__ void copyPositionsToVBOKernel(float* vbo, const float* pos_x, const float* pos_y,
                                          const float* pos_z, int N) {
@@ -61,9 +66,10 @@ CudaGLInterop::~CudaGLInterop() {
 }
 
 void CudaGLInterop::initialize(size_t particle_count) {
-  if (is_initialized_) {
-    cleanup();
-  }
+  // Idempotent: also releases partial state left behind by a previously
+  // failed initialize (e.g. the second cudaGraphicsGLRegisterBuffer threw
+  // after the first succeeded).
+  cleanup();
 
   particle_count_ = particle_count;
 
@@ -171,18 +177,30 @@ void CudaGLInterop::unmapAllBuffers() {
 
 void CudaGLInterop::updatePositions(const ParticleData* d_particles) {
   float* d_vbo = mapPositionBuffer();
-  if (d_vbo) {
-    launchCopyPositionsToVBOKernel(d_vbo, d_particles, 256);
+  if (!d_vbo)
+    return;
+  try {
+    launchCopyPositionsToVBOKernel(d_vbo, d_particles, kCopyBlockSize);
+  } catch (...) {
+    // Always unmap: leaving is_mapped_ true would make every future map
+    // return nullptr and freeze rendering permanently.
     unmapPositionBuffer();
+    throw;
   }
+  unmapPositionBuffer();
 }
 
 void CudaGLInterop::updateVelocities(const ParticleData* d_particles) {
   float* d_vbo = mapVelocityBuffer();
-  if (d_vbo) {
-    launchCopyVelocitiesToVBOKernel(d_vbo, d_particles, 256);
+  if (!d_vbo)
+    return;
+  try {
+    launchCopyVelocitiesToVBOKernel(d_vbo, d_particles, kCopyBlockSize);
+  } catch (...) {
     unmapVelocityBuffer();
+    throw;
   }
+  unmapVelocityBuffer();
 }
 
 bool CudaGLInterop::verifyDataIntegrity(const float* expected_data, size_t count) {
@@ -196,8 +214,13 @@ bool CudaGLInterop::verifyDataIntegrity(const float* expected_data, size_t count
     return false;
 
   std::vector<float> actual_data(count);
-  CUDA_CHECK(cudaMemcpy(actual_data.data(), d_vbo, count * sizeof(float), cudaMemcpyDeviceToHost));
-
+  try {
+    CUDA_CHECK(
+        cudaMemcpy(actual_data.data(), d_vbo, count * sizeof(float), cudaMemcpyDeviceToHost));
+  } catch (...) {
+    unmapPositionBuffer();
+    throw;
+  }
   unmapPositionBuffer();
 
   // Compare

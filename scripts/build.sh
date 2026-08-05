@@ -18,7 +18,25 @@ if command -v nvcc &> /dev/null; then
     echo "✓ CUDA detected"
 else
     CUDA_ENABLED=OFF
-    echo "⚠ CUDA not found; building headless core-only configuration"
+    echo "⚠ CUDA not found; CMake will auto-disable rendering, UI and examples"
+    echo "  (the headless core library and core tests are still built)."
+fi
+
+# Detect rendering dependencies (only meaningful when CUDA is available).
+# Without them, configure would hard-fail in find_package; degrade gracefully
+# to a headless build instead.
+RENDERING_ENABLED="$CUDA_ENABLED"
+if [ "$RENDERING_ENABLED" = "ON" ]; then
+    HAVE_GL=1
+    pkg-config --exists glfw3 2>/dev/null || [ -f /usr/include/GLFW/glfw3.h ] || HAVE_GL=0
+    pkg-config --exists glew 2>/dev/null || [ -f /usr/include/GL/glew.h ] || HAVE_GL=0
+    [ -d /usr/include/glm ] || HAVE_GL=0
+    if [ "$HAVE_GL" = "0" ]; then
+        RENDERING_ENABLED=OFF
+        echo "⚠ OpenGL dev packages (GLFW/GLEW/GLM) not found; disabling rendering."
+        echo "  Install them for the visualizer, e.g.:"
+        echo "    sudo apt install libglfw3-dev libglew-dev libglm-dev"
+    fi
 fi
 
 # Create build directory
@@ -31,6 +49,7 @@ cmake .. \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DNBODY_BUILD_EXAMPLES=ON \
     -DNBODY_ENABLE_CUDA="$CUDA_ENABLED" \
+    -DNBODY_ENABLE_RENDERING="$RENDERING_ENABLED" \
     -G "Unix Makefiles"
 
 # Build
@@ -50,12 +69,16 @@ else
   echo "ℹ️  Renderer and examples may be disabled in headless core-only builds."
 fi
 
-if [ -f "${BUILD_DIR}/nbody_observability_tests" ]; then
-  echo "🧪 Headless tests: ${BUILD_DIR}/nbody_observability_tests"
+if [ -f "${BUILD_DIR}/nbody_core_tests" ]; then
+  echo "🧪 Headless tests: ${BUILD_DIR}/nbody_core_tests"
 fi
 
 if [ -f "${BUILD_DIR}/nbody_tests" ]; then
   echo "🧪 CUDA tests: ${BUILD_DIR}/nbody_tests"
+fi
+
+if [ -f "${BUILD_DIR}/nbody_render_tests" ]; then
+  echo "🧪 Render tests: ${BUILD_DIR}/nbody_render_tests"
 fi
 
 if [ -f "${BUILD_DIR}/nbody_benchmarks" ]; then

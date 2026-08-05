@@ -93,6 +93,24 @@ BenchmarkRunRecord runSerializationBenchmark(const BenchmarkOptions& options) {
 }
 
 #if defined(NBODY_WITH_CUDA) && NBODY_WITH_CUDA
+// GPU benchmarks must synchronize before reading the clock: kernel launches
+// are asynchronous, so without this the measured time is just the API
+// enqueue overhead, not the actual computation.
+void synchronizeDevice() {
+  CUDA_CHECK(cudaDeviceSynchronize());
+}
+
+// Run untimed warmup iterations: the first call lazily allocates algorithm
+// state (Barnes-Hut tree, spatial hash grid) and warms up the CUDA context
+// and JIT, none of which belongs in the measurement.
+template <typename Func>
+void warmup(Func&& func, size_t iterations = 2) {
+  for (size_t i = 0; i < iterations; ++i) {
+    func();
+  }
+  synchronizeDevice();
+}
+
 BenchmarkRunRecord runForceBenchmark(const BenchmarkOptions& options, ForceMethod method,
                                      const std::string& benchmark_name) {
   SimulationConfig config;
@@ -120,10 +138,14 @@ BenchmarkRunRecord runForceBenchmark(const BenchmarkOptions& options, ForceMetho
   auto calculator = createForceCalculator(method, config);
   consumeGlobalPhaseSnapshot();
 
+  auto step = [&]() { calculator->computeForces(system.getDeviceData()); };
+  warmup(step);
+
   double total_ms = 0.0;
   for (size_t iteration = 0; iteration < options.iterations; ++iteration) {
     const auto start = std::chrono::steady_clock::now();
-    calculator->computeForces(system.getDeviceData());
+    step();
+    synchronizeDevice();
     const auto end = std::chrono::steady_clock::now();
     total_ms += std::chrono::duration_cast<Milliseconds>(end - start).count();
   }
@@ -153,10 +175,14 @@ BenchmarkRunRecord runIntegrationBenchmark(const BenchmarkOptions& options) {
 
   consumeGlobalPhaseSnapshot();
 
+  auto step = [&]() { system.update(system.getTimeStep()); };
+  warmup(step);
+
   double total_ms = 0.0;
   for (size_t iteration = 0; iteration < options.iterations; ++iteration) {
     const auto start = std::chrono::steady_clock::now();
-    system.update(system.getTimeStep());
+    step();
+    synchronizeDevice();
     const auto end = std::chrono::steady_clock::now();
     total_ms += std::chrono::duration_cast<Milliseconds>(end - start).count();
   }
@@ -190,10 +216,14 @@ BenchmarkRunRecord runBarnesHutBenchmark(const BenchmarkOptions& options) {
   auto calculator = createForceCalculator(ForceMethod::BARNES_HUT, config);
   consumeGlobalPhaseSnapshot();
 
+  auto step = [&]() { calculator->computeForces(system.getDeviceData()); };
+  warmup(step);
+
   double total_ms = 0.0;
   for (size_t iteration = 0; iteration < options.iterations; ++iteration) {
     const auto start = std::chrono::steady_clock::now();
-    calculator->computeForces(system.getDeviceData());
+    step();
+    synchronizeDevice();
     const auto end = std::chrono::steady_clock::now();
     total_ms += std::chrono::duration_cast<Milliseconds>(end - start).count();
   }

@@ -24,6 +24,10 @@ public:
   void record(std::string_view name, Milliseconds duration);
   std::vector<PhaseTiming> snapshot() const;
   void reset();
+  // Atomic snapshot-and-clear: records arriving between a separate
+  // snapshot() and reset() would be lost, so consumers that drain the
+  // profiler must use this.
+  std::vector<PhaseTiming> consume();
 
 private:
   mutable std::mutex mutex_;
@@ -54,7 +58,7 @@ struct BenchmarkRunRecord {
   std::vector<PhaseTiming> phase_timings;
 };
 
-std::string forceMethodToString(ForceMethod method);
+// forceMethodToString lives in types.hpp (canonical name mapping).
 std::string serializeBenchmarkRunRecord(const BenchmarkRunRecord& record);
 std::string serializeBenchmarkRunRecords(const std::vector<BenchmarkRunRecord>& records);
 void writeBenchmarkRunRecords(const std::string& path,
@@ -64,8 +68,8 @@ PhaseProfiler& globalPhaseProfiler();
 std::vector<PhaseTiming> consumeGlobalPhaseSnapshot();
 
 #if defined(NBODY_ENABLE_PROFILING) && NBODY_ENABLE_PROFILING
-#define NBODY_PROFILE_SCOPE(name)                                                              \
-  ::nbody::ScopedPhaseProfile nbody_scoped_phase_profile_##__LINE__(                           \
+#define NBODY_PROFILE_SCOPE(name)                                    \
+  ::nbody::ScopedPhaseProfile nbody_scoped_phase_profile_##__LINE__( \
       ::nbody::globalPhaseProfiler(), (name))
 #else
 #define NBODY_PROFILE_SCOPE(name) \

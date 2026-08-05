@@ -10,6 +10,12 @@ public:
   explicit Integrator(int block_size = 256);
   ~Integrator();
 
+  // Non-copyable, non-movable: owns a raw device scratch buffer.
+  Integrator(const Integrator&) = delete;
+  Integrator& operator=(const Integrator&) = delete;
+  Integrator(Integrator&&) = delete;
+  Integrator& operator=(Integrator&&) = delete;
+
   void integrate(ParticleData* d_particles, ForceCalculator* force_calc, float dt);
   void updatePositions(ParticleData* d_particles, float dt);
   void updateVelocities(ParticleData* d_particles, float dt);

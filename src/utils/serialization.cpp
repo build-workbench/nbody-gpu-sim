@@ -9,7 +9,7 @@ namespace nbody {
 void Serializer::save(const std::string& filename, const SimulationState& state) {
   std::ofstream file(filename, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("Failed to open file for writing: " + filename);
+    throw IOException("Failed to open file for writing: " + filename);
   }
   save(file, state);
 }
@@ -17,7 +17,7 @@ void Serializer::save(const std::string& filename, const SimulationState& state)
 SimulationState Serializer::load(const std::string& filename) {
   std::ifstream file(filename, std::ios::binary);
   if (!file) {
-    throw std::runtime_error("Failed to open file for reading: " + filename);
+    throw IOException("Failed to open file for reading: " + filename);
   }
   return load(file);
 }
@@ -45,6 +45,13 @@ SimulationState Serializer::load(std::istream& in) {
     throw ValidationException("Particle count (" + std::to_string(header.particle_count) +
                               ") exceeds maximum allowed (" + std::to_string(MAX_PARTICLE_COUNT) +
                               ")");
+  }
+
+  // Validate the force method before casting to the enum: an out-of-range
+  // value from a corrupted file would otherwise be silently accepted.
+  if (header.force_method > static_cast<uint32_t>(ForceMethod::SPATIAL_HASH)) {
+    throw ValidationException("Invalid force method in file header: " +
+                              std::to_string(header.force_method));
   }
 
   SimulationState state;
@@ -78,13 +85,17 @@ bool Serializer::validateStream(std::istream& in) {
   try {
     FileHeader header = readHeader(in);
     return header.magic == NBODY_MAGIC && header.version == NBODY_VERSION;
-  } catch (...) {
+  } catch (const std::exception&) {
     return false;
   }
 }
 
 void Serializer::writeHeader(std::ostream& out, const SimulationState& state) {
   FileHeader header;
+  // Zero the entire struct, including compiler-inserted tail padding, so the
+  // on-disk bytes are deterministic and no uninitialized stack memory leaks
+  // into the checkpoint file.
+  std::memset(&header, 0, sizeof(header));
   header.magic = NBODY_MAGIC;
   header.version = NBODY_VERSION;
   header.particle_count = state.particle_count;
@@ -93,7 +104,6 @@ void Serializer::writeHeader(std::ostream& out, const SimulationState& state) {
   header.G = state.G;
   header.softening = state.softening;
   header.force_method = static_cast<uint32_t>(state.force_method);
-  std::memset(header.reserved, 0, sizeof(header.reserved));
 
   out.write(reinterpret_cast<const char*>(&header), sizeof(header));
 }
@@ -104,15 +114,15 @@ FileHeader Serializer::readHeader(std::istream& in) {
 
   // Check if read succeeded
   if (!in || in.gcount() != sizeof(header)) {
-    throw std::runtime_error("Failed to read file header: file may be truncated or corrupted");
+    throw ValidationException("Failed to read file header: file may be truncated or corrupted");
   }
 
   if (header.magic != NBODY_MAGIC) {
-    throw std::runtime_error("Invalid file format: wrong magic number");
+    throw ValidationException("Invalid file format: wrong magic number");
   }
 
   if (header.version != NBODY_VERSION) {
-    throw std::runtime_error("Unsupported file version");
+    throw ValidationException("Unsupported file version");
   }
 
   return header;
@@ -128,7 +138,7 @@ std::vector<float> Serializer::readFloatArray(std::istream& in, size_t count) {
 
   // Check if read succeeded
   if (!in || in.gcount() != static_cast<std::streamsize>(count * sizeof(float))) {
-    throw std::runtime_error("Failed to read particle data: file may be truncated or corrupted");
+    throw ValidationException("Failed to read particle data: file may be truncated or corrupted");
   }
 
   return data;

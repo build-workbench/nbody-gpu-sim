@@ -8,11 +8,19 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_DIR"
 
-echo "🎨 Formatting source files..."
+# Prefer the same major version the CI format gate is pinned to, so local
+# formatting and CI agree.
+if command -v clang-format-18 >/dev/null 2>&1; then
+    CLANG_FORMAT=clang-format-18
+else
+    CLANG_FORMAT=clang-format
+fi
+
+echo "🎨 Formatting source files with $CLANG_FORMAT..."
 
 find . -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.cu" -o -name "*.cuh" \) \
     ! -path "./build/*" \
     ! -path "./.git/*" \
-    -exec clang-format -i {} +
+    -exec "$CLANG_FORMAT" -i {} +
 
 echo "✅ Formatting complete!"

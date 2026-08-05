@@ -79,7 +79,7 @@ void UIPanel::render() {
   ImGui::Text("Simulation");
   ImGui::Indent();
   ImGui::Text("Particles: %zu", particle_count_);
-  ImGui::Text("Method: %s", forceMethodToString(force_method_));
+  ImGui::Text("Method: %s", forceMethodDisplayName(force_method_));
   ImGui::Text("Time: %.2f s", simulation_time_);
   ImGui::Unindent();
 
@@ -123,7 +123,7 @@ void UIPanel::endFrame() {
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-const char* UIPanel::forceMethodToString(ForceMethod method) {
+const char* UIPanel::forceMethodDisplayName(ForceMethod method) {
   switch (method) {
   case ForceMethod::DIRECT_N2:
     return "Direct N2";

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstddef>
 #include <cmath>
+#include <cstddef>
 
 #if defined(__CUDACC__)
 #include <cuda_runtime.h>
@@ -32,23 +32,25 @@ class Renderer;
 class Camera;
 class ParticleSystem;
 
-enum class ForceMethod {
-  DIRECT_N2,
-  BARNES_HUT,
-  SPATIAL_HASH
-};
+enum class ForceMethod { DIRECT_N2, BARNES_HUT, SPATIAL_HASH };
 
-enum class InitDistribution {
-  UNIFORM,
-  SPHERICAL,
-  DISK
-};
+// Canonical machine-readable name (JSON reports, profiling, CLI output).
+// UI-facing display strings live in the rendering layer.
+inline const char* forceMethodToString(ForceMethod method) {
+  switch (method) {
+  case ForceMethod::DIRECT_N2:
+    return "direct_n2";
+  case ForceMethod::BARNES_HUT:
+    return "barnes_hut";
+  case ForceMethod::SPATIAL_HASH:
+    return "spatial_hash";
+  }
+  return "unknown";
+}
 
-enum class ColorMode {
-  DEPTH,
-  VELOCITY,
-  DENSITY
-};
+enum class InitDistribution { UNIFORM, SPHERICAL, DISK };
+
+enum class ColorMode { DEPTH, VELOCITY, DENSITY };
 
 struct Vec3 {
   float x, y, z;
@@ -66,11 +68,15 @@ struct Vec3 {
   __host__ __device__ Vec3 operator/(float s) const { return Vec3(x / s, y / s, z / s); }
 
   __host__ __device__ Vec3& operator+=(const Vec3& v) {
-    x += v.x; y += v.y; z += v.z;
+    x += v.x;
+    y += v.y;
+    z += v.z;
     return *this;
   }
   __host__ __device__ Vec3& operator-=(const Vec3& v) {
-    x -= v.x; y -= v.y; z -= v.z;
+    x -= v.x;
+    y -= v.y;
+    z -= v.z;
     return *this;
   }
 
@@ -108,11 +114,20 @@ struct ParticleData {
   size_t count;
 
   ParticleData()
-      : pos_x(nullptr), pos_y(nullptr), pos_z(nullptr),
-        vel_x(nullptr), vel_y(nullptr), vel_z(nullptr),
-        acc_x(nullptr), acc_y(nullptr), acc_z(nullptr),
-        acc_old_x(nullptr), acc_old_y(nullptr), acc_old_z(nullptr),
-        mass(nullptr), count(0) {}
+      : pos_x(nullptr),
+        pos_y(nullptr),
+        pos_z(nullptr),
+        vel_x(nullptr),
+        vel_y(nullptr),
+        vel_z(nullptr),
+        acc_x(nullptr),
+        acc_y(nullptr),
+        acc_z(nullptr),
+        acc_old_x(nullptr),
+        acc_old_y(nullptr),
+        acc_old_z(nullptr),
+        mass(nullptr),
+        count(0) {}
 };
 
 struct SimulationConfig {
@@ -123,7 +138,7 @@ struct SimulationConfig {
   float G = 1.0f;
   float softening = 0.1f;
   float barnes_hut_theta = 0.5f;
-  float spatial_hash_cell_size = 1.0f;
+  float spatial_hash_cell_size = 2.0f;
   float spatial_hash_cutoff = 2.0f;
   int cuda_block_size = 256;
 };

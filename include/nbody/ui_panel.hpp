@@ -69,8 +69,9 @@ private:
   ForceMethod selected_method_ = ForceMethod::DIRECT_N2;
   bool method_changed_ = false;
 
-  // Helper to convert ForceMethod to string
-  static const char* forceMethodToString(ForceMethod method);
+  // Human-friendly method label for the panel (the canonical machine name
+  // comes from forceMethodToString in types.hpp).
+  static const char* forceMethodDisplayName(ForceMethod method);
 };
 
 }  // namespace nbody

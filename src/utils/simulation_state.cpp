@@ -18,6 +18,18 @@ bool SimulationState::operator==(const SimulationState& other) const {
   if (force_method != other.force_method)
     return false;
 
+  // Malformed states whose vectors do not match particle_count are never
+  // equal; this also stops the loop below from reading out of bounds.
+  if (pos_x.size() != particle_count || pos_y.size() != particle_count ||
+      pos_z.size() != particle_count || vel_x.size() != particle_count ||
+      vel_y.size() != particle_count || vel_z.size() != particle_count ||
+      mass.size() != particle_count || other.pos_x.size() != particle_count ||
+      other.pos_y.size() != particle_count || other.pos_z.size() != particle_count ||
+      other.vel_x.size() != particle_count || other.vel_y.size() != particle_count ||
+      other.vel_z.size() != particle_count || other.mass.size() != particle_count) {
+    return false;
+  }
+
   for (size_t i = 0; i < particle_count; i++) {
     if (std::abs(pos_x[i] - other.pos_x[i]) > 1e-6f)
       return false;
