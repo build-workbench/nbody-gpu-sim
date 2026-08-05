@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitepress'
-import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const rawBase = process.env.VITEPRESS_BASE
 const base = rawBase
@@ -8,47 +7,26 @@ const base = rawBase
     : `/${rawBase}/`
   : '/n-body/'
 
-export default withMermaid(defineConfig({
+export default defineConfig({
   base,
+  lang: 'zh-CN',
   title: 'N-Body Simulation',
-  description: 'Million-Particle GPU Physics Engine',
+  description: '百万粒子 GPU 物理引擎',
 
   head: [
-    ['link', { rel: 'icon', href: '/n-body/favicon.ico' }],
+    // 内联 SVG favicon，无需从 public/ 服务二进制资源。
+    ['link', { rel: 'icon', href: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪐</text></svg>' }],
     ['meta', { name: 'theme-color', content: '#10b981' }],
   ],
-
-  locales: {
-    en: {
-      label: 'English',
-      lang: 'en-US',
-      link: '/en/',
-      themeConfig: {
-        nav: [{ text: 'Home', link: '/en/' }],
-        footer: {
-          message: 'Released under the MIT License.',
-          copyright: 'Copyright © 2024-2026 AICL-Lab',
-        },
-      },
-    },
-    zhCN: {
-      label: '简体中文',
-      lang: 'zh-CN',
-      link: '/zh-CN/',
-      themeConfig: {
-        nav: [{ text: '首页', link: '/zh-CN/' }],
-        footer: {
-          message: '基于 MIT 许可证发布。',
-          copyright: '版权所有 © 2024-2026 AICL-Lab',
-        },
-      },
-    },
-  },
 
   themeConfig: {
     socialLinks: [
       { icon: 'github', link: 'https://github.com/AICL-Lab/n-body' },
     ],
+    footer: {
+      message: '基于 MIT 许可证发布。',
+      copyright: '版权所有 © 2024-2026 AICL-Lab',
+    },
   },
 
   markdown: {
@@ -63,4 +41,4 @@ export default withMermaid(defineConfig({
       },
     ],
   },
-}))
+})

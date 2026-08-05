@@ -1,96 +1,56 @@
----
-layout: default
-title: Getting Started
-parent: Documentation
-nav_order: 1
----
+# 快速上手
 
-# Getting Started Guide
+构建、运行 N-Body 粒子模拟的完整指南。
 
-Complete guide for setting up, building, and running the N-Body Particle Simulation System.
+## 环境要求
 
----
+### 硬件
 
-## 📋 Table of Contents
+| 组件 | 最低 | 推荐 | 说明 |
+|------|------|------|------|
+| GPU | NVIDIA GTX 1650 | RTX 3080+ | 需 Compute Capability 7.5+（Turing 及以上） |
+| 显存 | 2 GB | 8 GB+ | 100 万粒子所需 |
+| 内存 | 8 GB | 16 GB+ | 主机端数据传输 |
+| 存储 | 500 MB | 1 GB | 构建产物与依赖 |
 
-1. [Requirements](#-system-requirements)
-2. [Installation](#-installation)
-3. [Building](#-building-the-project)
-4. [Running](#-running-the-simulation)
-5. [Next Steps](#-next-steps)
-6. [Troubleshooting](#-troubleshooting)
+### 软件
 
----
+| 组件 | 版本 | 安装 |
+|------|------|------|
+| CUDA Toolkit | 11.8+ | [NVIDIA CUDA](https://developer.nvidia.com/cuda-downloads) |
+| CMake | 3.18+ | `sudo apt install cmake` |
+| GCC/Clang | C++17 支持 | 通常已自带 |
+| OpenGL | 3.3+ | 通常已自带 |
+| GLFW | 3.3+ | `sudo apt install libglfw3-dev` |
+| GLEW | 2.1+ | `sudo apt install libglew-dev` |
+| GLM | 0.9.9+ | `sudo apt install libglm-dev` |
 
-## 📋 System Requirements
+无 CUDA/OpenGL 开发包时，可走**无头核心构建**路径，仍能跑核心测试与基准。
 
-### Hardware Requirements
-
-| Component | Minimum | Recommended | Notes |
-|-----------|---------|-------------|-------|
-| **GPU** | NVIDIA GTX 1060 | RTX 3080+ | Compute Capability 7.0+ required |
-| **VRAM** | 2 GB | 8 GB+ | For 1M+ particles |
-| **RAM** | 8 GB | 16 GB+ | Host memory for data transfer |
-| **Storage** | 500 MB | 1 GB | Build artifacts and dependencies |
-
-### Software Requirements
-
-| Component | Version | Installation |
-|-----------|---------|--------------|
-| **CUDA Toolkit** | 11.0+ | [NVIDIA CUDA](https://developer.nvidia.com/cuda-downloads) |
-| **CMake** | 3.18+ | `sudo apt install cmake` |
-| **GCC/Clang** | C++17 support | Usually included |
-| **OpenGL** | 3.3+ | Usually included |
-| **GLFW** | 3.3+ | `sudo apt install libglfw3-dev` |
-| **GLEW** | 2.1+ | `sudo apt install libglew-dev` |
-| **GLM** | 0.9.9+ | `sudo apt install libglm-dev` |
-
-For a **headless core-only** validation path, you can skip CUDA/OpenGL dependencies and configure the project with rendering and examples disabled while still keeping the headless observability tests and benchmarks available.
-
-### Verify CUDA Installation
+### 验证 CUDA 安装
 
 ```bash
-# Check CUDA compiler
 nvcc --version
-
-# Check GPU detection
 nvidia-smi
 ```
 
-Expected output should show CUDA version and GPU details.
+## 安装
 
----
-
-## 💾 Installation
-
-### Linux (Ubuntu/Debian)
+### Linux（Ubuntu/Debian）
 
 ```bash
-# 1. Install dependencies
 sudo apt-get update
-sudo apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    libglfw3-dev \
-    libglew-dev \
-    libglm-dev
-
-# 2. Clone the repository
+sudo apt-get install -y build-essential cmake git libglfw3-dev libglew-dev libglm-dev
 git clone https://github.com/AICL-Lab/n-body.git
 cd n-body
-
-# 3. Verify structure
-ls -la
-# Should show: CMakeLists.txt, src/, include/, tests/, docs/
 ```
 
-### Windows (Visual Studio)
+### Windows（Visual Studio）
 
-1. Install **Visual Studio 2019+** with C++ workload
-2. Install **CUDA Toolkit** from [NVIDIA](https://developer.nvidia.com/cuda-downloads)
-3. Install **CMake 3.18+**
-4. Install dependencies via **vcpkg**:
+1. 安装 **Visual Studio 2019+** 及 C++ 工作负载
+2. 安装 **CUDA Toolkit**
+3. 安装 **CMake 3.18+**
+4. 通过 **vcpkg** 安装依赖：
 
 ```cmd
 git clone https://github.com/Microsoft/vcpkg.git
@@ -99,30 +59,22 @@ cd vcpkg
 .\vcpkg install glfw3 glew glm
 ```
 
----
+## 构建
 
-## 🔨 Building the Project
-
-### Linux Build
+### 标准 Linux 构建
 
 ```bash
-# Create build directory
 mkdir -p build && cd build
-
-# Configure (Release mode for performance)
 cmake .. -DCMAKE_BUILD_TYPE=Release
-
-# Build using all CPU cores
 cmake --build . -j$(nproc)
 ```
 
-### Headless Core-Only Build
+或直接用脚本：`./scripts/build.sh`
 
-Use this path when you want to validate the non-visual core surfaces on a machine without CUDA or OpenGL development packages:
+### 无头核心构建（无 CUDA/OpenGL）
 
 ```bash
 mkdir -p build/headless && cd build/headless
-
 cmake ../.. \
     -DCMAKE_BUILD_TYPE=Release \
     -DNBODY_ENABLE_RENDERING=OFF \
@@ -130,13 +82,12 @@ cmake ../.. \
     -DNBODY_BUILD_TESTS=ON \
     -DNBODY_BUILD_BENCHMARKS=ON \
     -DNBODY_BUILD_EXAMPLES=OFF
-
 cmake --build . -j$(nproc)
 ```
 
-This configuration currently produces the core static library (`libnbody_lib.a`), the `nbody_observability_tests` target, and the `nbody_benchmarks` executable. It intentionally skips the render executable, examples, and CUDA-backed simulation tests.
+产出核心静态库 `libnbody_lib.a`、`nbody_core_tests`（CLI、可观测性、序列化、校验测试）和 `nbody_benchmarks`。跳过渲染可执行文件、示例和 CUDA 模拟测试。
 
-### Windows Build
+### Windows
 
 ```cmd
 mkdir build
@@ -145,195 +96,86 @@ cmake .. -G "Visual Studio 17 2022" -A x64
 cmake --build . --config Release
 ```
 
-### Build Options
+### 构建选项
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `CMAKE_BUILD_TYPE` | `Release` | `Debug` or `Release` |
-| `NBODY_ENABLE_RENDERING` | `ON` | Build OpenGL/GLFW visualization surfaces |
-| `NBODY_BUILD_TESTS` | `ON` | Build test suite |
-| `NBODY_BUILD_BENCHMARKS` | `ON` | Build the `nbody_benchmarks` executable |
-| `NBODY_ENABLE_PROFILING` | `OFF` | Enable named phase timings in benchmark output |
-| `CMAKE_CUDA_ARCHITECTURES` | `native` | GPU architecture (e.g., `86` for RTX 30xx) |
+| 选项 | 默认 | 说明 |
+|------|------|------|
+| `CMAKE_BUILD_TYPE` | `Release` | `Debug` 或 `Release` |
+| `NBODY_ENABLE_RENDERING` | `ON` | 构建 OpenGL/GLFW 可视化 |
+| `NBODY_BUILD_TESTS` | `ON` | 构建测试套件 |
+| `NBODY_BUILD_BENCHMARKS` | `ON` | 构建 `nbody_benchmarks` |
+| `NBODY_ENABLE_PROFILING` | `OFF` | 基准输出中启用命名阶段计时 |
+| `CMAKE_CUDA_ARCHITECTURES` | `native`（CMake 3.24+） | GPU 架构（如 `86` 对应 RTX 30xx）。旧版 CMake 回退到 `75;80;86;89;90` |
 
-Example with custom options:
-
-```bash
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CUDA_ARCHITECTURES=86 \
-    -DNBODY_BUILD_TESTS=ON
-```
-
----
-
-## 🎮 Running the Simulation
-
-### Basic Usage
+## 运行
 
 ```bash
-# Default: 10,000 particles
-./nbody_sim
-
-# Custom particle count
-./nbody_sim 100000    # 100K particles
-./nbody_sim 1000000   # 1 million particles
-./nbody_sim 5000000   # 5 million particles (needs 8GB+ VRAM)
+./nbody_sim              # 默认 1 万粒子
+./nbody_sim 100000       # 10 万
+./nbody_sim 1000000      # 100 万
+./nbody_sim 5000000      # 500 万（需 8GB+ 显存）
 ```
 
-### Interactive Controls
+### 交互控制
 
-| Key | Action |
-|-----|--------|
-| `Space` | ⏯️ Pause/Resume |
-| `R` | 🔄 Reset simulation |
-| `1` | 🔢 Direct N² algorithm |
-| `2` | 🌳 Barnes-Hut algorithm |
-| `3` | 🔲 Spatial Hash algorithm |
-| `C` | 📷 Reset camera |
-| `Esc` | ❌ Exit |
-| **Mouse** | |
-| `Left Drag` | 🔄 Rotate view |
-| `Scroll` | 🔍 Zoom in/out |
+| 按键 | 动作 |
+|------|------|
+| `Space` | 暂停/恢复 |
+| `R` | 重置模拟 |
+| `1` / `2` / `3` | 切换 Direct N² / Barnes-Hut / Spatial Hash |
+| `C` | 重置相机 |
+| `Esc` | 退出 |
+| 鼠标左键拖拽 | 旋转视角 |
+| 滚轮 | 缩放 |
 
-### Understanding the Display
+窗口标题实时显示粒子数、FPS 和模拟时间。
 
-Window title format:
-```
-N-Body Simulation | 100000 particles | 60.0 FPS | Time: 12.34
-```
-
-- **Particles**: Current particle count
-- **FPS**: Frames per second (target: 60+)
-- **Time**: Simulation elapsed time
-
-### Algorithm Selection Guide
-
-| Particles | Recommended | Why |
-|-----------|-------------|-----|
-| < 10K | Direct N² (press `1`) | Fastest, most accurate |
-| 10K - 100K | Barnes-Hut (press `2`) | Good speed/accuracy balance |
-| > 100K | Spatial Hash (press `3`) | Best performance |
-
----
-
-## 🧪 Running Tests
+## 测试与基准
 
 ```bash
 ./scripts/test.sh
-```
-
-`./scripts/test.sh` uses `ctest`, so headless builds run the observability tests while CUDA-enabled builds also include the full simulation suites discovered from `nbody_tests`.
-
-## 📊 Running Benchmarks
-
-```bash
 ./scripts/benchmark.sh
 ./scripts/benchmark.sh serialization.round_trip build/benchmark-results.json
 ```
 
-The benchmark executable emits structured JSON. If you configure with `-DNBODY_ENABLE_PROFILING=ON`, the output also includes named phase timings for the instrumented benchmark stages.
+基准可执行文件输出结构化 JSON；配置 `-DNBODY_ENABLE_PROFILING=ON` 时额外包含命名阶段计时。
 
-Test suites:
-- `ForceCalculation.*` - Force computation correctness
-- `BarnesHut.*` - Tree construction and traversal
-- `SpatialHash.*` - Grid operations
-- `Integrator.*` - Time integration
-- `Serialization.*` - Save/load functionality
+## 排错
 
----
+### 找不到 CUDA
 
-## 📚 Next Steps
-
-### Explore the Code
-
-| Example | File | Description |
-|---------|------|-------------|
-| Basic | `examples/example_basic.cpp` | Minimal simulation setup |
-| Algorithms | `examples/example_force_methods.cpp` | Compare algorithms |
-| Distribution | `examples/example_custom_distribution.cpp` | Custom initial conditions |
-| Energy | `examples/example_energy_conservation.cpp` | Monitor energy |
-
-### Read Documentation
-
-1. [Architecture](./architecture.md) - Understand system design
-2. [Algorithms](./algorithms.md) - Learn force calculation methods
-3. [API Reference](./api.md) - Use the library programmatically
-4. [Performance Guide](./performance.md) - Optimize for your use case
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### 1. CUDA Not Found
-
-**Error:**
-```
-CMake Error: Could not find CUDA
-```
-
-**Solution:**
 ```bash
-# Verify CUDA installation
 nvcc --version
-
-# Set CUDA path (if needed)
 export CUDA_HOME=/usr/local/cuda
 export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
-
-# Reconfigure CMake
 cmake .. -DCMAKE_CUDA_COMPILER=$CUDA_HOME/bin/nvcc
 ```
 
-#### 2. GLFW/GLEW Not Found
+### 找不到 GLFW/GLEW
 
-**Error:**
-```
-Could not find glfw3
-```
-
-**Solution:**
 ```bash
-# Ubuntu/Debian
-sudo apt-get install libglfw3-dev libglew-dev
-
-# Fedora
-sudo dnf install glfw-devel glew-devel
-
-# macOS
-brew install glfw glew
+sudo apt-get install libglfw3-dev libglew-dev   # Ubuntu/Debian
+sudo dnf install glfw-devel glew-devel           # Fedora
+brew install glfw glew                            # macOS
 ```
 
-#### 3. Out of Memory
+### 显存不足
 
-**Error:**
-```
-CUDA Error: out of memory
-```
+- 减少粒子数：`./nbody_sim 50000`
+- 检查显存：`nvidia-smi`
+- 关闭其他 GPU 应用
 
-**Solutions:**
-- Reduce particle count: `./nbody_sim 50000`
-- Check VRAM: `nvidia-smi`
-- Close other GPU applications
-- Lower algorithm precision (increase θ for Barnes-Hut)
+### FPS 偏低
 
-#### 4. Low FPS
+| 症状 | 原因 | 解决 |
+|------|------|------|
+| <100K 粒子时 FPS<10 | Debug 构建 | 用 `-DCMAKE_BUILD_TYPE=Release` 重建 |
+| >100K 粒子时 FPS<10 | 算法不当 | 按 `2` 或 `3` 切换算法 |
+| FPS 随时间下降 | 驱动问题 | 更新 NVIDIA 驱动 |
 
-**Causes & Solutions:**
+### 构建失败
 
-| Symptom | Cause | Solution |
-|---------|-------|----------|
-| FPS < 10 with <100K | Debug build | Rebuild with `-DCMAKE_BUILD_TYPE=Release` |
-| FPS < 10 with >100K | Wrong algorithm | Press `2` or `3` to switch |
-| FPS drops over time | Memory leak | Update to latest version |
-| Inconsistent FPS | Driver issue | Update NVIDIA drivers |
-
-#### 5. Build Failures
-
-**Clean build:**
 ```bash
 rm -rf build
 mkdir build && cd build
@@ -341,33 +183,16 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j$(nproc)
 ```
 
-**Verbose output:**
-```bash
-cmake .. -DCMAKE_VERBOSE_MAKEFILE=ON
-cmake --build . 2>&1 | tee build.log
-```
+详细日志：`cmake .. -DCMAKE_VERBOSE_MAKEFILE=ON && cmake --build . 2>&1 | tee build.log`
 
----
+## 下一步
 
-## 📊 Performance Quick Reference
+- [示例程序](../../examples/README.md) — 可运行的用法演示
+- [项目 README](../../README.md) — 概览与快速开始
+- [AGENTS.md](../../AGENTS.md) — 架构说明与 AI 协作指引
 
-Tested on RTX 3080:
+## 获取帮助
 
-| Particles | Direct N² | Barnes-Hut | Spatial Hash |
-|-----------|-----------|------------|--------------|
-| 10,000 | 60+ FPS | 120+ FPS | 120+ FPS |
-| 100,000 | ~10 FPS | 60+ FPS | 90+ FPS |
-| 1,000,000 | N/A | ~25 FPS | 60+ FPS |
-
----
-
-## 🆘 Getting Help
-
-1. Check this guide first
-2. Review [GitHub Issues](https://github.com/AICL-Lab/n-body/issues)
-3. Create new issue with:
-   - GPU model and driver version
-   - CUDA version (`nvcc --version`)
-   - Operating system
-   - Full error message
-   - Steps to reproduce
+1. 先查阅本指南
+2. 查看 [GitHub Issues](https://github.com/AICL-Lab/n-body/issues)
+3. 提交新 issue 时附上：GPU 型号与驱动版本、CUDA 版本（`nvcc --version`）、操作系统、完整错误信息、复现步骤

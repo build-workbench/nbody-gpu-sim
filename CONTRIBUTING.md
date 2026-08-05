@@ -1,39 +1,39 @@
-# Contributing to n-body
+# 参与贡献
 
-Thanks for improving the project.
+感谢你改进本项目。
 
-## Core Principles
+## 核心原则
 
-1. **No duplicate guidance** — prefer one canonical doc per purpose.
-2. **Project-specific quality** — avoid generic templates, vague docs, or ceremonial automation.
-3. **Small coherent changes** — keep changes easy to review and merge.
+1. **不重复** — 每个用途只保留一份权威文档。
+2. **项目专属** — 避免通用模板、模糊文档和仪式性自动化。
+3. **小步连贯** — 改动保持易于评审和合并。
 
-## Canonical Workflow
+## 标准工作流
 
-1. Read the relevant headers in `include/nbody/` before changing code.
-2. Implement in small coherent batches.
-3. Run the existing highest-value checks for the surfaces you changed.
+1. 改代码前先读 `include/nbody/` 下相关头文件。
+2. 以小而连贯的批次实现。
+3. 针对你改动的部分跑现有最高价值的检查。
 
-## Branching and Merge Discipline
+## 分支与合并
 
-- Prefer short-lived branches.
-- Avoid long-running divergence.
+- 优先短生命周期分支。
+- 避免长期分叉。
 
-## Documentation Rules
+## 文档规则
 
-- `README.md` / `README.zh-CN.md` explain the project and quick start.
-- `AGENTS.md` is the single AI assistant guidance file.
-- `site/` is the GitHub Pages showcase surface.
-- Update required bilingual counterparts when changing primary onboarding docs.
+- `README.md` 解释项目与快速开始（中文）。
+- `AGENTS.md` 是唯一的 AI 协作指引文件。
+- `site/` 是 GitHub Pages 展示站点（中文）。
+- 改动主入口文档时同步更新关联文档。
 
-## Engineering Rules
+## 工程规则
 
-- Prefer the canonical CMake build path and the scripts in `scripts/`.
-- Keep dependencies and GitHub Actions versions pinned or explicitly bounded.
-- Keep CI and Pages triggers narrow and meaningful.
-- Default LSP baseline: `clangd` using the compile database generated from the primary build.
+- 优先使用标准 CMake 构建路径和 `scripts/` 下的脚本。
+- 依赖与 GitHub Actions 版本保持固定或有明确上界。
+- CI 与 Pages 触发条件保持精简且有意义。
+- LSP 基线：`clangd` 使用主构建生成的 compile_commands.json。
 
-## Local Commands
+## 本地命令
 
 ```bash
 ./scripts/build.sh
@@ -41,8 +41,8 @@ Thanks for improving the project.
 ./scripts/format.sh
 ```
 
-## Pull Requests
+## Pull Request
 
-- Explain what changed and why.
-- Call out docs, workflow, and repository-structure changes explicitly.
-- Note any checks you ran and any environment limitations that prevented a check.
+- 说清楚改了什么、为什么改。
+- 明确标注文档、工作流和仓库结构的变更。
+- 注明你跑过的检查，以及因环境限制未能跑的检查。

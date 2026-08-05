@@ -36,7 +36,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: site
-        run: npm ci || npm install
+        # npm ci (not install): fail loudly if package-lock.json drifts from
+        # package.json instead of silently regenerating the lockfile.
+        run: npm ci
 
       - name: Build VitePress
         working-directory: site
@@ -55,18 +57,6 @@ jobs:
             exit 1
           fi
           echo "✅ index.html exists"
-
-          if [ ! -d "site/.vitepress/dist/en" ]; then
-            echo "❌ ERROR: en directory not found!"
-            exit 1
-          fi
-          echo "✅ en directory exists"
-
-          if [ ! -d "site/.vitepress/dist/zh-CN" ]; then
-            echo "❌ ERROR: zh-CN directory not found!"
-            exit 1
-          fi
-          echo "✅ zh-CN directory exists"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

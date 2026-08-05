@@ -1,25 +1,25 @@
-# Examples
+# 示例
 
-This directory contains focused example programs for the major n-body workflows.
+本目录包含针对 n-body 主要工作流的聚焦示例程序。
 
-## Available Programs
+## 可用程序
 
-| Program | Purpose |
-|---------|---------|
-| [`example_basic.cpp`](example_basic.cpp) | Minimal end-to-end simulation |
-| [`example_force_methods.cpp`](example_force_methods.cpp) | Compare force algorithms |
-| [`example_custom_distribution.cpp`](example_custom_distribution.cpp) | Build custom particle layouts |
-| [`example_energy_conservation.cpp`](example_energy_conservation.cpp) | Inspect integrator stability |
+| 程序 | 用途 |
+|------|------|
+| [`example_basic.cpp`](example_basic.cpp) | 最小端到端模拟 |
+| [`example_force_methods.cpp`](example_force_methods.cpp) | 对比力计算算法 |
+| [`example_custom_distribution.cpp`](example_custom_distribution.cpp) | 构建自定义粒子布局 |
+| [`example_energy_conservation.cpp`](example_energy_conservation.cpp) | 检查积分器稳定性 |
 
-## Build
+## 构建
 
-Examples are built by default through the canonical CMake path:
+示例默认通过标准 CMake 路径构建：
 
 ```bash
 ./scripts/build.sh
 ```
 
-Or manually:
+或手动：
 
 ```bash
 mkdir -p build
@@ -28,7 +28,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DNBODY_BUILD_EXAMPLES=ON
 cmake --build . -j"$(nproc)"
 ```
 
-Generated executables live in `build/`:
+生成的可执行文件位于 `build/`：
 
 ```bash
 ./build/example_basic
@@ -37,33 +37,33 @@ Generated executables live in `build/`:
 ./build/example_energy_conservation
 ```
 
-## What Each Example Covers
+## 各示例覆盖内容
 
 ### `example_basic.cpp`
 
-- initialize a `ParticleSystem`
-- run a basic simulation loop
-- save and load state
-- inspect total energy
+- 初始化 `ParticleSystem`
+- 运行基础模拟循环
+- 保存与加载状态
+- 查看总能量
 
 ### `example_force_methods.cpp`
 
-- compare Direct N², Barnes-Hut, and Spatial Hash
-- switch algorithms at runtime
-- inspect performance trade-offs
+- 对比 Direct N²、Barnes-Hut 和 Spatial Hash
+- 运行时切换算法
+- 查看性能权衡
 
 ### `example_custom_distribution.cpp`
 
-- create custom initial particle distributions
-- write particle data directly
-- experiment with non-default setups
+- 创建自定义初始粒子分布
+- 直接写入粒子数据
+- 试验非默认配置
 
 ### `example_energy_conservation.cpp`
 
-- track energy drift over time
-- inspect timestep sensitivity
-- evaluate integrator stability
+- 跟踪能量随时间漂移
+- 查看时间步敏感度
+- 评估积分器稳定性
 
-## Related
+## 相关
 
-- [Getting Started](../docs/setup/getting-started.md)
+- [快速上手](../docs/setup/getting-started.md)
