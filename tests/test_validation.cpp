@@ -13,12 +13,13 @@ using nbody::test::genFloatInRange;
 // Unit Tests
 
 TEST(ValidationTest, ValidParticleCount) {
-  EXPECT_NO_THROW(validateParticleCount(100));
-  EXPECT_NO_THROW(validateParticleCount(1000000));
+  EXPECT_NO_THROW(validateParticleCountRange(100));
+  EXPECT_NO_THROW(validateParticleCountRange(1000000));
 }
 
 TEST(ValidationTest, InvalidParticleCount) {
-  EXPECT_THROW(validateParticleCount(0), ValidationException);
+  EXPECT_THROW(validateParticleCountRange(0), ValidationException);
+  EXPECT_THROW(validateParticleCountRange(100000001), ValidationException);
 }
 
 TEST(ValidationTest, ValidTimeStep) {
@@ -187,7 +188,7 @@ RC_GTEST_PROP(Validation, AcceptsValidParameters, ()) {
   // Property: System accepts valid parameters without throwing
   bool threw = false;
   try {
-    validateParticleCount(count);
+    validateParticleCountRange(count);
     validateTimeStep(dt);
     validateSoftening(softening);
     validateTheta(theta);
