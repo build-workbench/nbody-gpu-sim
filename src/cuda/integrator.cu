@@ -1,4 +1,5 @@
 #include "nbody/error_handling.hpp"
+#include "nbody/force_calculator.hpp"
 #include "nbody/integrator.hpp"
 #include "nbody/performance_observability.hpp"
 #include <cub/cub.cuh>
