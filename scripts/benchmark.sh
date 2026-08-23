@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Benchmark script for n-body project
+# Benchmark script for nbody-gpu-sim project
 
 set -euo pipefail
 

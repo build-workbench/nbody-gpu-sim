@@ -5,7 +5,7 @@ const base = rawBase
   ? rawBase.startsWith('/')
     ? rawBase.endsWith('/') ? rawBase : `${rawBase}/`
     : `/${rawBase}/`
-  : '/n-body/'
+  : '/nbody-gpu-sim/'
 
 export default defineConfig({
   base,
@@ -21,11 +21,11 @@ export default defineConfig({
 
   themeConfig: {
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/AICL-Lab/n-body' },
+      { icon: 'github', link: 'https://github.com/vibe-knight/nbody-gpu-sim' },
     ],
     footer: {
       message: '基于 MIT 许可证发布。',
-      copyright: '版权所有 © 2024-2026 AICL-Lab',
+      copyright: '版权所有 © 2024-2026 Vibe Knight',
     },
   },
 

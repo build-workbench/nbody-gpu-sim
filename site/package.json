@@ -1,5 +1,5 @@
 {
-  "name": "n-body-docs",
+  "name": "nbody-gpu-sim-docs",
   "version": "2.1.0",
   "type": "module",
   "description": "N-Body GPU 物理引擎文档站点",

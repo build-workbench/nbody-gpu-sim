@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build script for n-body project
+# Build script for nbody-gpu-sim project
 
 set -euo pipefail
 
@@ -10,7 +10,7 @@ BUILD_DIR="${PROJECT_DIR}/build"
 # Default build type
 BUILD_TYPE="${1:-Release}"
 
-echo "🔨 Building n-body project (${BUILD_TYPE})..."
+echo "🔨 Building nbody-gpu-sim project (${BUILD_TYPE})..."
 
 # Detect CUDA availability
 if command -v nvcc &> /dev/null; then

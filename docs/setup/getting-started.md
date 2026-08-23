@@ -41,8 +41,8 @@ nvidia-smi
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential cmake git libglfw3-dev libglew-dev libglm-dev
-git clone https://github.com/AICL-Lab/n-body.git
-cd n-body
+git clone https://github.com/vibe-knight/nbody-gpu-sim.git
+cd nbody-gpu-sim
 ```
 
 ### Windows（Visual Studio）
@@ -194,5 +194,5 @@ cmake --build . -j$(nproc)
 ## 获取帮助
 
 1. 先查阅本指南
-2. 查看 [GitHub Issues](https://github.com/AICL-Lab/n-body/issues)
+2. 查看 [GitHub Issues](https://github.com/vibe-knight/nbody-gpu-sim/issues)
 3. 提交新 issue 时附上：GPU 型号与驱动版本、CUDA 版本（`nvcc --version`）、操作系统、完整错误信息、复现步骤
