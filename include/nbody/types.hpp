@@ -12,12 +12,6 @@
 #ifndef __device__
 #define __device__
 #endif
-struct int3 {
-  int x, y, z;
-};
-inline constexpr int3 make_int3(int x, int y, int z) {
-  return {x, y, z};
-}
 #endif
 
 namespace nbody {
