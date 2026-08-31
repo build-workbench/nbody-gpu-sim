@@ -221,6 +221,22 @@
   overflow-x: auto;
 }
 
+/* === 架构图嵌入 === */
+.arch-embed {
+  margin: 16px 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.arch-embed iframe {
+  display: block;
+  width: 100%;
+  height: min(72vh, 640px);
+  border: 0;
+}
+
 /* === 响应式 === */
 @media (max-width: 959px) {
   .feature-map { grid-template-columns: repeat(2, 1fr); }

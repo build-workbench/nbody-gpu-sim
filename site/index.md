@@ -109,7 +109,7 @@ layout: home
   <div class="quick-start-title">构建与运行</div>
   <div class="quick-start-content">
     <div class="command-block">
-      <code>git clone https://github.com/vibe-knight/nbody-gpu-sim.git<br>cd nbody-gpu-sim<br>./scripts/build.sh<br>./build/nbody_sim 100000</code>
+      <code>git clone https://github.com/build-workbench/nbody-gpu-sim.git<br>cd nbody-gpu-sim<br>./scripts/build.sh<br>./build/nbody_sim 100000</code>
     </div>
     <p>依赖：NVIDIA GPU（支持 CUDA）、CUDA Toolkit 11+、CMake 3.18+、OpenGL 3.3+</p>
   </div>
@@ -117,22 +117,17 @@ layout: home
 
 ## 架构
 
-```
-┌─ CPU（主机）─────────────────────┐
-│  SimulationConfig → ParticleSystem │
-│           │                        │
-│           ▼                        │
-└──► 力计算内核（N²/Barnes-Hut/Hash）──┐
-                                       ▼
-┌─ GPU（设备）─────────────────────┐
-│  力计算 → Velocity Verlet 积分     │
-│           │                        │
-│           ▼                        │
-│  OpenGL 零拷贝渲染                 │
-└──────────┬───────────────────────┘
-           ▼
-     渲染循环（窗口标题实时显示 FPS）
-```
+<div class="arch-embed">
+  <iframe
+    src="architecture.html?theme=light&embed=1"
+    title="nbody-gpu-sim 架构图"
+    loading="lazy"
+  ></iframe>
+</div>
+
+<p style="text-align: center; margin-top: -8px;">
+  <a href="architecture.html?theme=light" target="_blank">在新标签页打开可交互架构图（支持缩放、路径追踪、视图导出）</a>
+</p>
 
 ## 性能
 
@@ -154,7 +149,7 @@ layout: home
   title = {nbody-gpu-sim: Million-Particle GPU N-Body Simulation},
   author = {Vibe Knight},
   year = {2026},
-  url = {https://github.com/vibe-knight/nbody-gpu-sim},
+  url = {https://github.com/build-workbench/nbody-gpu-sim},
   version = {2.1.0},
   note = {CUDA-accelerated N-body simulation with real-time visualization}
 }
@@ -164,4 +159,4 @@ layout: home
 
 ## 链接
 
-- [GitHub](https://github.com/vibe-knight/nbody-gpu-sim) - 源代码和问题反馈
+- [GitHub](https://github.com/build-workbench/nbody-gpu-sim) - 源代码和问题反馈

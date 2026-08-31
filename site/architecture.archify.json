@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "nbody-gpu-sim 架构",
+    "subtitle": "CUDA + OpenGL 百万粒子 N-body 模拟",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "visual_preset": "classic",
+    "repository": {
+      "url": "https://github.com/build-workbench/nbody-gpu-sim",
+      "revision": "cdeef81b3b4d13ab924c2b504443a9c710ca3ace"
+    },
+    "views": [
+      {
+        "id": "main-path",
+        "label": "主路径：初始化 → 模拟 → 渲染",
+        "focus": ["cli", "config", "cpu-init", "gpu-data", "integrator", "interop", "renderer"],
+        "note": "从命令行参数解析到每一帧的物理模拟与实时渲染。"
+      },
+      {
+        "id": "force-algorithms",
+        "label": "三种力计算算法",
+        "focus": ["integrator", "force-direct", "force-bh", "force-hash"],
+        "note": "由积分器调用的三种 GPU 力计算内核，互斥选择。"
+      },
+      {
+        "id": "state-and-benchmark",
+        "label": "无头基准与状态持久化",
+        "focus": ["cli", "bench", "cpu-init", "serializer"],
+        "note": "基准测试模式与二进制检查点的导出/导入。"
+      }
+    ]
+  },
+  "layout": { "mode": "grid", "cols": 7, "gapX": 40, "gapY": 52, "cellW": 150, "cellH": 64 },
+  "components": [
+    { "id": "cli", "type": "backend", "label": "命令行入口", "sublabel": "app_cli.cpp", "row": 0, "col": 0, "sources": [{ "path": "src/core/app_cli.cpp", "line": 49 }] },
+    { "id": "config", "type": "backend", "label": "模拟配置", "sublabel": "SimulationConfig", "row": 0, "col": 1, "sources": [{ "path": "src/main.cpp", "line": 148 }] },
+    { "id": "cpu-init", "type": "backend", "label": "粒子系统初始化", "sublabel": "主机内存", "row": 0, "col": 2, "sources": [{ "path": "src/core/particle_system.cpp", "line": 63 }, { "path": "src/cuda/particle_init.cu", "line": 134 }] },
+    { "id": "gpu-data", "type": "messagebus", "label": "GPU 数据管理", "sublabel": "显存分配/上传", "row": 0, "col": 3, "sources": [{ "path": "src/cuda/particle_init.cu", "line": 11 }] },
+    { "id": "integrator", "type": "backend", "label": "积分器", "sublabel": "Velocity Verlet", "row": 0, "col": 4, "sources": [{ "path": "src/cuda/integrator.cu", "line": 175 }] },
+    { "id": "interop", "type": "messagebus", "label": "CUDA-GL 互操作", "sublabel": "零拷贝缓冲映射", "row": 0, "col": 5, "sources": [{ "path": "src/render/cuda_gl_interop.cu", "line": 68 }] },
+    { "id": "renderer", "type": "frontend", "label": "OpenGL 渲染器", "sublabel": "点精灵 + UI 面板", "row": 0, "col": 6, "sources": [{ "path": "src/render/renderer.cpp", "line": 194 }, { "path": "src/render/ui_panel.cpp", "line": 1 }] },
+    { "id": "bench", "type": "backend", "label": "无头基准模式", "sublabel": "CI 性能回归", "row": 1, "col": 0, "sources": [{ "path": "src/main.cpp", "line": 347 }] },
+    { "id": "serializer", "type": "database", "label": "状态持久化", "sublabel": "二进制检查点", "row": 1, "col": 2, "sources": [{ "path": "src/utils/serialization.cpp", "line": 25 }] },
+    { "id": "force-direct", "type": "backend", "label": "直接 N² 内核", "sublabel": "O(N²) 精确", "row": 1, "col": 3, "sources": [{ "path": "src/cuda/force_direct.cu", "line": 10 }] },
+    { "id": "force-bh", "type": "backend", "label": "Barnes-Hut 内核", "sublabel": "O(N log N) 八叉树", "row": 1, "col": 4, "sources": [{ "path": "src/cuda/force_barnes_hut.cu", "line": 577 }] },
+    { "id": "force-hash", "type": "backend", "label": "空间哈希内核", "sublabel": "O(N) 短程", "row": 1, "col": 5, "sources": [{ "path": "src/cuda/force_spatial_hash.cu", "line": 376 }] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "主机（CPU）", "wraps": ["cli", "config", "cpu-init", "serializer", "bench"], "pad": 18 },
+    { "kind": "region", "label": "设备（GPU）", "wraps": ["gpu-data", "integrator", "interop", "force-direct", "force-bh", "force-hash"], "pad": 18 }
+  ],
+  "connections": [
+    { "id": "cli-config", "from": "cli", "to": "config", "label": "解析参数" },
+    { "id": "config-cpu-init", "from": "config", "to": "cpu-init", "label": "初始化配置" },
+    { "id": "cpu-init-gpu-data", "from": "cpu-init", "to": "gpu-data", "label": "上传显存", "variant": "emphasis" },
+    { "id": "gpu-data-integrator", "from": "gpu-data", "to": "integrator", "label": "设备粒子" },
+    { "id": "integrator-interop", "from": "integrator", "to": "interop", "label": "映射缓冲" },
+    { "id": "interop-renderer", "from": "interop", "to": "renderer", "label": "零拷贝渲染", "variant": "emphasis" },
+    { "id": "integrator-force-direct", "from": "integrator", "to": "force-direct" },
+    { "id": "integrator-force-bh", "from": "integrator", "to": "force-bh" },
+    { "id": "integrator-force-hash", "from": "integrator", "to": "force-hash" },
+    { "id": "cpu-init-serializer", "from": "cpu-init", "to": "serializer", "label": "检查点导出/导入", "variant": "dashed", "labelDy": 24, "labelDx": -70 },
+    { "id": "serializer-cpu-init", "from": "serializer", "to": "cpu-init", "variant": "dashed" },
+    { "id": "cli-bench", "from": "cli", "to": "bench", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "数据主路径", "items": ["每帧：粒子显存更新 → 力计算 → Velocity Verlet 积分 → 零拷贝渲染", "CUDA-OpenGL 互操作避免主机与设备间的往返拷贝"] },
+    { "dot": "emerald", "title": "三种力内核（互斥选择）", "items": ["直接 N²：精确成对力，适合 ≤1 万粒子", "Barnes-Hut：八叉树近似，适合 10 万+ 粒子", "空间哈希：网格短程力，适合分子动力学/流体"] },
+    { "dot": "amber", "title": "无头模式", "items": ["bench 模式脱离窗口运行，用于 CI 性能回归", "检查点为二进制快照，可导出/导入恢复模拟状态"] }
+  ]
+}
