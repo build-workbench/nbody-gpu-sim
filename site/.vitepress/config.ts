@@ -21,7 +21,7 @@ export default defineConfig({
 
   themeConfig: {
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vibe-knight/nbody-gpu-sim' },
+      { icon: 'github', link: 'https://github.com/build-workbench/nbody-gpu-sim' },
     ],
     footer: {
       message: '基于 MIT 许可证发布。',

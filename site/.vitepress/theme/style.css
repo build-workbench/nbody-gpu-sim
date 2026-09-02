@@ -3,6 +3,31 @@
  * 翡翠绿品牌色 + 首页自定义卡片。其余沿用 VitePress 默认主题。
  */
 
+/* 自托管字体: Code New Roman(英文) + Resource Han Rounded CN(中文, GB2312子集) */
+@font-face {
+  font-family: 'Resource Han Rounded CN';
+  src: url('/fonts/han-rounded.woff2') format('woff2');
+  font-weight: 100 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Resource Han Rounded CN';
+  src: url('/fonts/han-rounded-bold.woff2') format('woff2');
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code New Roman';
+  src: url('/fonts/code-new-roman.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* 品牌色 - 翡翠绿 */
   --vp-c-brand-1: #10b981;
@@ -19,6 +44,10 @@
   --algo-purple-bg: #ede9fe;
   --tag-bg: #d1fae5;
   --tag-text: #059669;
+
+  /* 字体: 英文 Code New Roman + 中文 Han Rounded CN */
+  --vp-font-family-base:
+    'Code New Roman', 'Resource Han Rounded CN', ui-sans-serif, system-ui, sans-serif;
 }
 
 .dark {
@@ -233,7 +262,11 @@
 .arch-embed iframe {
   display: block;
   width: 100%;
-  height: min(72vh, 640px);
+  /* 高度跟随 architecture.html 内 SVG 的 viewBox 比例（1340x344），
+     分母加大 14 补偿 embed 模式下 .diagram-container 的 0.5rem 内边距；
+     重新生成架构图若 viewBox 比例变化，需同步更新此值 */
+  height: auto;
+  aspect-ratio: 1340 / 358;
   border: 0;
 }
 
