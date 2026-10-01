@@ -1,3 +1,7 @@
+**English** | [中文](#chinese)
+
+<a id="top"></a>
+
 # nbody-gpu-sim
 
 CUDA-accelerated N-body gravitational simulation, supporting three force algorithms and real-time OpenGL visualization.
@@ -59,6 +63,7 @@ Run tests: `./scripts/test.sh`  ·  JSON performance benchmark: `./scripts/bench
 ---
 
 <a id="chinese"></a>
+[English](#top) | **中文**
 
 # nbody-gpu-sim
 
