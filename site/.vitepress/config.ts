@@ -25,7 +25,7 @@ export default defineConfig({
     ],
     footer: {
       message: '基于 MIT 许可证发布。',
-      copyright: '版权所有 © 2024-2026 Vibe Knight',
+      copyright: '版权所有 © 2024-2026 build-workbench',
     },
   },
 

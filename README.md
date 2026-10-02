@@ -58,7 +58,7 @@ Run tests: `./scripts/test.sh`  ·  JSON performance benchmark: `./scripts/bench
 
 ## License
 
-[MIT](LICENSE) © Vibe Knight
+[MIT](LICENSE) © build-workbench
 
 ---
 
@@ -121,4 +121,4 @@ cd nbody-gpu-sim
 
 ## License
 
-[MIT](LICENSE) © Vibe Knight
+[MIT](LICENSE) © build-workbench

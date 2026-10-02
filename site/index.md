@@ -147,7 +147,7 @@ layout: home
 ```bibtex
 @software{nbody2026,
   title = {nbody-gpu-sim: Million-Particle GPU N-Body Simulation},
-  author = {Vibe Knight},
+  author = {build-workbench},
   year = {2026},
   url = {https://github.com/build-workbench/nbody-gpu-sim},
   version = {2.1.0},
